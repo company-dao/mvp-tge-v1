@@ -26,11 +26,11 @@ contract GovernanceToken is
         uint256 cap_,
         address tge_
     ) external override initializer {
-        __Ownable_init();
         __ERC20_init(name_, symbol_);
         __ERC20Capped_init(cap_);
 
         tge = ITGE(tge_);
+        _transferOwnership(tge_);
     }
 
     // RESTRICTED FUNCTIONS
@@ -40,8 +40,6 @@ contract GovernanceToken is
         uint256 amount,
         uint256 locked
     ) external override onlyOwner {
-        require(locked <= amount, "Can not lock more than mint");
-
         _mint(to, amount);
         _locked[to] += locked;
     }

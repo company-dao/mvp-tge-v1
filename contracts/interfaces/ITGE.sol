@@ -14,7 +14,19 @@ interface ITGE {
         uint256 duration;
     }
 
-    function initialize(address token_, TGEInfo memory info) external;
+    function initialize(
+        address owner_,
+        address token_,
+        TGEInfo memory info
+    ) external;
+
+    function purchase(uint256 amount) external payable;
+
+    function claimBack() external;
+
+    function transferFunds(address to) external;
+
+    function maxPurchaseOf(address account) external view returns (uint256);
 
     enum State {
         Active,

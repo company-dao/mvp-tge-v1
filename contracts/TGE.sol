@@ -33,17 +33,17 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // CONSTRUCTOR
 
-    function initialize(address token_, TGEInfo memory info)
-        external
-        override
-        initializer
-    {
+    function initialize(
+        address owner_,
+        address token_,
+        TGEInfo memory info
+    ) external override initializer {
         require(
             info.hardcap <= IGovernanceToken(token_).cap(),
             "Hardcap higher than cap"
         );
 
-        __Ownable_init();
+        _transferOwnership(owner_);
 
         token = IGovernanceToken(token_);
         metadataURI = info.metadataURI;
@@ -59,7 +59,12 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // PUBLIC FUNCTIONS
 
-    function purchase(uint256 amount) external payable onlyState(State.Active) {
+    function purchase(uint256 amount)
+        external
+        payable
+        override
+        onlyState(State.Active)
+    {
         require(amount >= minPurchase, "Amount less than min purchase");
         require(msg.value == amount * price, "Invalid ETH value passed");
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
@@ -70,7 +75,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         token.mint(msg.sender, amount, (amount * lockupPercent) / 100);
     }
 
-    function claimBack() external onlyState(State.Failed) {
+    function claimBack() external override onlyState(State.Failed) {
         uint256 refundValue = token.balanceOf(msg.sender) * price;
         token.burn(msg.sender);
         payable(msg.sender).transfer(refundValue);
@@ -80,6 +85,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     function transferFunds(address to)
         external
+        override
         onlyOwner
         onlyState(State.Successful)
     {
@@ -88,7 +94,12 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // VIEW FUNCTIONS
 
-    function maxPurchaseOf(address account) public view returns (uint256) {
+    function maxPurchaseOf(address account)
+        public
+        view
+        override
+        returns (uint256)
+    {
         return maxPurchase - purchaseOf[account];
     }
 

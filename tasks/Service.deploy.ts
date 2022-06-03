@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 
 task("deploy:service", "Deploy Service contract")
-    .addOptionalParam("fee", "Fee for TGE creation", 0)
+    .addOptionalParam("fee", "Fee for TGE creation", "0")
     .setAction(async function (
         { fee },
         { getNamedAccounts, deployments: { deploy } }

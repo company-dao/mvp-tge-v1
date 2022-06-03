@@ -4,10 +4,12 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 
 contract Service is Ownable {
+    using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
 
     address public tokenMaster;
@@ -16,7 +18,7 @@ contract Service is Ownable {
 
     uint256 public fee;
 
-    mapping(address => bool) public isWhitelisted;
+    EnumerableSet.AddressSet private _whitelist;
 
     // EVENTS
 
@@ -53,20 +55,21 @@ contract Service is Ownable {
         address tge = tgeMaster.clone();
 
         IGovernanceToken(token).initialize(name, symbol, cap, tge);
-        ITGE(tge).initialize(token, tgeInfo);
+        ITGE(tge).initialize(msg.sender, token, tgeInfo);
 
         emit TGECreated(token, tge);
     }
 
     // RESTRICTED FUNCTIONS
 
-    function setWhitelisted(address account, bool whitelisted)
-        external
-        onlyOwner
-    {
-        require(isWhitelisted[account] != whitelisted, "Already in that state");
-        isWhitelisted[account] = whitelisted;
-        emit WhitelistedSet(account, whitelisted);
+    function addToWhitelist(address account) external onlyOwner {
+        require(_whitelist.add(account), "Already whitelisted");
+        emit WhitelistedSet(account, true);
+    }
+
+    function removeFromWhitelist(address account) external onlyOwner {
+        require(_whitelist.remove(account), "Already not whitelisted");
+        emit WhitelistedSet(account, false);
     }
 
     function setFee(uint256 fee_) external onlyOwner {
@@ -78,10 +81,28 @@ contract Service is Ownable {
         payable(to).transfer(payable(address(this)).balance);
     }
 
+    // VIEW FUNCTIONS
+
+    function isWhitelisted(address account) public view returns (bool) {
+        return _whitelist.contains(account);
+    }
+
+    function whitelist() external view returns (address[] memory) {
+        return _whitelist.values();
+    }
+
+    function whitelistLength() external view returns (uint256) {
+        return _whitelist.length();
+    }
+
+    function whitelistAt(uint256 index) external view returns (address) {
+        return _whitelist.at(index);
+    }
+
     // MODIFIERS
 
     modifier onlyWhitelisted() {
-        require(isWhitelisted[msg.sender], "Not whitelisted");
+        require(isWhitelisted(msg.sender), "Not whitelisted");
         _;
     }
 }
