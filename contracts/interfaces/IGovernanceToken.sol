@@ -5,12 +5,13 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 interface IGovernanceToken is IERC20Upgradeable {
-    function initialize(
-        string memory name_,
-        string memory symbol_,
-        uint256 cap_,
-        address tge_
-    ) external;
+    struct TokenInfo {
+        string name;
+        string symbol;
+        uint256 cap;
+    }
+
+    function initialize(address tge_, TokenInfo memory info) external;
 
     function mint(
         address to,

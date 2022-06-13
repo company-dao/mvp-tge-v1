@@ -5,12 +5,15 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 
 contract Service is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
+
+    address public poolMaster;
 
     address public tokenMaster;
 
@@ -26,15 +29,17 @@ contract Service is Ownable {
 
     event FeeSet(uint256 fee);
 
-    event TGECreated(address token, address tge);
+    event PoolCreated(address pool, address token, address tge);
 
     // CONSTRUCTOR
 
     constructor(
+        address poolMaster_,
         address tokenMaster_,
         address tgeMaster_,
         uint256 fee_
     ) {
+        poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
         fee = fee_;
@@ -43,21 +48,31 @@ contract Service is Ownable {
 
     // PUBLIC FUNCTIONS
 
-    function createTGE(
-        string memory name,
-        string memory symbol,
-        uint256 cap,
+    function createPool(
+        IPool pool,
+        IGovernanceToken.TokenInfo memory tokenInfo
         ITGE.TGEInfo memory tgeInfo
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
+
+        if (address(pool) == address(0)) {
+            pool = IPool(poolMaster.clone());
+            pool.initialize(msg.sender);
+            // TODO: add to ServiceDirectory
+        } else {
+            // TODO: check if is actual pool via ServiceDirectory
+            require(msg.sender == pool.owner(), "Sender is not pool owner");
+            require(ITGE(pool.tge()).state() == ITGE.State.Failed, "Previous TGE not failed");
+        }
 
         address token = tokenMaster.clone();
         address tge = tgeMaster.clone();
 
         IGovernanceToken(token).initialize(name, symbol, cap, tge);
         ITGE(tge).initialize(msg.sender, token, tgeInfo);
+        pool.setInfo(token, tge);
 
-        emit TGECreated(token, tge);
+        emit PoolCreated(address(pool), token, tge);
     }
 
     // RESTRICTED FUNCTIONS
