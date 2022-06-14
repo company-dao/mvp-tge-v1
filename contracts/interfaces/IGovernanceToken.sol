@@ -11,15 +11,24 @@ interface IGovernanceToken is IERC20Upgradeable {
         uint256 cap;
     }
 
-    function initialize(address tge_, TokenInfo memory info) external;
+    function initialize(address pool_, TokenInfo memory info) external;
 
     function mint(
         address to,
         uint256 amount,
-        uint256 locked
+        uint256 lockedAmount,
+        uint256 lockDeadline
     ) external;
 
-    function burn(address from) external;
+    function burn(address from, uint256 amount) external;
+
+    function lock(
+        address account,
+        uint256 amount,
+        uint256 deadline
+    ) external;
 
     function cap() external view returns (uint256);
+
+    function unlockedBalanceOf(address account) external view returns (uint256);
 }

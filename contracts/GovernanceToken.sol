@@ -5,6 +5,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import "./interfaces/IService.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 
@@ -14,23 +15,30 @@ contract GovernanceToken is
     ERC20VotesUpgradeable,
     ERC20CappedUpgradeable
 {
-    ITGE public tge;
+    IService public service;
 
-    mapping(address => uint256) private _locked;
+    address public pool;
+
+    struct LockedBalance {
+        uint256 amount;
+        uint256 deadline;
+    }
+
+    mapping(address => LockedBalance) private _locked;
 
     // CONSTRUCTOR
 
-    function initialize(
-        string memory name_,
-        string memory symbol_,
-        uint256 cap_,
-        address tge_
-    ) external override initializer {
-        __ERC20_init(name_, symbol_);
-        __ERC20Capped_init(cap_);
+    function initialize(address pool_, TokenInfo memory info)
+        external
+        override
+        initializer
+    {
+        __ERC20_init(info.name, info.symbol);
+        __ERC20Capped_init(info.cap);
+        __Ownable_init();
 
-        tge = ITGE(tge_);
-        _transferOwnership(tge_);
+        service = IService(msg.sender);
+        pool = pool_;
     }
 
     // RESTRICTED FUNCTIONS
@@ -38,24 +46,40 @@ contract GovernanceToken is
     function mint(
         address to,
         uint256 amount,
-        uint256 locked
-    ) external override onlyOwner {
+        uint256 lockedAmount,
+        uint256 lockDeadline
+    ) external override onlyTGE {
         _mint(to, amount);
-        _locked[to] += locked;
+        _lock(to, lockedAmount, lockDeadline);
     }
 
-    function burn(address from) external override onlyOwner {
-        _burn(from, balanceOf(from));
-        _locked[from] = 0;
+    function burn(address from, uint256 amount) external override onlyTGE {
+        require(
+            amount <= unlockedBalanceOf(from),
+            "Not enough unlocked balance"
+        );
+        _burn(from, amount);
+    }
+
+    function lock(
+        address account,
+        uint256 amount,
+        uint256 deadline
+    ) external override onlyPool {
+        _lock(account, amount, deadline);
     }
 
     // VIEW FUNCTIONS
 
-    function lockedOf(address account) public view returns (uint256) {
-        if (tge.state() == ITGE.State.Successful) {
+    function unlockedBalanceOf(address account) public view returns (uint256) {
+        return balanceOf(account) - lockedBalanceOf(account);
+    }
+
+    function lockedBalanceOf(address account) public view returns (uint256) {
+        if (block.number >= _locked[account].deadline) {
             return 0;
         } else {
-            return _locked[account];
+            return _locked[account].amount;
         }
     }
 
@@ -74,13 +98,21 @@ contract GovernanceToken is
 
     // INTERNAL FUNCTIONS
 
+    function _lock(
+        address account,
+        uint256 amount,
+        uint256 deadline
+    ) internal {
+        _locked[account] = LockedBalance({amount: amount, deadline: deadline});
+    }
+
     function _transfer(
         address from,
         address to,
         uint256 amount
     ) internal override {
         require(
-            amount <= balanceOf(from) - lockedOf(from),
+            amount <= unlockedBalanceOf(from),
             "Not enough unlocked balance"
         );
         super._transfer(from, to, amount);
@@ -106,5 +138,17 @@ contract GovernanceToken is
         uint256 amount
     ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
         super._afterTokenTransfer(from, to, amount);
+    }
+
+    // MODIFIERS
+
+    modifier onlyPool() {
+        require(msg.sender == pool, "Not pool");
+        _;
+    }
+
+    modifier onlyTGE() {
+        // Check that is TGE through ServiceDirectory
+        _;
     }
 }

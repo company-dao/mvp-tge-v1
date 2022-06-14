@@ -54,7 +54,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         maxPurchase = info.maxPurchase;
         lockupPercent = info.lockupPercent;
         duration = info.duration;
-        createdAt = block.timestamp;
+        createdAt = block.number;
     }
 
     // PUBLIC FUNCTIONS
@@ -72,12 +72,19 @@ contract TGE is ITGE, OwnableUpgradeable {
 
         totalPurchases += amount;
         purchaseOf[msg.sender] += amount;
-        token.mint(msg.sender, amount, (amount * lockupPercent) / 100);
+        token.mint(
+            msg.sender,
+            amount,
+            (amount * lockupPercent) / 100,
+            createdAt + duration
+        );
     }
 
     function claimBack() external override onlyState(State.Failed) {
-        uint256 refundValue = token.balanceOf(msg.sender) * price;
-        token.burn(msg.sender);
+        uint256 refundTokens = token.balanceOf(msg.sender);
+        // TODO: calculate refund amount as minimum of balance and purchase
+        token.burn(msg.sender, refundTokens);
+        uint256 refundValue = refundTokens * price;
         payable(msg.sender).transfer(refundValue);
     }
 
@@ -104,7 +111,7 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     function state() public view override returns (State) {
-        if (block.timestamp < createdAt + duration) {
+        if (block.number < createdAt + duration) {
             return State.Active;
         } else if (totalPurchases >= softcap) {
             return State.Successful;

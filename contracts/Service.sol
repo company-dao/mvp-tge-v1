@@ -5,11 +5,12 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 
-contract Service is Ownable {
+contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
 
@@ -31,6 +32,8 @@ contract Service is Ownable {
 
     event PoolCreated(address pool, address token, address tge);
 
+    event SecondaryTGECreated(address pool, address tge);
+
     // CONSTRUCTOR
 
     constructor(
@@ -50,7 +53,7 @@ contract Service is Ownable {
 
     function createPool(
         IPool pool,
-        IGovernanceToken.TokenInfo memory tokenInfo
+        IGovernanceToken.TokenInfo memory tokenInfo,
         ITGE.TGEInfo memory tgeInfo
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
@@ -62,17 +65,44 @@ contract Service is Ownable {
         } else {
             // TODO: check if is actual pool via ServiceDirectory
             require(msg.sender == pool.owner(), "Sender is not pool owner");
-            require(ITGE(pool.tge()).state() == ITGE.State.Failed, "Previous TGE not failed");
+            require(
+                pool.tge().state() == ITGE.State.Failed,
+                "Previous TGE not failed"
+            );
         }
 
         address token = tokenMaster.clone();
+        // TODO: add to ServiceDirectory
         address tge = tgeMaster.clone();
+        // TODO: add to ServiceDirectory
 
-        IGovernanceToken(token).initialize(name, symbol, cap, tge);
+        IGovernanceToken(token).initialize(address(pool), tokenInfo);
+        pool.setToken(token);
         ITGE(tge).initialize(msg.sender, token, tgeInfo);
-        pool.setInfo(token, tge);
+        pool.setTGE(tge);
 
         emit PoolCreated(address(pool), token, tge);
+    }
+
+    // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
+
+    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo)
+        external
+        override
+        onlyPool
+    {
+        address tge = tgeMaster.clone();
+        ITGE(tge).initialize(
+            msg.sender,
+            address(IPool(msg.sender).token()),
+            tgeInfo
+        );
+
+        emit SecondaryTGECreated(msg.sender, tge);
+    }
+
+    function addProposal(uint256 proposalId) external {
+        // TODO: add proposal to service directory
     }
 
     // RESTRICTED FUNCTIONS
@@ -118,6 +148,11 @@ contract Service is Ownable {
 
     modifier onlyWhitelisted() {
         require(isWhitelisted(msg.sender), "Not whitelisted");
+        _;
+    }
+
+    modifier onlyPool() {
+        // TODO: check that is actually pool via ServiceDirectory
         _;
     }
 }
