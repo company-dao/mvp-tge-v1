@@ -11,6 +11,8 @@ interface ITGE {
         uint256 minPurchase;
         uint256 maxPurchase;
         uint256 lockupPercent;
+        uint256 lockupTVL;
+        uint256 lockupDuration;
         uint256 duration;
     }
 
@@ -35,4 +37,6 @@ interface ITGE {
     }
 
     function state() external view returns (State);
+
+    function unlockAvailable() external view returns (bool);
 }

@@ -23,6 +23,10 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     uint256 public lockupPercent;
 
+    uint256 public lockupTVL;
+
+    uint256 public lockupDuration;
+
     uint256 public duration;
 
     uint256 public createdAt;
@@ -53,6 +57,8 @@ contract TGE is ITGE, OwnableUpgradeable {
         minPurchase = info.minPurchase;
         maxPurchase = info.maxPurchase;
         lockupPercent = info.lockupPercent;
+        lockupTVL = info.lockupTVL;
+        lockupDuration = info.lockupDuration;
         duration = info.duration;
         createdAt = block.timestamp;
     }
@@ -111,6 +117,12 @@ contract TGE is ITGE, OwnableUpgradeable {
         } else {
             return State.Failed;
         }
+    }
+
+    function unlockAvailable() external view returns (bool) {
+        return
+            totalPurchases * price >= lockupTVL &&
+            block.timestamp >= createdAt + lockupDuration;
     }
 
     // MODIFIER

@@ -52,7 +52,7 @@ contract GovernanceToken is
     // VIEW FUNCTIONS
 
     function lockedOf(address account) public view returns (uint256) {
-        if (tge.state() == ITGE.State.Successful) {
+        if (tge.unlockAvailable()) {
             return 0;
         } else {
             return _locked[account];

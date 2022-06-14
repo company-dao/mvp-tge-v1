@@ -46,6 +46,8 @@ describe("Test Service", function () {
                 minPurchase: 10,
                 maxPurchase: 3000,
                 lockupPercent: 50,
+                lockupTVL: parseUnits("20"),
+                lockupDuration: 2000,
                 duration: 1000,
             },
         ];
@@ -219,13 +221,43 @@ describe("Test Service", function () {
         );
     });
 
-    it("In successful TGE purchased funds are unlocked", async function () {
+    it("In successful TGE purchased funds are still locked until conditions are met", async function () {
         await tge.connect(other).purchase(1000, { value: parseUnits("10") });
         await increaseTime(1000);
 
+        expect(await token.lockedOf(other.address)).to.equal(500);
+        await expect(
+            token.connect(other).transfer(third.address, 1000)
+        ).to.be.revertedWith("Not enough unlocked balance");
+    });
+
+    it("Funds are still locked if only TVL condition is met", async function () {
+        await tge.connect(other).purchase(2000, { value: parseUnits("20") });
+        await increaseTime(1000);
+
+        expect(await token.lockedOf(other.address)).to.equal(1000);
+        await expect(
+            token.connect(other).transfer(third.address, 1500)
+        ).to.be.revertedWith("Not enough unlocked balance");
+    });
+
+    it("Funds are still locked if only duration condition is met", async function () {
+        await tge.connect(other).purchase(1000, { value: parseUnits("10") });
+        await increaseTime(3000);
+
+        expect(await token.lockedOf(other.address)).to.equal(500);
+        await expect(
+            token.connect(other).transfer(third.address, 1000)
+        ).to.be.revertedWith("Not enough unlocked balance");
+    });
+
+    it("Funds are unlocked as soon as all unlocked conditions are met", async function () {
+        await tge.connect(other).purchase(2000, { value: parseUnits("20") });
+        await increaseTime(2000);
+
         expect(await token.lockedOf(other.address)).to.equal(0);
-        await token.connect(other).transfer(third.address, 1000);
-        expect(await token.balanceOf(third.address)).to.equal(1000);
+        await token.connect(other).transfer(third.address, 2000);
+        expect(await token.balanceOf(third.address)).to.equal(2000);
     });
 
     it("Token has zero decimals", async function () {
