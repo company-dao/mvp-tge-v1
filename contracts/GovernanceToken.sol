@@ -148,7 +148,11 @@ contract GovernanceToken is
     }
 
     modifier onlyTGE() {
-        // Check that is TGE through ServiceDirectory
+        require(
+            service.directory().typeOf(msg.sender) ==
+                IDirectory.ContractType.TGE,
+            "Not a TGE"
+        );
         _;
     }
 }

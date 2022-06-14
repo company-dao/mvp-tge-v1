@@ -3,7 +3,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./Governor.sol";
+import "./components/Governor.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
@@ -94,7 +94,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         bytes memory cd,
         string memory description
     ) internal returns (uint256 proposalId) {
-        // TODO: check that there are no active TGE's
+        require(tge.state() != ITGE.State.Active, "Has active TGE");
 
         address[] memory targets = new address[](1);
         targets[0] = target;

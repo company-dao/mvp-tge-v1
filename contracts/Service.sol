@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IService.sol";
+import "./interfaces/IDirectory.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
@@ -13,6 +14,8 @@ import "./interfaces/ITGE.sol";
 contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
+
+    IDirectory public directory;
 
     address public poolMaster;
 
@@ -37,11 +40,13 @@ contract Service is IService, Ownable {
     // CONSTRUCTOR
 
     constructor(
+        IDirectory directory_,
         address poolMaster_,
         address tokenMaster_,
         address tgeMaster_,
         uint256 fee_
     ) {
+        directory = directory_;
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
@@ -61,9 +66,15 @@ contract Service is IService, Ownable {
         if (address(pool) == address(0)) {
             pool = IPool(poolMaster.clone());
             pool.initialize(msg.sender);
-            // TODO: add to ServiceDirectory
+            directory.addContractRecord(
+                address(pool),
+                IDirectory.ContractType.Pool
+            );
         } else {
-            // TODO: check if is actual pool via ServiceDirectory
+            require(
+                directory.typeOf(address(pool)) == IDirectory.ContractType.Pool,
+                "Not a pool"
+            );
             require(msg.sender == pool.owner(), "Sender is not pool owner");
             require(
                 pool.tge().state() == ITGE.State.Failed,
@@ -72,9 +83,12 @@ contract Service is IService, Ownable {
         }
 
         address token = tokenMaster.clone();
-        // TODO: add to ServiceDirectory
+        directory.addContractRecord(
+            token,
+            IDirectory.ContractType.GovernanceToken
+        );
         address tge = tgeMaster.clone();
-        // TODO: add to ServiceDirectory
+        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
 
         IGovernanceToken(token).initialize(address(pool), tokenInfo);
         pool.setToken(token);
@@ -92,17 +106,19 @@ contract Service is IService, Ownable {
         onlyPool
     {
         address tge = tgeMaster.clone();
+        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
         ITGE(tge).initialize(
             msg.sender,
             address(IPool(msg.sender).token()),
             tgeInfo
         );
+        IPool(msg.sender).setTGE(tge);
 
         emit SecondaryTGECreated(msg.sender, tge);
     }
 
-    function addProposal(uint256 proposalId) external {
-        // TODO: add proposal to service directory
+    function addProposal(uint256 proposalId) external onlyPool {
+        directory.addProposalRecord(msg.sender, proposalId);
     }
 
     // RESTRICTED FUNCTIONS
@@ -152,7 +168,10 @@ contract Service is IService, Ownable {
     }
 
     modifier onlyPool() {
-        // TODO: check that is actually pool via ServiceDirectory
+        require(
+            directory.typeOf(msg.sender) == IDirectory.ContractType.Pool,
+            "Not a pool"
+        );
         _;
     }
 }

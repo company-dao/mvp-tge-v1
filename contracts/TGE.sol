@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 
@@ -81,8 +82,11 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     function claimBack() external override onlyState(State.Failed) {
-        uint256 refundTokens = token.balanceOf(msg.sender);
-        // TODO: calculate refund amount as minimum of balance and purchase
+        // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
+        uint256 refundTokens = MathUpgradeable.min(
+            token.balanceOf(msg.sender),
+            purchaseOf[msg.sender]
+        );
         token.burn(msg.sender, refundTokens);
         uint256 refundValue = refundTokens * price;
         payable(msg.sender).transfer(refundValue);
