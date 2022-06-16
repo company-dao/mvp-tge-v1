@@ -54,10 +54,6 @@ contract GovernanceToken is
     }
 
     function burn(address from, uint256 amount) external override onlyTGE {
-        require(
-            amount <= unlockedBalanceOf(from),
-            "Not enough unlocked balance"
-        );
         _burn(from, amount);
     }
 

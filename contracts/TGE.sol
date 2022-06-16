@@ -39,9 +39,11 @@ contract TGE is ITGE, OwnableUpgradeable {
         address token_,
         TGEInfo memory info
     ) external override initializer {
+        uint256 remainingSupply = IGovernanceToken(token_).cap() -
+            IGovernanceToken(token_).totalSupply();
         require(
-            info.hardcap <= IGovernanceToken(token_).cap(),
-            "Hardcap higher than cap"
+            info.hardcap <= remainingSupply,
+            "Hardcap higher than remaining supply"
         );
 
         _transferOwnership(owner_);
@@ -84,9 +86,10 @@ contract TGE is ITGE, OwnableUpgradeable {
     function claimBack() external override onlyState(State.Failed) {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
         uint256 refundTokens = MathUpgradeable.min(
-            token.balanceOf(msg.sender),
+            token.unlockedBalanceOf(msg.sender),
             purchaseOf[msg.sender]
         );
+        purchaseOf[msg.sender] -= refundTokens;
         token.burn(msg.sender, refundTokens);
         uint256 refundValue = refundTokens * price;
         payable(msg.sender).transfer(refundValue);

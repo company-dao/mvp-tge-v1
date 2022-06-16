@@ -105,6 +105,11 @@ contract Service is IService, Ownable {
         override
         onlyPool
     {
+        require(
+            IPool(msg.sender).tge().state() != ITGE.State.Active,
+            "Has active TGE"
+        );
+
         address tge = tgeMaster.clone();
         directory.addContractRecord(tge, IDirectory.ContractType.TGE);
         ITGE(tge).initialize(

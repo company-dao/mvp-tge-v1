@@ -73,6 +73,12 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         _castVote(proposalId, votes);
     }
 
+    // RECEIVE
+
+    receive() external payable {
+        // Supposed to be empty
+    }
+
     // PUBLIC VIEW FUNCTIONS
 
     function owner()

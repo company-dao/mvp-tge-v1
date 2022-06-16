@@ -4,11 +4,13 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 const deployFunction: DeployFunction = async function ({
     run,
 }: HardhatRuntimeEnvironment) {
+    await run("deploy:directory", {});
+
     await run("deploy:service", {});
 };
 
 export default deployFunction;
 
-deployFunction.dependencies = [];
+deployFunction.dependencies = ["Directory"];
 
 deployFunction.tags = ["Service"];

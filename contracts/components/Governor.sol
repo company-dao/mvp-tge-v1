@@ -46,6 +46,8 @@ abstract contract Governor {
         require(proposal.endBlock <= block.number, "Voting not finished");
         require(proposal.forVotes >= proposal.quorum, "Quorum not reached");
 
+        proposals[proposalId].executed = true;
+
         string memory errorMessage = "Call reverted without message";
         for (uint256 i = 0; i < proposal.targets.length; ++i) {
             (bool success, bytes memory returndata) = proposal.targets[i].call{
@@ -75,12 +77,15 @@ abstract contract Governor {
             proposals[lastProposalId].endBlock <= block.number,
             "Already has active proposal"
         );
+        // Temporarily disabled as arbitrary proposals are not supported in this version
+        /*
         require(
             targets.length == values.length &&
                 values.length == calldatas.length,
             "Lengths mismatch"
         );
         require(targets.length > 0, "Empty proposal");
+        */
 
         proposalId = ++lastProposalId;
         proposals[proposalId] = Proposal({
