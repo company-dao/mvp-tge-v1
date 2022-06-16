@@ -78,7 +78,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         token.mint(
             msg.sender,
             amount,
-            (amount * lockupPercent) / 100,
+            (amount * lockupPercent + 99) / 100,
             createdAt + duration
         );
     }

@@ -137,6 +137,13 @@ describe("Test initial TGE", function () {
             expect(await token.lockedBalanceOf(other.address)).to.equal(500);
         });
 
+        it("Locking is rounded up", async function () {
+            await tge
+                .connect(other)
+                .purchase(1001, { value: parseUnits("10.01") });
+            expect(await token.lockedBalanceOf(other.address)).to.equal(501);
+        });
+
         it("Can't transfer lockup tokens", async function () {
             await tge
                 .connect(other)
