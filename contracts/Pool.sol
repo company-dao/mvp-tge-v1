@@ -16,6 +16,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     ITGE public tge;
 
+    string public metadataURI;
+
     // INITIALIZER AND CONFIGURATOR
 
     function initialize(address owner_) external initializer {
@@ -29,6 +31,13 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function setTGE(address tge_) external onlyService {
         tge = ITGE(tge_);
+    }
+
+    function setMetadataURI(string memory metadataURI_)
+        external
+        onlyServiceOwner
+    {
+        metadataURI = metadataURI_;
     }
 
     // PUBLIC FUNCTIONS
@@ -131,6 +140,11 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     modifier onlyService() {
         require(msg.sender == address(service), "Not service");
+        _;
+    }
+
+    modifier onlyServiceOwner() {
+        require(msg.sender == service.owner(), "Not service owner");
         _;
     }
 }

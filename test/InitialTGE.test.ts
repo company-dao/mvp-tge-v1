@@ -204,26 +204,15 @@ describe("Test initial TGE", function () {
         it("Can't transfer funds if event is not successful", async function () {
             await tge.connect(other).purchase(500, { value: parseUnits("5") });
 
-            await expect(tge.transferFunds(owner.address)).to.be.revertedWith(
+            await expect(tge.transferFunds()).to.be.revertedWith(
                 "TGE in wrong state"
             );
 
             await mineBlock(20);
 
-            await expect(tge.transferFunds(owner.address)).to.be.revertedWith(
+            await expect(tge.transferFunds()).to.be.revertedWith(
                 "TGE in wrong state"
             );
-        });
-
-        it("Only TGE owner can transfer funds", async function () {
-            await tge
-                .connect(other)
-                .purchase(1000, { value: parseUnits("10") });
-            await mineBlock(20);
-
-            await expect(
-                tge.connect(other).transferFunds(other.address)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
         });
 
         it("Transferring funds for successful TGE by owner should work", async function () {
@@ -232,9 +221,8 @@ describe("Test initial TGE", function () {
                 .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
-            const treasury = Wallet.createRandom();
-            await tge.transferFunds(treasury.address);
-            expect(await provider.getBalance(treasury.address)).to.equal(
+            await tge.transferFunds();
+            expect(await provider.getBalance(pool.address)).to.equal(
                 parseUnits("10")
             );
         });

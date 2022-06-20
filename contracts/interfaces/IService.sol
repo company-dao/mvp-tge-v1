@@ -11,4 +11,6 @@ interface IService {
     function addProposal(uint256 proposalId) external;
 
     function directory() external view returns (IDirectory);
+
+    function owner() external view returns (address);
 }

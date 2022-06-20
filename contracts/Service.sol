@@ -165,6 +165,10 @@ contract Service is IService, Ownable {
         return _whitelist.at(index);
     }
 
+    function owner() public view override(IService, Ownable) returns (address) {
+        return super.owner();
+    }
+
     // MODIFIERS
 
     modifier onlyWhitelisted() {

@@ -97,13 +97,11 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // RESTRICTED FUNCTIONS
 
-    function transferFunds(address to)
-        external
-        override
-        onlyOwner
-        onlyState(State.Successful)
-    {
-        payable(to).transfer(payable(address(this)).balance);
+    function transferFunds() external override onlyState(State.Successful) {
+        (bool success, ) = token.pool().call{
+            value: payable(address(this)).balance
+        }("");
+        require(success, "Transfer failed");
     }
 
     // VIEW FUNCTIONS

@@ -24,7 +24,7 @@ interface ITGE {
 
     function claimBack() external;
 
-    function transferFunds(address to) external;
+    function transferFunds() external;
 
     function maxPurchaseOf(address account) external view returns (uint256);
 
