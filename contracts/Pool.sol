@@ -78,7 +78,11 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     function castVote(uint256 proposalId) external {
         uint256 votes = token.unlockedBalanceOf(msg.sender);
         require(votes > 0, "No votes");
-        token.lock(msg.sender, votes, proposals[proposalId].endBlock);
+        token.lock(
+            msg.sender,
+            token.balanceOf(msg.sender),
+            proposals[proposalId].endBlock
+        );
         _castVote(proposalId, votes);
     }
 

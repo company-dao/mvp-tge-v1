@@ -18,9 +18,13 @@ abstract contract Governor {
 
     mapping(uint256 => Proposal) public proposals;
 
-    mapping(uint256 => mapping(address => bool)) public ballots;
-
     uint256 public lastProposalId;
+
+    enum ProposalState {
+        Active,
+        Successful,
+        Executed
+    }
 
     // EVENTS
 
@@ -42,9 +46,10 @@ abstract contract Governor {
     function execute(uint256 proposalId) external {
         Proposal memory proposal = proposals[proposalId];
 
-        require(proposal.startBlock != 0, "Proposal does not exist");
-        require(proposal.endBlock <= block.number, "Voting not finished");
-        require(proposal.forVotes >= proposal.quorum, "Quorum not reached");
+        require(
+            proposalState(proposalId) == ProposalState.Successful,
+            "Proposal is in wrong state"
+        );
 
         proposals[proposalId].executed = true;
 
@@ -61,6 +66,27 @@ abstract contract Governor {
         }
 
         emit ProposalExecuted(proposalId);
+    }
+
+    // PUBLIC VIEW FUNCTIONS
+
+    function proposalState(uint256 proposalId)
+        public
+        view
+        returns (ProposalState)
+    {
+        Proposal memory proposal = proposals[proposalId];
+        if (proposal.executed) {
+            return ProposalState.Executed;
+        } else if (
+            proposal.startBlock != 0 &&
+            proposal.endBlock <= block.number &&
+            proposal.forVotes >= proposal.quorum
+        ) {
+            return ProposalState.Successful;
+        } else {
+            return ProposalState.Active;
+        }
     }
 
     // INTERNAL FUNCTIONS
@@ -115,10 +141,8 @@ abstract contract Governor {
             proposals[proposalId].endBlock > block.number,
             "Voting finished"
         );
-        require(!ballots[proposalId][msg.sender], "Already voted");
 
         proposals[proposalId].forVotes += votes;
-        ballots[proposalId][msg.sender] = true;
 
         emit VoteCast(msg.sender, proposalId, votes);
     }

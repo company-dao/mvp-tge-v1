@@ -119,16 +119,6 @@ describe("Test secondary TGE", function () {
         );
     });
 
-    it("Can't vote twice (if ballot present)", async function () {
-        await token.connect(other).transfer(third.address, 100);
-        await pool.connect(other).castVote(1);
-        await token.connect(third).transfer(other.address, 100);
-
-        await expect(pool.connect(other).castVote(1)).to.be.revertedWith(
-            "Already voted"
-        );
-    });
-
     it("Only pool can lock tokens for voting", async function () {
         await expect(
             token.connect(third).lock(other.address, 100, 0)
@@ -167,20 +157,24 @@ describe("Test secondary TGE", function () {
 
     it("Can't execute non-existent proposal", async function () {
         await expect(pool.execute(2)).to.be.revertedWith(
-            "Proposal does not exist"
+            "Proposal is in wrong state"
         );
     });
 
     it("Can't execute proposal before voting period is finished", async function () {
         await pool.connect(other).castVote(1);
 
-        await expect(pool.execute(1)).to.be.revertedWith("Voting not finished");
+        await expect(pool.execute(1)).to.be.revertedWith(
+            "Proposal is in wrong state"
+        );
     });
 
     it("Can't execute proposal if quorum is not reached", async function () {
         await mineBlock(25);
 
-        await expect(pool.execute(1)).to.be.revertedWith("Quorum not reached");
+        await expect(pool.execute(1)).to.be.revertedWith(
+            "Proposal is in wrong state"
+        );
     });
 
     it("Can execute successful proposal, creating secondary TGE", async function () {
