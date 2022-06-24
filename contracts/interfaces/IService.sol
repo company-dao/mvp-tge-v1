@@ -13,4 +13,8 @@ interface IService {
     function directory() external view returns (IDirectory);
 
     function owner() external view returns (address);
+
+    function proposalQuorum() external view returns (uint256);
+
+    function proposalThreshold() external view returns (uint256);
 }

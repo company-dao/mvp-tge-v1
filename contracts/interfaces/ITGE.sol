@@ -11,7 +11,10 @@ interface ITGE {
         uint256 minPurchase;
         uint256 maxPurchase;
         uint256 lockupPercent;
+        uint256 lockupDuration;
+        uint256 lockupTVL;
         uint256 duration;
+        address[] whitelist;
     }
 
     function initialize(

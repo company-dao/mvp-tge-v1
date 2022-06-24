@@ -43,14 +43,8 @@ contract GovernanceToken is
 
     // RESTRICTED FUNCTIONS
 
-    function mint(
-        address to,
-        uint256 amount,
-        uint256 lockedAmount,
-        uint256 lockDeadline
-    ) external override onlyTGE {
+    function mint(address to, uint256 amount) external override onlyTGE {
         _mint(to, amount);
-        _lock(to, lockedAmount, lockDeadline);
     }
 
     function burn(address from, uint256 amount) external override onlyTGE {

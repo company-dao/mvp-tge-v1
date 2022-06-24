@@ -7,12 +7,14 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 abstract contract Governor {
     struct Proposal {
         uint256 quorum;
+        uint256 threshold;
         address[] targets;
         uint256[] values;
         bytes[] calldatas;
         uint256 startBlock;
         uint256 endBlock;
         uint256 forVotes;
+        uint256 againstVotes;
         bool executed;
     }
 
@@ -21,7 +23,9 @@ abstract contract Governor {
     uint256 public lastProposalId;
 
     enum ProposalState {
+        None,
         Active,
+        Failed,
         Successful,
         Executed
     }
@@ -37,7 +41,12 @@ abstract contract Governor {
         string description
     );
 
-    event VoteCast(address voter, uint256 proposalId, uint256 votes);
+    event VoteCast(
+        address voter,
+        uint256 proposalId,
+        uint256 votes,
+        bool support
+    );
 
     event ProposalExecuted(uint256 proposalId);
 
@@ -78,14 +87,23 @@ abstract contract Governor {
         Proposal memory proposal = proposals[proposalId];
         if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (
-            proposal.startBlock != 0 &&
-            proposal.endBlock <= block.number &&
-            proposal.forVotes >= proposal.quorum
+        }
+        if (proposal.startBlock == 0) {
+            return ProposalState.None;
+        }
+        if (proposal.endBlock > block.number) {
+            return ProposalState.Active;
+        }
+
+        uint256 quorumVotes = (_getTotalVotes() * proposal.quorum) / 100;
+        uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
+        if (
+            totalVotes >= quorumVotes &&
+            proposal.forVotes * 100 > totalVotes * proposal.threshold
         ) {
             return ProposalState.Successful;
         } else {
-            return ProposalState.Active;
+            return ProposalState.Failed;
         }
     }
 
@@ -94,6 +112,7 @@ abstract contract Governor {
     function _propose(
         uint256 duration,
         uint256 quorum,
+        uint256 threshold,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
@@ -103,25 +122,18 @@ abstract contract Governor {
             proposals[lastProposalId].endBlock <= block.number,
             "Already has active proposal"
         );
-        // Temporarily disabled as arbitrary proposals are not supported in this version
-        /*
-        require(
-            targets.length == values.length &&
-                values.length == calldatas.length,
-            "Lengths mismatch"
-        );
-        require(targets.length > 0, "Empty proposal");
-        */
 
         proposalId = ++lastProposalId;
         proposals[proposalId] = Proposal({
             quorum: quorum,
+            threshold: threshold,
             targets: targets,
             values: values,
             calldatas: calldatas,
             startBlock: block.number,
             endBlock: block.number + duration,
             forVotes: 0,
+            againstVotes: 0,
             executed: false
         });
         _afterProposalCreated(proposalId);
@@ -136,16 +148,26 @@ abstract contract Governor {
         );
     }
 
-    function _castVote(uint256 proposalId, uint256 votes) internal {
+    function _castVote(
+        uint256 proposalId,
+        uint256 votes,
+        bool support
+    ) internal {
         require(
             proposals[proposalId].endBlock > block.number,
             "Voting finished"
         );
 
-        proposals[proposalId].forVotes += votes;
+        if (support) {
+            proposals[proposalId].forVotes += votes;
+        } else {
+            proposals[proposalId].againstVotes += votes;
+        }
 
-        emit VoteCast(msg.sender, proposalId, votes);
+        emit VoteCast(msg.sender, proposalId, votes, support);
     }
 
     function _afterProposalCreated(uint256 proposalId) internal virtual;
+
+    function _getTotalVotes() internal view virtual returns (uint256);
 }

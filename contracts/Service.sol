@@ -25,6 +25,10 @@ contract Service is IService, Ownable {
 
     uint256 public fee;
 
+    uint256 public proposalQuorum;
+
+    uint256 public proposalThreshold;
+
     EnumerableSet.AddressSet private _whitelist;
 
     // EVENTS
@@ -32,6 +36,10 @@ contract Service is IService, Ownable {
     event WhitelistedSet(address account, bool whitelisted);
 
     event FeeSet(uint256 fee);
+
+    event ProposalQuorumSet(uint256 quorum);
+
+    event ProposalThresholdSet(uint256 threshold);
 
     event PoolCreated(address pool, address token, address tge);
 
@@ -44,14 +52,21 @@ contract Service is IService, Ownable {
         address poolMaster_,
         address tokenMaster_,
         address tgeMaster_,
-        uint256 fee_
+        uint256 fee_,
+        uint256 proposalQuorum_,
+        uint256 proposalThreshold_
     ) {
         directory = directory_;
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
         fee = fee_;
+        proposalQuorum = proposalQuorum_;
+        proposalThreshold = proposalThreshold_;
+
         emit FeeSet(fee_);
+        emit ProposalQuorumSet(proposalQuorum_);
+        emit ProposalThresholdSet(proposalThreshold_);
     }
 
     // PUBLIC FUNCTIONS
@@ -141,6 +156,19 @@ contract Service is IService, Ownable {
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;
         emit FeeSet(fee_);
+    }
+
+    function setProposalQuorum(uint256 proposalQuorum_) external onlyOwner {
+        proposalQuorum = proposalQuorum_;
+        emit ProposalQuorumSet(proposalQuorum_);
+    }
+
+    function setProposalThreshold(uint256 proposalThreshold_)
+        external
+        onlyOwner
+    {
+        proposalThreshold = proposalThreshold_;
+        emit ProposalThresholdSet(proposalThreshold_);
     }
 
     function transferFunds(address to) external onlyOwner {

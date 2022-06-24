@@ -44,30 +44,20 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function createTransferETHProposal(
         uint256 duration,
-        uint256 quorum,
         address to,
         uint256 value,
         string memory description
     ) external onlyShareholder returns (uint256 proposalId) {
-        proposalId = _proposeSingleAction(
-            duration,
-            quorum,
-            to,
-            value,
-            "",
-            description
-        );
+        proposalId = _proposeSingleAction(duration, to, value, "", description);
     }
 
     function createTGEProposal(
         uint256 duration,
-        uint256 quorum,
         ITGE.TGEInfo memory info,
         string memory description
     ) external onlyShareholder returns (uint256 proposalId) {
         proposalId = _proposeSingleAction(
             duration,
-            quorum,
             address(service),
             0,
             abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
@@ -75,7 +65,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         );
     }
 
-    function castVote(uint256 proposalId) external {
+    function castVote(uint256 proposalId, bool support) external {
         uint256 votes = token.unlockedBalanceOf(msg.sender);
         require(votes > 0, "No votes");
         token.lock(
@@ -83,7 +73,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
             token.balanceOf(msg.sender),
             proposals[proposalId].endBlock
         );
-        _castVote(proposalId, votes);
+        _castVote(proposalId, votes, support);
     }
 
     // RECEIVE
@@ -107,14 +97,11 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function _proposeSingleAction(
         uint256 duration,
-        uint256 quorum,
         address target,
         uint256 value,
         bytes memory cd,
         string memory description
     ) internal returns (uint256 proposalId) {
-        require(tge.state() != ITGE.State.Active, "Has active TGE");
-
         address[] memory targets = new address[](1);
         targets[0] = target;
         uint256[] memory values = new uint256[](1);
@@ -123,7 +110,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         calldatas[0] = cd;
         proposalId = _propose(
             duration,
-            quorum,
+            service.proposalQuorum(),
+            service.proposalThreshold(),
             targets,
             values,
             calldatas,
@@ -133,6 +121,10 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function _afterProposalCreated(uint256 proposalId) internal override {
         service.addProposal(proposalId);
+    }
+
+    function _getTotalVotes() internal view override returns (uint256) {
+        return token.totalSupply();
     }
 
     // MODIFIER

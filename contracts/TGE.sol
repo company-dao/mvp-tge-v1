@@ -24,13 +24,25 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     uint256 public lockupPercent;
 
+    uint256 public lockupTVL;
+
+    uint256 public lockupDuration;
+
     uint256 public duration;
+
+    address[] public whitelist;
+
+    mapping(address => bool) public isWhitelisted;
 
     uint256 public createdAt;
 
     uint256 public totalPurchases;
 
     mapping(address => uint256) public purchaseOf;
+
+    bool lockupTVLReached;
+
+    mapping(address => uint256) public lockedBalanceOf;
 
     // CONSTRUCTOR
 
@@ -56,7 +68,16 @@ contract TGE is ITGE, OwnableUpgradeable {
         minPurchase = info.minPurchase;
         maxPurchase = info.maxPurchase;
         lockupPercent = info.lockupPercent;
+        lockupTVL = info.lockupTVL;
+        lockupTVLReached = (lockupTVL == 0);
+        lockupDuration = info.lockupDuration;
         duration = info.duration;
+
+        for (uint256 i = 0; i < info.whitelist.length; i++) {
+            whitelist.push(info.whitelist[i]);
+            isWhitelisted[info.whitelist[i]] = true;
+        }
+
         createdAt = block.number;
     }
 
@@ -66,8 +87,10 @@ contract TGE is ITGE, OwnableUpgradeable {
         external
         payable
         override
+        onlyWhitelisted
         onlyState(State.Active)
     {
+        require(isWhitelisted[msg.sender], "Not whitelisted");
         require(amount >= minPurchase, "Amount less than min purchase");
         require(msg.value == amount * price, "Invalid ETH value passed");
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
@@ -75,24 +98,44 @@ contract TGE is ITGE, OwnableUpgradeable {
 
         totalPurchases += amount;
         purchaseOf[msg.sender] += amount;
-        token.mint(
-            msg.sender,
-            amount,
-            (amount * lockupPercent + 99) / 100,
-            createdAt + duration
-        );
+        uint256 lockedAmount = (amount * lockupPercent + 99) / 100;
+        if (amount - lockedAmount > 0) {
+            token.mint(msg.sender, amount - lockedAmount);
+        }
+        token.mint(address(this), lockedAmount);
+        lockedBalanceOf[msg.sender] += lockedAmount;
     }
 
     function claimBack() external override onlyState(State.Failed) {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
+        uint256 balance = token.balanceOf(msg.sender);
         uint256 refundTokens = MathUpgradeable.min(
-            token.unlockedBalanceOf(msg.sender),
+            balance + lockedBalanceOf[msg.sender],
             purchaseOf[msg.sender]
         );
         purchaseOf[msg.sender] -= refundTokens;
+        if (refundTokens > balance) {
+            lockedBalanceOf[msg.sender] -= (refundTokens - balance);
+            token.burn(address(this), refundTokens - balance);
+            refundTokens = balance;
+        }
         token.burn(msg.sender, refundTokens);
         uint256 refundValue = refundTokens * price;
         payable(msg.sender).transfer(refundValue);
+    }
+
+    function unlock() external onlyState(State.Successful) {
+        require(unlockAvailable(), "Unlock not yet available");
+        require(lockedBalanceOf[msg.sender] > 0, "No locked balance");
+
+        uint256 balance = lockedBalanceOf[msg.sender];
+        lockedBalanceOf[msg.sender] = 0;
+        token.transfer(msg.sender, balance);
+    }
+
+    function setLockupTVLReached() external {
+        require(getTVL() >= lockupTVL, "Lockup TVL not yet reached");
+        lockupTVLReached = true;
     }
 
     // RESTRICTED FUNCTIONS
@@ -125,10 +168,23 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
     }
 
+    function unlockAvailable() public view returns (bool) {
+        return lockupTVLReached && block.number >= createdAt + lockupDuration;
+    }
+
+    function getTVL() public view returns (uint256) {
+        return totalPurchases * price;
+    }
+
     // MODIFIER
 
     modifier onlyState(State state_) {
         require(state() == state_, "TGE in wrong state");
+        _;
+    }
+
+    modifier onlyWhitelisted() {
+        require(isWhitelisted[msg.sender], "Not whitelisted");
         _;
     }
 }

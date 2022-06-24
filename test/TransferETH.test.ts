@@ -19,7 +19,7 @@ const { getContractAt, getContract, getContractFactory, getSigners, provider } =
 const { parseUnits } = ethers.utils;
 const { AddressZero } = ethers.constants;
 
-describe("Test secondary TGE", function () {
+describe("Test transfer ETH", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;
@@ -48,7 +48,6 @@ describe("Test secondary TGE", function () {
             .connect(other)
             .createTransferETHProposal(
                 25,
-                500,
                 third.address,
                 parseUnits("1"),
                 "Let's give this guy some money"
@@ -75,7 +74,6 @@ describe("Test secondary TGE", function () {
                 .connect(third)
                 .createTransferETHProposal(
                     25,
-                    500,
                     third.address,
                     parseUnits("1"),
                     "Let's give this guy some money"
@@ -84,7 +82,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("Can't execute transfer proposal if pool doesn't hold enough funds", async function () {
-        await pool.connect(other).castVote(1);
+        await pool.connect(other).castVote(1, true);
         await mineBlock(25);
 
         await expect(pool.execute(1)).to.be.revertedWith(
@@ -93,7 +91,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("Executing succeeded transfer proposals should work", async function () {
-        await pool.connect(other).castVote(1);
+        await pool.connect(other).castVote(1, true);
         await mineBlock(25);
         await owner.sendTransaction({
             to: pool.address,

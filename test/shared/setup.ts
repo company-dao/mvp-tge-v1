@@ -11,7 +11,7 @@ const { parseUnits } = ethers.utils;
 const { AddressZero } = ethers.constants;
 
 export async function setup() {
-    const [owner] = await getSigners();
+    const [owner, other] = await getSigners();
 
     const service: Service = await getContract("Service");
     await service.addToWhitelist(owner.address);
@@ -30,7 +30,10 @@ export async function setup() {
         minPurchase: 10,
         maxPurchase: 3000,
         lockupPercent: 50,
+        lockupDuration: 50,
+        lockupTVL: parseUnits("20"),
         duration: 20,
+        whitelist: [owner.address, other.address],
     };
     const tx = await service.createPool(AddressZero, tokenData, tgeData, {
         value: parseUnits("0.01"),

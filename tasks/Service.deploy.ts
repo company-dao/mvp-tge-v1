@@ -3,8 +3,10 @@ import { Directory } from "../typechain-types";
 
 task("deploy:service", "Deploy Service contract")
     .addOptionalParam("fee", "Fee for TGE creation", "0")
+    .addOptionalParam("proposalQuorum", "Proposal quorum", "30")
+    .addOptionalParam("proposalThreshold", "Proposal threshold", "50")
     .setAction(async function (
-        { fee },
+        { fee, proposalQuorum, proposalThreshold },
         { getNamedAccounts, deployments: { deploy }, ethers: { getContract } }
     ) {
         const { deployer } = await getNamedAccounts();
@@ -37,6 +39,8 @@ task("deploy:service", "Deploy Service contract")
                 tokenMaster.address,
                 tgeMaster.address,
                 fee,
+                proposalQuorum,
+                proposalThreshold,
             ],
             log: true,
         });

@@ -115,13 +115,13 @@ describe("Test initial TGE", function () {
                 .purchase(3000, { value: parseUnits("30") });
 
             await expect(
-                tge.connect(third).purchase(3000, { value: parseUnits("30") })
+                tge.purchase(3000, { value: parseUnits("30") })
             ).to.be.revertedWith("Overflows hardcap");
         });
 
         it("Mint can't be called on token directly, should be done though TGE", async function () {
             await expect(
-                token.connect(other).mint(other.address, 100, 0, 0)
+                token.connect(other).mint(other.address, 100)
             ).to.be.revertedWith("Not a TGE");
         });
 
@@ -130,18 +130,18 @@ describe("Test initial TGE", function () {
                 .connect(other)
                 .purchase(1000, { value: parseUnits("10") });
 
-            expect(await token.balanceOf(other.address)).to.equal(1000);
+            expect(await token.balanceOf(other.address)).to.equal(500);
             expect(await provider.getBalance(tge.address)).to.equal(
                 parseUnits("10")
             );
-            expect(await token.lockedBalanceOf(other.address)).to.equal(500);
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
         });
 
         it("Locking is rounded up", async function () {
             await tge
                 .connect(other)
                 .purchase(1001, { value: parseUnits("10.01") });
-            expect(await token.lockedBalanceOf(other.address)).to.equal(501);
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(501);
         });
 
         it("Can't transfer lockup tokens", async function () {
@@ -158,7 +158,7 @@ describe("Test initial TGE", function () {
             await mineBlock(20);
 
             await expect(
-                tge.connect(third).purchase(1000, { value: parseUnits("10") })
+                tge.connect(other).purchase(1000, { value: parseUnits("10") })
             ).to.be.revertedWith("TGE in wrong state");
         });
 
@@ -178,19 +178,12 @@ describe("Test initial TGE", function () {
         });
 
         it("Claiming back works if TGE is failed", async function () {
-            const PurchaserFactory = await getContractFactory("Purchaser");
-            const purchaser = await PurchaserFactory.deploy(tge.address);
-
-            await purchaser.purchase(400, { value: parseUnits("4") });
-            await tge.connect(third).purchase(400, { value: parseUnits("4") });
+            await tge.connect(other).purchase(400, { value: parseUnits("4") });
 
             await mineBlock(20);
 
-            await purchaser.claimBack();
-
-            expect(await provider.getBalance(purchaser.address)).to.equal(
-                parseUnits("4")
-            );
+            await tge.connect(other).claimBack();
+            expect(await token.balanceOf(other.address)).to.equal(0);
         });
 
         it("Burn can't be called on token directly, should be done though TGE", async function () {
@@ -227,15 +220,56 @@ describe("Test initial TGE", function () {
             );
         });
 
-        it("In successful TGE purchased funds are unlocked", async function () {
+        it("In successful TGE purchased funds are still locked until conditions are met", async function () {
             await tge
                 .connect(other)
                 .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
-            expect(await token.lockedBalanceOf(other.address)).to.equal(0);
-            await token.connect(other).transfer(third.address, 1000);
-            expect(await token.balanceOf(third.address)).to.equal(1000);
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
+            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+                "Unlock not yet available"
+            );
+        });
+
+        it("Funds are still locked if only TVL condition is met", async function () {
+            await tge
+                .connect(other)
+                .purchase(2000, { value: parseUnits("20") });
+            await mineBlock(20);
+
+            expect(await tge.getTVL()).to.equal(parseUnits("20"));
+            await tge.setLockupTVLReached();
+
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(1000);
+            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+                "Unlock not yet available"
+            );
+        });
+
+        it("Funds are still locked if only duration condition is met", async function () {
+            await tge
+                .connect(other)
+                .purchase(1000, { value: parseUnits("10") });
+            await mineBlock(20);
+
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
+            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+                "Unlock not yet available"
+            );
+        });
+
+        it("Funds can be unlocked as soon as all unlocked conditions are met", async function () {
+            await tge
+                .connect(other)
+                .purchase(2000, { value: parseUnits("20") });
+            await mineBlock(50);
+
+            await tge.setLockupTVLReached();
+
+            await tge.connect(other).unlock();
+            expect(await tge.lockedBalanceOf(other.address)).to.equal(0);
+            expect(await token.balanceOf(other.address)).to.equal(2000);
         });
 
         it("Token has zero decimals", async function () {
