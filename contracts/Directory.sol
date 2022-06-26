@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IDirectory.sol";
 
 contract Directory is IDirectory, Ownable {
-    address service;
+    address public service;
 
     struct ContractInfo {
         address addr;

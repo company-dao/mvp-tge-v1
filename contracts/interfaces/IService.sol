@@ -14,6 +14,8 @@ interface IService {
 
     function owner() external view returns (address);
 
+    function proposalGateway() external view returns (address);
+
     function proposalQuorum() external view returns (uint256);
 
     function proposalThreshold() external view returns (uint256);

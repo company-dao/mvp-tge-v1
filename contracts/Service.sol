@@ -17,6 +17,8 @@ contract Service is IService, Ownable {
 
     IDirectory public directory;
 
+    address public proposalGateway;
+
     address public poolMaster;
 
     address public tokenMaster;
@@ -50,6 +52,7 @@ contract Service is IService, Ownable {
     constructor(
         IDirectory directory_,
         address poolMaster_,
+        address proposalGateway_,
         address tokenMaster_,
         address tgeMaster_,
         uint256 fee_,
@@ -57,6 +60,7 @@ contract Service is IService, Ownable {
         uint256 proposalThreshold_
     ) {
         directory = directory_;
+        proposalGateway = proposalGateway_;
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
