@@ -45,5 +45,5 @@ task("deploy:service", "Deploy Service contract")
             log: true,
         });
 
-        await directory.transferOwnership(service.address);
+        await directory.setService(service.address);
     });

@@ -217,13 +217,15 @@ describe("Test secondary TGE", function () {
 
         await token.connect(other).transfer(owner.address, 400);
 
-        // Despite purchaser has 450 tokens now (50 in lockup), only 100 would be burnt as it is his purchase
+        // Despite purchaser has 450 tokens now (+50 in lockup), only 100 would be burnt as it is his purchase
         await tge2.connect(owner).claimBack();
         expect(await token.balanceOf(owner.address)).to.equal(350);
+        expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
 
         // Subsequnt reclaims would do nothing
         await tge2.connect(owner).claimBack();
         expect(await token.balanceOf(owner.address)).to.equal(350);
+        expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
     });
 
     it("If secondary TGE is failed, user can't burn tokens that are locked in subsequent proposal voting", async function () {

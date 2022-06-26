@@ -55,6 +55,7 @@ const config: HardhatUserConfig = {
         ropsten: defaultNetworkConfig,
         rinkeby: defaultNetworkConfig,
         kovan: defaultNetworkConfig,
+        goerli: defaultNetworkConfig,
         BSCTest: networkConfig(
             "https://data-seed-prebsc-1-s1.binance.org:8545/"
         ),
