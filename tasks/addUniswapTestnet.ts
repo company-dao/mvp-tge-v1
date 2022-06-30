@@ -75,7 +75,7 @@ function makePath(path: Array<string | number>) {
     return "0x" + res;
 }
 
-task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
+task("addUniswapTestnet", "Add uniswap liquidity to tokens").setAction(
     async function (
         { _ },
         {
@@ -94,7 +94,7 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
         const token2 = await getContract<ERC20Mock>("TWO");
         const token3 = await getContract<ERC20Mock>("THREE");
 
-        const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+        const WETH_ADDRESS = "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6"; // WETH in Goerli
         const weth = await getContractAt("IWETH", WETH_ADDRESS);
 
         const POSITION_MANAGER_ADDRESS =
@@ -104,19 +104,45 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
             POSITION_MANAGER_ADDRESS
         );
 
-        await weth.deposit({ value: parseUnits("250") });
-        await weth.approve(positionManager.address, parseUnits("250"));
+        console.log("Getting and approving WETH");
 
-        await token1.mint(owner.address, parseUnits("500000"));
-        await token1.approve(positionManager.address, parseUnits("500000"));
+        /*await weth
+            .deposit({ value: parseUnits("0.02") })
+            .then((tx: any) => tx.wait());
+        await weth
+            .approve(positionManager.address, parseUnits("0.02"))
+            .then((tx: any) => tx.wait());
 
-        await token2.mint(owner.address, parseUnits("500000"));
-        await token2.approve(positionManager.address, parseUnits("500000"));
+        console.log("Minting and approving ONE");
 
-        await token3.mint(owner.address, parseUnits("500000"));
-        await token3.approve(positionManager.address, parseUnits("500000"));
+        await token1
+            .mint(owner.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
+        await token1
+            .approve(positionManager.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
+
+        console.log("Minting and approving TWO");
+
+        await token2
+            .mint(owner.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
+        await token2
+            .approve(positionManager.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
+
+        console.log("Minting and approving THREE");
+
+        await token3
+            .mint(owner.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
+        await token3
+            .approve(positionManager.address, parseUnits("500"))
+            .then((tx: any) => tx.wait());
 
         // Create pools and add liquidity
+
+        console.log("Providing ONE - ETH liquidity");
 
         await positionManager
             .connect(owner)
@@ -125,10 +151,13 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
                     owner.address,
                     token1.address,
                     weth.address,
-                    parseUnits("20000"),
-                    parseUnits("100")
+                    parseUnits("2"),
+                    parseUnits("0.01")
                 )
-            );
+            )
+            .then((tx: any) => tx.wait());*/
+
+        console.log("Providing ONE - TWO liquidity");
 
         await positionManager
             .connect(owner)
@@ -137,10 +166,13 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
                     owner.address,
                     token1.address,
                     token2.address,
-                    parseUnits("200000"),
-                    parseUnits("100000")
+                    parseUnits("200"),
+                    parseUnits("100")
                 )
-            );
+            )
+            .then((tx: any) => tx.wait());
+
+        console.log("Providing THREE - ETH liquidity");
 
         await positionManager
             .connect(owner)
@@ -149,19 +181,22 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
                     owner.address,
                     token3.address,
                     weth.address,
-                    parseUnits("1000"),
-                    parseUnits("100")
+                    parseUnits("0.5"),
+                    parseUnits("0.01")
                 )
-            );
+            )
+            .then((tx: any) => tx.wait());
 
         // Configure swap paths
 
         const service = await getContract<Service>("Service");
 
-        await service.addTokensToWhitelist([AddressZero], ["0x"], ["0x"]);
+        console.log("Adding to whitelist");
+
         await service.addTokensToWhitelist(
-            [token1.address, token2.address],
+            [AddressZero, token1.address, token2.address],
             [
+                "0x",
                 makePath([token1.address, 500, weth.address]),
                 makePath([
                     token2.address,
@@ -172,6 +207,7 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
                 ]),
             ],
             [
+                "0x",
                 makePath([weth.address, 500, token1.address]),
                 makePath([
                     weth.address,
