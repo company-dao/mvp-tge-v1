@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "./IService.sol";
 
 interface IGovernanceToken is IERC20Upgradeable {
     struct TokenInfo {
@@ -28,4 +29,6 @@ interface IGovernanceToken is IERC20Upgradeable {
     function unlockedBalanceOf(address account) external view returns (uint256);
 
     function pool() external view returns (address);
+
+    function service() external view returns (IService);
 }

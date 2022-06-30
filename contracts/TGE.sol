@@ -4,10 +4,16 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IService.sol";
 
 contract TGE is ITGE, OwnableUpgradeable {
+    using AddressUpgradeable for address payable;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
     IGovernanceToken public token;
 
     string public metadataURI;
@@ -40,7 +46,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     mapping(address => uint256) public purchaseOf;
 
-    bool lockupTVLReached;
+    bool public lockupTVLReached;
 
     mapping(address => uint256) public lockedBalanceOf;
 
@@ -77,22 +83,38 @@ contract TGE is ITGE, OwnableUpgradeable {
             whitelist.push(info.whitelist[i]);
             isWhitelisted[info.whitelist[i]] = true;
         }
+        if (info.whitelist.length == 0) {
+            isWhitelisted[address(0)] = true;
+        }
 
         createdAt = block.number;
     }
 
     // PUBLIC FUNCTIONS
 
-    function purchase(uint256 amount)
+    function purchase(address currency, uint256 amount)
         external
         payable
-        override
         onlyWhitelisted
         onlyState(State.Active)
     {
-        require(isWhitelisted[msg.sender], "Not whitelisted");
+        IService service = token.service();
+        require(service.isTokenWhitelisted(currency), "Token not whitelisted");
+        if (currency == address(0)) {
+            require(msg.value == amount * price, "Invalid ETH value passed");
+        } else {
+            uint256 amountIn = service.uniswapQuoter().quoteExactOutput(
+                service.tokenSwapReversePath(currency),
+                amount * price
+            );
+            IERC20Upgradeable(currency).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amountIn
+            );
+        }
+
         require(amount >= minPurchase, "Amount less than min purchase");
-        require(msg.value == amount * price, "Invalid ETH value passed");
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
         require(totalPurchases + amount <= hardcap, "Overflows hardcap");
 
@@ -124,7 +146,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         payable(msg.sender).transfer(refundValue);
     }
 
-    function unlock() external onlyState(State.Successful) {
+    function unlock() external {
         require(unlockAvailable(), "Unlock not yet available");
         require(lockedBalanceOf[msg.sender] > 0, "No locked balance");
 
@@ -140,11 +162,22 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // RESTRICTED FUNCTIONS
 
-    function transferFunds() external override onlyState(State.Successful) {
-        (bool success, ) = token.pool().call{
-            value: payable(address(this)).balance
-        }("");
-        require(success, "Transfer failed");
+    function transferFunds(address currency)
+        external
+        onlyState(State.Successful)
+    {
+        if (currency == address(0)) {
+            payable(token.pool()).sendValue(address(this).balance);
+        } else {
+            require(
+                currency != address(token),
+                "Impossible to transfer TGE token"
+            );
+            IERC20Upgradeable(currency).safeTransfer(
+                token.pool(),
+                IERC20Upgradeable(currency).balanceOf(address(this))
+            );
+        }
     }
 
     // VIEW FUNCTIONS
@@ -172,7 +205,25 @@ contract TGE is ITGE, OwnableUpgradeable {
         return lockupTVLReached && block.number >= createdAt + lockupDuration;
     }
 
-    function getTVL() public view returns (uint256) {
+    function getTVL() public returns (uint256) {
+        IService service = token.service();
+        IQuoter quoter = service.uniswapQuoter();
+        address[] memory tokenWhitelist = service.tokenWhitelist();
+        uint256 tvl;
+        for (uint256 i = 0; i < tokenWhitelist.length; i++) {
+            if (tokenWhitelist[i] == address(0)) {
+                tvl += address(this).balance;
+            } else {
+                uint256 balance = IERC20Upgradeable(tokenWhitelist[i])
+                    .balanceOf(address(this));
+                if (balance > 0) {
+                    tvl += quoter.quoteExactInput(
+                        service.tokenSwapPath(tokenWhitelist[i]),
+                        balance
+                    );
+                }
+            }
+        }
         return totalPurchases * price;
     }
 
@@ -184,7 +235,10 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     modifier onlyWhitelisted() {
-        require(isWhitelisted[msg.sender], "Not whitelisted");
+        require(
+            isWhitelisted[address(0)] || isWhitelisted[msg.sender],
+            "Not whitelisted"
+        );
         _;
     }
 }

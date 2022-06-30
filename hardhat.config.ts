@@ -51,6 +51,13 @@ const config: HardhatUserConfig = {
         },
     },
     networks: {
+        hardhat: {
+            chainId: 1337,
+            forking: {
+                url: process.env.FORKING_RPC_URL!,
+                blockNumber: 15050841,
+            },
+        },
         mainnet: defaultNetworkConfig,
         ropsten: defaultNetworkConfig,
         rinkeby: defaultNetworkConfig,

@@ -6,11 +6,11 @@ const deployFunction: DeployFunction = async function ({
 }: HardhatRuntimeEnvironment) {
     await run("deploy:directory", {});
 
+    await run("deploy:proposalGateway", {});
+
     await run("deploy:service", {});
 };
 
 export default deployFunction;
-
-deployFunction.dependencies = ["Directory"];
 
 deployFunction.tags = ["Service"];

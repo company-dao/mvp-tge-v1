@@ -16,7 +16,9 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     ITGE public tge;
 
-    string public metadataURI;
+    string public companyId;
+
+    string public companyDomain;
 
     // INITIALIZER AND CONFIGURATOR
 
@@ -33,37 +35,29 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         tge = ITGE(tge_);
     }
 
-    function setMetadataURI(string memory metadataURI_)
-        external
-        onlyServiceOwner
-    {
-        metadataURI = metadataURI_;
+    function setCompanyId(string memory companyId_) external onlyServiceOwner {
+        require(bytes(companyId).length == 0, "Already set");
+        require(bytes(companyId_).length != 0, "Can not be empty");
+        companyId = companyId_;
+    }
+
+    function setCompanyDomain(string memory companyDomain_) external {
+        if (bytes(companyDomain).length == 0) {
+            require(
+                msg.sender == service.owner(),
+                "Initial setter should be admin"
+            );
+        } else {
+            require(
+                msg.sender == address(this),
+                "Changer should be pool governance"
+            );
+        }
+        require(bytes(companyDomain_).length != 0, "Can not be empty");
+        companyDomain = companyDomain_;
     }
 
     // PUBLIC FUNCTIONS
-
-    function createTransferETHProposal(
-        uint256 duration,
-        address to,
-        uint256 value,
-        string memory description
-    ) external onlyShareholder returns (uint256 proposalId) {
-        proposalId = _proposeSingleAction(duration, to, value, "", description);
-    }
-
-    function createTGEProposal(
-        uint256 duration,
-        ITGE.TGEInfo memory info,
-        string memory description
-    ) external onlyShareholder returns (uint256 proposalId) {
-        proposalId = _proposeSingleAction(
-            duration,
-            address(service),
-            0,
-            abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
-            description
-        );
-    }
 
     function castVote(uint256 proposalId, bool support) external {
         uint256 votes = token.unlockedBalanceOf(msg.sender);
@@ -74,6 +68,30 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
             proposals[proposalId].endBlock
         );
         _castVote(proposalId, votes, support);
+    }
+
+    function proposeSingleAction(
+        uint256 duration,
+        address target,
+        uint256 value,
+        bytes memory cd,
+        string memory description
+    ) external onlyProposalGateway returns (uint256 proposalId) {
+        address[] memory targets = new address[](1);
+        targets[0] = target;
+        uint256[] memory values = new uint256[](1);
+        values[0] = value;
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = cd;
+        proposalId = _propose(
+            duration,
+            service.proposalQuorum(),
+            service.proposalThreshold(),
+            targets,
+            values,
+            calldatas,
+            description
+        );
     }
 
     // RECEIVE
@@ -95,30 +113,6 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     // INTERNAL FUNCTIONS
 
-    function _proposeSingleAction(
-        uint256 duration,
-        address target,
-        uint256 value,
-        bytes memory cd,
-        string memory description
-    ) internal returns (uint256 proposalId) {
-        address[] memory targets = new address[](1);
-        targets[0] = target;
-        uint256[] memory values = new uint256[](1);
-        values[0] = value;
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = cd;
-        proposalId = _propose(
-            duration,
-            service.proposalQuorum(),
-            service.proposalThreshold(),
-            targets,
-            values,
-            calldatas,
-            description
-        );
-    }
-
     function _afterProposalCreated(uint256 proposalId) internal override {
         service.addProposal(proposalId);
     }
@@ -129,11 +123,6 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     // MODIFIER
 
-    modifier onlyShareholder() {
-        require(token.balanceOf(msg.sender) > 0, "Not shareholder");
-        _;
-    }
-
     modifier onlyService() {
         require(msg.sender == address(service), "Not service");
         _;
@@ -141,6 +130,14 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     modifier onlyServiceOwner() {
         require(msg.sender == service.owner(), "Not service owner");
+        _;
+    }
+
+    modifier onlyProposalGateway() {
+        require(
+            msg.sender == service.proposalGateway(),
+            "Not proposal gateway"
+        );
         _;
     }
 }

@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.13;
 
+import "./IService.sol";
 import "./ITGE.sol";
 import "./IGovernanceToken.sol";
 
@@ -12,7 +13,19 @@ interface IPool {
 
     function setTGE(address tge_) external;
 
+    function setCompanyDomain(string memory companyDomain_) external;
+
+    function proposeSingleAction(
+        uint256 duration,
+        address target,
+        uint256 value,
+        bytes memory cd,
+        string memory description
+    ) external returns (uint256 proposalId);
+
     function owner() external view returns (address);
+
+    function service() external view returns (IService);
 
     function token() external view returns (IGovernanceToken);
 

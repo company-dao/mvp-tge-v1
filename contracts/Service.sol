@@ -5,6 +5,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IDirectory.sol";
 import "./interfaces/IPool.sol";
@@ -16,6 +18,8 @@ contract Service is IService, Ownable {
     using Clones for address;
 
     IDirectory public directory;
+
+    address public proposalGateway;
 
     address public poolMaster;
 
@@ -29,11 +33,23 @@ contract Service is IService, Ownable {
 
     uint256 public proposalThreshold;
 
-    EnumerableSet.AddressSet private _whitelist;
+    ISwapRouter public uniswapRouter;
+
+    IQuoter public uniswapQuoter;
+
+    EnumerableSet.AddressSet private _userWhitelist;
+
+    EnumerableSet.AddressSet private _tokenWhitelist;
+
+    mapping(address => bytes) public tokenSwapPath;
+
+    mapping(address => bytes) public tokenSwapReversePath;
 
     // EVENTS
 
-    event WhitelistedSet(address account, bool whitelisted);
+    event UserWhitelistedSet(address account, bool whitelisted);
+
+    event TokenWhitelistedSet(address token, bool whitelisted);
 
     event FeeSet(uint256 fee);
 
@@ -50,19 +66,25 @@ contract Service is IService, Ownable {
     constructor(
         IDirectory directory_,
         address poolMaster_,
+        address proposalGateway_,
         address tokenMaster_,
         address tgeMaster_,
         uint256 fee_,
         uint256 proposalQuorum_,
-        uint256 proposalThreshold_
+        uint256 proposalThreshold_,
+        ISwapRouter uniswapRouter_,
+        IQuoter uniswapQuoter_
     ) {
         directory = directory_;
+        proposalGateway = proposalGateway_;
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
         fee = fee_;
         proposalQuorum = proposalQuorum_;
         proposalThreshold = proposalThreshold_;
+        uniswapRouter = uniswapRouter_;
+        uniswapQuoter = uniswapQuoter_;
 
         emit FeeSet(fee_);
         emit ProposalQuorumSet(proposalQuorum_);
@@ -143,14 +165,40 @@ contract Service is IService, Ownable {
 
     // RESTRICTED FUNCTIONS
 
-    function addToWhitelist(address account) external onlyOwner {
-        require(_whitelist.add(account), "Already whitelisted");
-        emit WhitelistedSet(account, true);
+    function addUserToWhitelist(address account) external onlyOwner {
+        require(_userWhitelist.add(account), "Already whitelisted");
+        emit UserWhitelistedSet(account, true);
     }
 
-    function removeFromWhitelist(address account) external onlyOwner {
-        require(_whitelist.remove(account), "Already not whitelisted");
-        emit WhitelistedSet(account, false);
+    function removeUserFromWhitelist(address account) external onlyOwner {
+        require(_userWhitelist.remove(account), "Already not whitelisted");
+        emit UserWhitelistedSet(account, false);
+    }
+
+    function addTokensToWhitelist(
+        address[] memory tokens,
+        bytes[] memory swapPaths,
+        bytes[] memory swapReversePaths
+    ) external onlyOwner {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            require(_tokenWhitelist.add(tokens[i]), "Already whitelisted");
+            tokenSwapPath[tokens[i]] = swapPaths[i];
+            tokenSwapReversePath[tokens[i]] = swapReversePaths[i];
+            emit TokenWhitelistedSet(tokens[i], true);
+        }
+    }
+
+    function removeTokensFromWhitelist(address[] memory tokens)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            require(
+                _tokenWhitelist.remove(tokens[i]),
+                "Already not whitelisted"
+            );
+            emit TokenWhitelistedSet(tokens[i], false);
+        }
     }
 
     function setFee(uint256 fee_) external onlyOwner {
@@ -177,20 +225,38 @@ contract Service is IService, Ownable {
 
     // VIEW FUNCTIONS
 
-    function isWhitelisted(address account) public view returns (bool) {
-        return _whitelist.contains(account);
+    function isUserWhitelisted(address account) public view returns (bool) {
+        return _userWhitelist.contains(account);
     }
 
-    function whitelist() external view returns (address[] memory) {
-        return _whitelist.values();
+    function userWhitelist() external view returns (address[] memory) {
+        return _userWhitelist.values();
     }
 
-    function whitelistLength() external view returns (uint256) {
-        return _whitelist.length();
+    function userWhitelistLength() external view returns (uint256) {
+        return _userWhitelist.length();
     }
 
-    function whitelistAt(uint256 index) external view returns (address) {
-        return _whitelist.at(index);
+    function userWhitelistAt(uint256 index) external view returns (address) {
+        return _userWhitelist.at(index);
+    }
+
+    function isTokenWhitelisted(address token)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _tokenWhitelist.contains(token);
+    }
+
+    function tokenWhitelist()
+        external
+        view
+        override
+        returns (address[] memory)
+    {
+        return _tokenWhitelist.values();
     }
 
     function owner() public view override(IService, Ownable) returns (address) {
@@ -200,7 +266,7 @@ contract Service is IService, Ownable {
     // MODIFIERS
 
     modifier onlyWhitelisted() {
-        require(isWhitelisted(msg.sender), "Not whitelisted");
+        require(isUserWhitelisted(msg.sender), "Not whitelisted");
         _;
     }
 

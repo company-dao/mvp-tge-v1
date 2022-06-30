@@ -12,6 +12,7 @@ task("deploy:service", "Deploy Service contract")
         const { deployer } = await getNamedAccounts();
 
         const directory = await getContract<Directory>("Directory");
+        const proposalGateway = await getContract("ProposalGateway");
 
         const poolMaster = await deploy("Pool", {
             from: deployer,
@@ -31,16 +32,24 @@ task("deploy:service", "Deploy Service contract")
             log: true,
         });
 
+        const UNISWAP_ROUTER_ADDRESS =
+            "0xe592427a0aece92de3edee1f18e0157c05861564";
+        const UNISWAP_QUOTER_ADDRESS =
+            "0xb27308f9f90d607463bb33ea1bebb41c27ce5ab6";
+
         const service = await deploy("Service", {
             from: deployer,
             args: [
                 directory.address,
                 poolMaster.address,
+                proposalGateway.address,
                 tokenMaster.address,
                 tgeMaster.address,
                 fee,
                 proposalQuorum,
                 proposalThreshold,
+                UNISWAP_ROUTER_ADDRESS,
+                UNISWAP_QUOTER_ADDRESS,
             ],
             log: true,
         });
