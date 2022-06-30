@@ -10,13 +10,13 @@ import {
     Service,
     TGE,
 } from "../typechain-types";
-import { TokenInfoStruct } from "../typechain-types/GovernanceToken";
 import { TGEInfoStruct } from "../typechain-types/ITGE";
 import { setup } from "./shared/setup";
 import { mineBlock } from "./shared/utils";
 
 const { getContractAt, getContract, getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
+const { AddressZero } = ethers.constants;
 
 describe("Test secondary TGE", function () {
     let owner: SignerWithAddress,
@@ -42,7 +42,9 @@ describe("Test secondary TGE", function () {
         directory = await getContract<Directory>("Directory");
 
         // Successfully finish TGE
-        await tge.connect(other).purchase(1000, { value: parseUnits("10") });
+        await tge
+            .connect(other)
+            .purchase(AddressZero, 1000, { value: parseUnits("10") });
         await mineBlock(20);
 
         tgeData.duration = 30;
@@ -222,7 +224,9 @@ describe("Test secondary TGE", function () {
         );
         const tge2: TGE = await getContractAt("TGE", tgeRecord.addr);
 
-        await tge2.connect(owner).purchase(100, { value: parseUnits("1") });
+        await tge2
+            .connect(owner)
+            .purchase(AddressZero, 100, { value: parseUnits("1") });
 
         await mineBlock(30);
 
@@ -250,7 +254,9 @@ describe("Test secondary TGE", function () {
         );
         const tge2: TGE = await getContractAt("TGE", tgeRecord.addr);
 
-        await tge2.connect(owner).purchase(100, { value: parseUnits("1") });
+        await tge2
+            .connect(owner)
+            .purchase(AddressZero, 100, { value: parseUnits("1") });
         await mineBlock(30);
 
         await gateway
