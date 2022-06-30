@@ -40,7 +40,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     mapping(address => uint256) public purchaseOf;
 
-    bool lockupTVLReached;
+    bool public lockupTVLReached;
 
     mapping(address => uint256) public lockedBalanceOf;
 
@@ -77,6 +77,9 @@ contract TGE is ITGE, OwnableUpgradeable {
             whitelist.push(info.whitelist[i]);
             isWhitelisted[info.whitelist[i]] = true;
         }
+        if (info.whitelist.length == 0) {
+            isWhitelisted[address(0)] = true;
+        }
 
         createdAt = block.number;
     }
@@ -90,7 +93,10 @@ contract TGE is ITGE, OwnableUpgradeable {
         onlyWhitelisted
         onlyState(State.Active)
     {
-        require(isWhitelisted[msg.sender], "Not whitelisted");
+        require(
+            isWhitelisted[address(0)] || isWhitelisted[msg.sender],
+            "Not whitelisted"
+        );
         require(amount >= minPurchase, "Amount less than min purchase");
         require(msg.value == amount * price, "Invalid ETH value passed");
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");

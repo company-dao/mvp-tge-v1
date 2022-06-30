@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Pool, Service, TGE } from "../../typechain-types";
+import { Pool, ProposalGateway, Service, TGE } from "../../typechain-types";
 import {
     GovernanceToken,
     TokenInfoStruct,
@@ -48,5 +48,7 @@ export async function setup() {
     );
     const tge: TGE = await getContractAt("TGE", event.args![2]);
 
-    return { service, tokenData, tgeData, pool, token, tge };
+    const gateway = await getContract<ProposalGateway>("ProposalGateway");
+
+    return { service, tokenData, tgeData, pool, token, tge, gateway };
 }

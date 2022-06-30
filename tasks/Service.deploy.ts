@@ -12,6 +12,7 @@ task("deploy:service", "Deploy Service contract")
         const { deployer } = await getNamedAccounts();
 
         const directory = await getContract<Directory>("Directory");
+        const proposalGateway = await getContract("ProposalGateway");
 
         const poolMaster = await deploy("Pool", {
             from: deployer,
@@ -36,6 +37,7 @@ task("deploy:service", "Deploy Service contract")
             args: [
                 directory.address,
                 poolMaster.address,
+                proposalGateway.address,
                 tokenMaster.address,
                 tgeMaster.address,
                 fee,

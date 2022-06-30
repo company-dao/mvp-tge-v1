@@ -6,6 +6,7 @@ import {
     Directory,
     GovernanceToken,
     Pool,
+    ProposalGateway,
     Service,
     TGE,
 } from "../typechain-types";
@@ -14,8 +15,7 @@ import { TGEInfoStruct } from "../typechain-types/ITGE";
 import { setup } from "./shared/setup";
 import { mineBlock } from "./shared/utils";
 
-const { getContractAt, getContract, getContractFactory, getSigners, provider } =
-    ethers;
+const { getContractAt, getContract, getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
 
 describe("Test secondary TGE", function () {
@@ -26,7 +26,8 @@ describe("Test secondary TGE", function () {
         pool: Pool,
         tge: TGE,
         token: GovernanceToken,
-        directory: Directory;
+        directory: Directory,
+        gateway: ProposalGateway;
     let snapshotId: any;
     let tgeData: TGEInfoStruct;
     let tx: ContractTransaction;
@@ -37,7 +38,7 @@ describe("Test secondary TGE", function () {
         await deployments.fixture();
 
         // Setup
-        ({ service, tgeData, pool, tge, token } = await setup());
+        ({ service, tgeData, pool, tge, token, gateway } = await setup());
         directory = await getContract<Directory>("Directory");
 
         // Successfully finish TGE
@@ -48,9 +49,14 @@ describe("Test secondary TGE", function () {
         tgeData.softcap = 500;
         tgeData.hardcap = 2000;
 
-        tx = await pool
+        tx = await gateway
             .connect(other)
-            .createTGEProposal(25, tgeData, "Let's do TGE once again");
+            .createTGEProposal(
+                pool.address,
+                25,
+                tgeData,
+                "Let's do TGE once again"
+            );
     });
 
     beforeEach(async function () {
@@ -69,9 +75,14 @@ describe("Test secondary TGE", function () {
 
     it("Only shareholder can create secondary TGE proposals", async function () {
         await expect(
-            pool
+            gateway
                 .connect(third)
-                .createTGEProposal(25, tgeData, "Let's do TGE once again")
+                .createTGEProposal(
+                    pool.address,
+                    25,
+                    tgeData,
+                    "Let's do TGE once again"
+                )
         ).to.be.revertedWith("Not shareholder");
     });
 
@@ -91,7 +102,9 @@ describe("Test secondary TGE", function () {
 
     it("Can't propose secondary TGE when there is active proposal", async function () {
         await expect(
-            pool.connect(other).createTGEProposal(25, tgeData, "And one more")
+            gateway
+                .connect(other)
+                .createTGEProposal(pool.address, 25, tgeData, "And one more")
         ).to.be.revertedWith("Already has active proposal");
     });
 
@@ -240,9 +253,10 @@ describe("Test secondary TGE", function () {
         await tge2.connect(owner).purchase(100, { value: parseUnits("1") });
         await mineBlock(30);
 
-        await pool
+        await gateway
             .connect(other)
             .createTGEProposal(
+                pool.address,
                 25,
                 tgeData,
                 "That didn't work out, let's try again!"
@@ -263,9 +277,14 @@ describe("Test secondary TGE", function () {
         await mineBlock(25);
 
         // Create, succeed and execute second proposal
-        await pool
+        await gateway
             .connect(other)
-            .createTGEProposal(25, tgeData, "Let's do TGE once again");
+            .createTGEProposal(
+                pool.address,
+                25,
+                tgeData,
+                "Let's do TGE once again"
+            );
         await pool.connect(other).castVote(2, true);
         await mineBlock(25);
         await pool.execute(2);
@@ -278,9 +297,14 @@ describe("Test secondary TGE", function () {
         await mineBlock(25);
 
         tgeData.hardcap = 9500;
-        await pool
+        await gateway
             .connect(other)
-            .createTGEProposal(5, tgeData, "Let's do TGE once again");
+            .createTGEProposal(
+                pool.address,
+                5,
+                tgeData,
+                "Let's do TGE once again"
+            );
         await pool.connect(other).castVote(2, true);
         await mineBlock(5);
 

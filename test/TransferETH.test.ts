@@ -6,6 +6,7 @@ import {
     Directory,
     GovernanceToken,
     Pool,
+    ProposalGateway,
     Service,
     TGE,
 } from "../typechain-types";
@@ -23,7 +24,11 @@ describe("Test transfer ETH", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;
-    let service: Service, pool: Pool, tge: TGE, token: GovernanceToken;
+    let service: Service,
+        pool: Pool,
+        tge: TGE,
+        token: GovernanceToken,
+        gateway: ProposalGateway;
     let snapshotId: any;
     let tokenData: TokenInfoStruct, tgeData: TGEInfoStruct;
     let tx: ContractTransaction;
@@ -34,7 +39,8 @@ describe("Test transfer ETH", function () {
         await deployments.fixture();
 
         // Setup
-        ({ service, tokenData, tgeData, pool, tge, token } = await setup());
+        ({ service, tokenData, tgeData, pool, tge, token, gateway } =
+            await setup());
 
         // Successfully finish TGE
         await tge.connect(other).purchase(1000, { value: parseUnits("10") });
@@ -44,9 +50,10 @@ describe("Test transfer ETH", function () {
         tgeData.softcap = 500;
         tgeData.hardcap = 2000;
 
-        tx = await pool
+        tx = await gateway
             .connect(other)
             .createTransferETHProposal(
+                pool.address,
                 25,
                 third.address,
                 parseUnits("1"),
@@ -70,9 +77,10 @@ describe("Test transfer ETH", function () {
 
     it("Only shareholder can create transfer proposals", async function () {
         await expect(
-            pool
+            gateway
                 .connect(third)
                 .createTransferETHProposal(
+                    pool.address,
                     25,
                     third.address,
                     parseUnits("1"),
