@@ -56,7 +56,10 @@ contract GovernanceToken is
         uint256 amount,
         uint256 deadline
     ) external override onlyPool {
-        _lock(account, amount, deadline);
+        _locked[account] = LockedBalance({
+            amount: lockedBalanceOf(account) + amount,
+            deadline: deadline
+        });
     }
 
     // VIEW FUNCTIONS
@@ -87,14 +90,6 @@ contract GovernanceToken is
     }
 
     // INTERNAL FUNCTIONS
-
-    function _lock(
-        address account,
-        uint256 amount,
-        uint256 deadline
-    ) internal {
-        _locked[account] = LockedBalance({amount: amount, deadline: deadline});
-    }
 
     function _transfer(
         address from,

@@ -9,7 +9,7 @@ import { mineBlock } from "./shared/utils";
 
 const { getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
-const { AddressZero } = ethers.constants;
+const { AddressZero, MaxUint256 } = ethers.constants;
 
 describe("Test transfer proposals", function () {
     let owner: SignerWithAddress,
@@ -81,7 +81,7 @@ describe("Test transfer proposals", function () {
         });
 
         it("Can't execute transfer proposal if pool doesn't hold enough funds", async function () {
-            await pool.connect(other).castVote(1, true);
+            await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
 
             await expect(pool.execute(1)).to.be.revertedWith(
@@ -90,7 +90,7 @@ describe("Test transfer proposals", function () {
         });
 
         it("Executing succeeded transfer proposals should work", async function () {
-            await pool.connect(other).castVote(1, true);
+            await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
             await owner.sendTransaction({
                 to: pool.address,
@@ -122,7 +122,7 @@ describe("Test transfer proposals", function () {
         });
 
         it("Can't execute transfer proposal if pool doesn't hold enough funds", async function () {
-            await pool.connect(other).castVote(1, true);
+            await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
 
             await expect(pool.execute(1)).to.be.revertedWith(
@@ -131,7 +131,7 @@ describe("Test transfer proposals", function () {
         });
 
         it("Executing succeeded transfer proposals should work", async function () {
-            await pool.connect(other).castVote(1, true);
+            await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
             await token1.mint(pool.address, parseUnits("100"));
 

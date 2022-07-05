@@ -51,7 +51,8 @@ export async function setup() {
         lockupDuration: 50,
         lockupTVL: parseUnits("20"),
         duration: 20,
-        whitelist: [owner.address, other.address],
+        userWhitelist: [owner.address, other.address],
+        tokenWhitelist: [],
     };
     const tx = await service.createPool(AddressZero, tokenData, tgeData, {
         value: parseUnits("0.01"),

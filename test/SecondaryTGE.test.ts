@@ -4,6 +4,7 @@ import { ContractTransaction } from "ethers";
 import { deployments, ethers, network } from "hardhat";
 import {
     Directory,
+    ERC20Mock,
     GovernanceToken,
     Pool,
     ProposalGateway,
@@ -16,7 +17,7 @@ import { mineBlock } from "./shared/utils";
 
 const { getContractAt, getContract, getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
-const { AddressZero } = ethers.constants;
+const { AddressZero, MaxUint256 } = ethers.constants;
 
 describe("Test secondary TGE", function () {
     let owner: SignerWithAddress,
@@ -26,6 +27,7 @@ describe("Test secondary TGE", function () {
         pool: Pool,
         tge: TGE,
         token: GovernanceToken,
+        token1: ERC20Mock,
         directory: Directory,
         gateway: ProposalGateway;
     let snapshotId: any;
@@ -38,7 +40,8 @@ describe("Test secondary TGE", function () {
         await deployments.fixture();
 
         // Setup
-        ({ service, tgeData, pool, tge, token, gateway } = await setup());
+        ({ service, tgeData, pool, tge, token, gateway, token1 } =
+            await setup());
         directory = await getContract<Directory>("Directory");
 
         // Successfully finish TGE
@@ -50,6 +53,7 @@ describe("Test secondary TGE", function () {
         tgeData.duration = 30;
         tgeData.softcap = 500;
         tgeData.hardcap = 2000;
+        tgeData.tokenWhitelist = [AddressZero];
 
         tx = await gateway
             .connect(other)
@@ -111,13 +115,13 @@ describe("Test secondary TGE", function () {
     });
 
     it("Only shareholders can vote on proposal", async function () {
-        await expect(pool.connect(third).castVote(1, true)).to.be.revertedWith(
-            "No votes"
-        );
+        await expect(
+            pool.connect(third).castVote(1, MaxUint256, true)
+        ).to.be.revertedWith("No votes");
     });
 
     it("Casting votes from valid voter works", async function () {
-        await expect(pool.connect(other).castVote(1, true))
+        await expect(pool.connect(other).castVote(1, MaxUint256, true))
             .to.emit(pool, "VoteCast")
             .withArgs(other.address, 1, 500, true);
 
@@ -125,12 +129,22 @@ describe("Test secondary TGE", function () {
         expect(proposal.forVotes).to.equal(500);
     });
 
-    it("Can't vote twice (if tokens are blocked)", async function () {
-        await pool.connect(other).castVote(1, true);
+    it("Can vote partially", async function () {
+        await pool.connect(other).castVote(1, 250, true);
 
-        await expect(pool.connect(other).castVote(1, true)).to.be.revertedWith(
-            "No votes"
-        );
+        expect(await token.unlockedBalanceOf(other.address)).to.equal(250);
+        expect(await token.lockedBalanceOf(other.address)).to.equal(250);
+
+        const proposal = await pool.proposals(1);
+        expect(proposal.forVotes).to.equal(250);
+    });
+
+    it("Can't vote twice (if tokens are blocked)", async function () {
+        await pool.connect(other).castVote(1, MaxUint256, true);
+
+        await expect(
+            pool.connect(other).castVote(1, MaxUint256, true)
+        ).to.be.revertedWith("No votes");
     });
 
     it("Only pool can lock tokens for voting", async function () {
@@ -140,7 +154,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("Voting tokens are locked and can be transferred", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
 
         expect(await token.lockedBalanceOf(other.address)).to.equal(500);
         expect(await token.unlockedBalanceOf(other.address)).to.equal(0);
@@ -151,7 +165,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("After voting in finished tokens are unlocked", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
 
         expect(await token.lockedBalanceOf(other.address)).to.equal(0);
@@ -164,9 +178,9 @@ describe("Test secondary TGE", function () {
     it("Can't vote after voting period is finished", async function () {
         await mineBlock(25);
 
-        await expect(pool.connect(other).castVote(1, true)).to.be.revertedWith(
-            "Voting finished"
-        );
+        await expect(
+            pool.connect(other).castVote(1, MaxUint256, true)
+        ).to.be.revertedWith("Voting finished");
     });
 
     it("Can't execute non-existent proposal", async function () {
@@ -176,7 +190,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("Can't execute proposal before voting period is finished", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
 
         await expect(pool.execute(1)).to.be.revertedWith(
             "Proposal is in wrong state"
@@ -192,7 +206,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("Can execute successful proposal, creating secondary TGE", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
 
         await expect(pool.execute(1)).to.emit(service, "SecondaryTGECreated");
@@ -215,8 +229,24 @@ describe("Test secondary TGE", function () {
         await expect(service.addProposal(35)).to.be.revertedWith("Not a pool");
     });
 
+    it("Can purchase only with tokens from TGE whitelist (if it not matches global)", async function () {
+        await pool.connect(other).castVote(1, MaxUint256, true);
+        await mineBlock(25);
+        await pool.execute(1);
+        const tgeRecord = await directory.contractRecordAt(
+            await directory.lastContractRecordIndex()
+        );
+        const tge2: TGE = await getContractAt("TGE", tgeRecord.addr);
+
+        await token1.mint(owner.address, parseUnits("100000"));
+        await token1.approve(tge2.address, MaxUint256);
+        await expect(
+            tge2.connect(owner).purchase(token1.address, 100)
+        ).to.be.revertedWith("Token not whitelisted");
+    });
+
     it("If secondary TGE is failed, user can't burn there more tokens than he has purchased", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
         await pool.execute(1);
         const tgeRecord = await directory.contractRecordAt(
@@ -246,7 +276,7 @@ describe("Test secondary TGE", function () {
     });
 
     it("If secondary TGE is failed, user can't burn tokens that are locked in subsequent proposal voting", async function () {
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
         await pool.execute(1);
         const tgeRecord = await directory.contractRecordAt(
@@ -267,7 +297,7 @@ describe("Test secondary TGE", function () {
                 tgeData,
                 "That didn't work out, let's try again!"
             );
-        await pool.connect(owner).castVote(2, true);
+        await pool.connect(owner).castVote(2, MaxUint256, true);
 
         // Nothing should be burnt as tokens are locked in voting
         await tge2.connect(owner).claimBack();
@@ -279,7 +309,7 @@ describe("Test secondary TGE", function () {
         // However theoretically there can be two unexecuted proposals that are attemplted to be executed subsequently
 
         // Succeed first proposal, but not execute
-        await pool.connect(other).castVote(1, true);
+        await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
 
         // Create, succeed and execute second proposal
@@ -291,7 +321,7 @@ describe("Test secondary TGE", function () {
                 tgeData,
                 "Let's do TGE once again"
             );
-        await pool.connect(other).castVote(2, true);
+        await pool.connect(other).castVote(2, MaxUint256, true);
         await mineBlock(25);
         await pool.execute(2);
 
@@ -311,7 +341,7 @@ describe("Test secondary TGE", function () {
                 tgeData,
                 "Let's do TGE once again"
             );
-        await pool.connect(other).castVote(2, true);
+        await pool.connect(other).castVote(2, MaxUint256, true);
         await mineBlock(5);
 
         await expect(pool.execute(2)).to.be.revertedWith(

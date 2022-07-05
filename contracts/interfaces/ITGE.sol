@@ -14,7 +14,8 @@ interface ITGE {
         uint256 lockupDuration;
         uint256 lockupTVL;
         uint256 duration;
-        address[] whitelist;
+        address[] userWhitelist;
+        address[] tokenWhitelist;
     }
 
     function initialize(

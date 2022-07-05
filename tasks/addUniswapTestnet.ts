@@ -1,11 +1,7 @@
 import { BigNumber, utils } from "ethers";
 import { task } from "hardhat/config";
 import bn from "bignumber.js";
-import {
-    ERC20Mock,
-    IUniswapPositionManager,
-    Service,
-} from "../typechain-types";
+import { ERC20Mock, IUniswapPositionManager } from "../typechain-types";
 
 function sqrt(value: BigNumber): BigNumber {
     return BigNumber.from(
@@ -106,7 +102,7 @@ task("addUniswapTestnet", "Add uniswap liquidity to tokens").setAction(
 
         console.log("Getting and approving WETH");
 
-        /*await weth
+        await weth
             .deposit({ value: parseUnits("0.02") })
             .then((tx: any) => tx.wait());
         await weth
@@ -155,7 +151,7 @@ task("addUniswapTestnet", "Add uniswap liquidity to tokens").setAction(
                     parseUnits("0.01")
                 )
             )
-            .then((tx: any) => tx.wait());*/
+            .then((tx: any) => tx.wait());
 
         console.log("Providing ONE - TWO liquidity");
 
@@ -186,37 +182,5 @@ task("addUniswapTestnet", "Add uniswap liquidity to tokens").setAction(
                 )
             )
             .then((tx: any) => tx.wait());
-
-        // Configure swap paths
-
-        const service = await getContract<Service>("Service");
-
-        console.log("Adding to whitelist");
-
-        await service.addTokensToWhitelist(
-            [AddressZero, token1.address, token2.address],
-            [
-                "0x",
-                makePath([token1.address, 500, weth.address]),
-                makePath([
-                    token2.address,
-                    500,
-                    token1.address,
-                    500,
-                    weth.address,
-                ]),
-            ],
-            [
-                "0x",
-                makePath([weth.address, 500, token1.address]),
-                makePath([
-                    weth.address,
-                    500,
-                    token1.address,
-                    500,
-                    token2.address,
-                ]),
-            ]
-        );
     }
 );

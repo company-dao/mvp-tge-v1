@@ -36,9 +36,13 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     uint256 public duration;
 
-    address[] public whitelist;
+    address[] public userWhitelist;
 
-    mapping(address => bool) public isWhitelisted;
+    address[] public tokenWhitelist;
+
+    mapping(address => bool) public isUserWhitelisted;
+
+    mapping(address => bool) public isTokenWhitelisted;
 
     uint256 public createdAt;
 
@@ -79,12 +83,17 @@ contract TGE is ITGE, OwnableUpgradeable {
         lockupDuration = info.lockupDuration;
         duration = info.duration;
 
-        for (uint256 i = 0; i < info.whitelist.length; i++) {
-            whitelist.push(info.whitelist[i]);
-            isWhitelisted[info.whitelist[i]] = true;
+        for (uint256 i = 0; i < info.userWhitelist.length; i++) {
+            userWhitelist.push(info.userWhitelist[i]);
+            isUserWhitelisted[info.userWhitelist[i]] = true;
         }
-        if (info.whitelist.length == 0) {
-            isWhitelisted[address(0)] = true;
+        for (uint256 i = 0; i < info.tokenWhitelist.length; i++) {
+            require(
+                token.service().isTokenWhitelisted(info.tokenWhitelist[i]),
+                "Token not globally whitelisted"
+            );
+            tokenWhitelist.push(info.tokenWhitelist[i]);
+            isTokenWhitelisted[info.tokenWhitelist[i]] = true;
         }
 
         createdAt = block.number;
@@ -95,14 +104,14 @@ contract TGE is ITGE, OwnableUpgradeable {
     function purchase(address currency, uint256 amount)
         external
         payable
-        onlyWhitelisted
+        onlyWhitelistedUser
+        onlyWhitelistedCurrency(currency)
         onlyState(State.Active)
     {
-        IService service = token.service();
-        require(service.isTokenWhitelisted(currency), "Token not whitelisted");
         if (currency == address(0)) {
             require(msg.value == amount * price, "Invalid ETH value passed");
         } else {
+            IService service = token.service();
             uint256 amountIn = service.uniswapQuoter().quoteExactOutput(
                 service.tokenSwapReversePath(currency),
                 amount * price
@@ -208,17 +217,19 @@ contract TGE is ITGE, OwnableUpgradeable {
     function getTVL() public returns (uint256) {
         IService service = token.service();
         IQuoter quoter = service.uniswapQuoter();
-        address[] memory tokenWhitelist = service.tokenWhitelist();
+        address[] memory tokenWhitelist_ = tokenWhitelist.length == 0
+            ? service.tokenWhitelist()
+            : tokenWhitelist;
         uint256 tvl;
-        for (uint256 i = 0; i < tokenWhitelist.length; i++) {
-            if (tokenWhitelist[i] == address(0)) {
+        for (uint256 i = 0; i < tokenWhitelist_.length; i++) {
+            if (tokenWhitelist_[i] == address(0)) {
                 tvl += address(this).balance;
             } else {
-                uint256 balance = IERC20Upgradeable(tokenWhitelist[i])
+                uint256 balance = IERC20Upgradeable(tokenWhitelist_[i])
                     .balanceOf(address(this));
                 if (balance > 0) {
                     tvl += quoter.quoteExactInput(
-                        service.tokenSwapPath(tokenWhitelist[i]),
+                        service.tokenSwapPath(tokenWhitelist_[i]),
                         balance
                     );
                 }
@@ -234,11 +245,23 @@ contract TGE is ITGE, OwnableUpgradeable {
         _;
     }
 
-    modifier onlyWhitelisted() {
+    modifier onlyWhitelistedUser() {
         require(
-            isWhitelisted[address(0)] || isWhitelisted[msg.sender],
+            userWhitelist.length == 0 || isUserWhitelisted[msg.sender],
             "Not whitelisted"
         );
+        _;
+    }
+
+    modifier onlyWhitelistedCurrency(address currency) {
+        if (tokenWhitelist.length == 0) {
+            require(
+                token.service().isTokenWhitelisted(currency),
+                "Token not whitelisted"
+            );
+        } else {
+            require(isTokenWhitelisted[currency], "Token not whitelisted");
+        }
         _;
     }
 }

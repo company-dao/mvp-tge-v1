@@ -59,14 +59,21 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     // PUBLIC FUNCTIONS
 
-    function castVote(uint256 proposalId, bool support) external {
-        uint256 votes = token.unlockedBalanceOf(msg.sender);
+    function castVote(
+        uint256 proposalId,
+        uint256 votes,
+        bool support
+    ) external {
+        if (votes == type(uint256).max) {
+            votes = token.unlockedBalanceOf(msg.sender);
+        } else {
+            require(
+                votes <= token.unlockedBalanceOf(msg.sender),
+                "Not enough unlocked balance"
+            );
+        }
         require(votes > 0, "No votes");
-        token.lock(
-            msg.sender,
-            token.balanceOf(msg.sender),
-            proposals[proposalId].endBlock
-        );
+        token.lock(msg.sender, votes, proposals[proposalId].endBlock);
         _castVote(proposalId, votes, support);
     }
 
