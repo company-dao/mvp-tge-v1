@@ -20,10 +20,22 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     string public companyDomain;
 
+    uint256 public ballotQuorumThreshold;
+
+    uint256 public ballotDecisionThreshold;
+
+    uint256 public ballotLifespan;
+
     // INITIALIZER AND CONFIGURATOR
 
-    function initialize(address owner_) external initializer {
+    function initialize(
+        address owner_, 
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external initializer {
         service = IService(msg.sender);
+        setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
         _transferOwnership(owner_);
     }
 
@@ -55,6 +67,20 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         }
         require(bytes(companyDomain_).length != 0, "Can not be empty");
         companyDomain = companyDomain_;
+    }
+
+    function setBallotParams(
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external onlyServiceOwner {
+        require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
+        require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
+        require(ballotLifespan_ > 0, "Invalid ballotLifespan");
+
+        ballotQuorumThreshold = ballotQuorumThreshold_;
+        ballotDecisionThreshold = ballotDecisionThreshold_;
+        ballotLifespan = ballotLifespan_;
     }
 
     // PUBLIC FUNCTIONS

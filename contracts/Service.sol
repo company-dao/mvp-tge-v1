@@ -17,6 +17,8 @@ contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
 
+    uint256 public constant ThresholdDecimals = 2;
+
     IDirectory public directory;
 
     address public proposalGateway;
@@ -32,6 +34,12 @@ contract Service is IService, Ownable {
     uint256 public proposalQuorum;
 
     uint256 public proposalThreshold;
+
+    uint256 public ballotQuorumThreshold;
+
+    uint256 public ballotDecisionThreshold;
+
+    uint256 public ballotLifespan;
 
     ISwapRouter public uniswapRouter;
 
@@ -60,6 +68,8 @@ contract Service is IService, Ownable {
     event PoolCreated(address pool, address token, address tge);
 
     event SecondaryTGECreated(address pool, address tge);
+
+    event BallotParamsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
 
     // CONSTRUCTOR
 
@@ -96,7 +106,10 @@ contract Service is IService, Ownable {
     function createPool(
         IPool pool,
         IGovernanceToken.TokenInfo memory tokenInfo,
-        ITGE.TGEInfo memory tgeInfo
+        ITGE.TGEInfo memory tgeInfo,
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
 
@@ -131,6 +144,8 @@ contract Service is IService, Ownable {
         pool.setToken(token);
         ITGE(tge).initialize(msg.sender, token, tgeInfo);
         pool.setTGE(tge);
+        
+        pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
 
         emit PoolCreated(address(pool), token, tge);
     }
@@ -221,6 +236,22 @@ contract Service is IService, Ownable {
 
     function transferFunds(address to) external onlyOwner {
         payable(to).transfer(payable(address(this)).balance);
+    }
+
+    function setBallotParams(
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external onlyOwner {
+        require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
+        require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
+        require(ballotLifespan_ > 0, "Invalid ballotLifespan");
+
+        ballotQuorumThreshold = ballotQuorumThreshold_;
+        ballotDecisionThreshold = ballotDecisionThreshold_;
+        ballotLifespan = ballotLifespan_;
+
+        emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }
 
     // VIEW FUNCTIONS

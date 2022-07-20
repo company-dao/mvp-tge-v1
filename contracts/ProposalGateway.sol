@@ -86,6 +86,28 @@ contract ProposalGateway is OwnableUpgradeable {
         );
     }
 
+    function createSetBallotParamsProposal(
+        IPool pool,
+        uint256 duration,
+        uint256 ballotQuorumThreshold, 
+        uint256 ballotDecisionThreshold, 
+        uint256 ballotLifespan,
+        string memory description
+    ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
+        proposalId = pool.proposeSingleAction(
+            duration,
+            address(pool),
+            0,
+            abi.encodeWithSelector(
+                IPool.setBallotParams.selector, // ?
+                ballotQuorumThreshold,
+                ballotDecisionThreshold,
+                ballotLifespan
+            ),
+            description
+        );
+    }
+
     // MODIFIERS
 
     modifier onlyPoolShareholder(IPool pool) {
