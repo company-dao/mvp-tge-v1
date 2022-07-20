@@ -30,12 +30,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function initialize(
         address owner_, 
-        uint256 ballotQuorumThreshold_, 
-        uint256 ballotDecisionThreshold_, 
-        uint256 ballotLifespan_
     ) external initializer {
         service = IService(msg.sender);
-        setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
         _transferOwnership(owner_);
     }
 

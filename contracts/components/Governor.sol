@@ -16,6 +16,9 @@ abstract contract Governor {
         uint256 forVotes;
         uint256 againstVotes;
         bool executed;
+        uint256 ballotQuorumThreshold;
+        uint256 ballotDecisionThreshold; 
+        uint256 ballotLifespan;
     }
 
     mapping(uint256 => Proposal) public proposals;
@@ -107,6 +110,30 @@ abstract contract Governor {
         }
     }
 
+    function getProposalBallotQuorumThreshold(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return proposals[proposalId].ballotQuorumThreshold;
+    }
+
+    function getProposalBallotDecisionThreshold(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return proposals[proposalId].ballotDecisionThreshold;
+    }
+
+    function getProposalBallotLifespan(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return proposals[proposalId].ballotLifespan;
+    }
+
     // INTERNAL FUNCTIONS
 
     function _propose(
@@ -116,6 +143,9 @@ abstract contract Governor {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
+        uint256 ballotQuorumThreshold,
+        uint256 ballotDecisionThreshold, 
+        uint256 ballotLifespan,
         string memory description
     ) internal returns (uint256 proposalId) {
         require(
@@ -134,7 +164,10 @@ abstract contract Governor {
             endBlock: block.number + duration,
             forVotes: 0,
             againstVotes: 0,
-            executed: false
+            executed: false,
+            ballotQuorumThreshold: ballotQuorumThreshold,
+            ballotDecisionThreshold: ballotDecisionThreshold,
+            ballotLifespan: ballotLifespan
         });
         _afterProposalCreated(proposalId);
 
