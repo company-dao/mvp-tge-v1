@@ -15,14 +15,13 @@ interface ITGE {
         uint256 lockupTVL;
         uint256 duration;
         address[] userWhitelist;
-        address[] tokenWhitelist;
+        address unitOfAccount;
     }
 
     function initialize(
         address owner_,
         address token_,
-        TGEInfo memory info,
-        address unitOfAccount_
+        TGEInfo memory info
     ) external;
 
     function claimBack() external;

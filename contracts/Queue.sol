@@ -11,34 +11,60 @@ contract Queue is OwnableUpgradeable {
 
     enum Status {NotUsed, Used}
 
-    struct Info {
-        uint256 serialNumber;
+    struct QueueInfo {
+        uint256 region;
+        string serialNumber;
         Status status;
-        address lockedFor;
+        address owner;
     }
 
-    mapping(uint256 => Info) public regionToInfo;
+    uint256 public currentId;
 
-    function initialize(address owner_) external initializer {
+    mapping(uint256 => QueueInfo) public queueInfo;
+
+    // EVENTS
+
+    event RecordCreated(uint256 id, uint256 region, string serialNumber);
+
+    event RecordDeleted(uint256 id);
+
+    function initialize() external initializer { // TODO: service owner = Queue owner
         service = IService(msg.sender);
-        _transferOwnership(owner_);
+        currentId = 0;
     }
 
-    function createRecord(uint256 region, uint256 serialNumber) external onlyService {
-        if(regionToInfo[region].serialNumber > 1) {
-            regionToInfo[region] = Info({serialNumber: serialNumber, status: Status.NotUsed, lockedFor: address(0)});
-        } else {
-            regionToInfo[region] = Info({serialNumber: serialNumber, status: Status.NotUsed, lockedFor: address(0)});
+    function createRecord(uint256 region, string memory serialNumber) external onlyOwner {
+        for (uint256 i = 0; i < currentId; i++) {
+            require(
+                queueInfo[i].region != region && 
+                keccak256(abi.encodePacked(queueInfo[i].serialNumber)) != keccak256(abi.encodePacked(serialNumber)),
+                "Region and serial number can't match"
+            );
         }
+
+        currentId += 1;
+        queueInfo[currentId] = QueueInfo({region: region, serialNumber: serialNumber, status: Status.NotUsed, owner: address(0)});
+        emit RecordCreated(currentId, region, serialNumber);
     }
 
-    function deleteRecord(uint256 region) external onlyOwner {
+    function lockRecord(uint256 region) external onlyService returns (string memory) {
+        for (uint256 i = 0; i < currentId; i++) {
+            if (queueInfo[i].region == region && (queueInfo[region].status == Status.NotUsed)) {
+                queueInfo[i].status = Status.NotUsed;
+                return queueInfo[i].serialNumber;
+            }
+        }
+        return "";
+    }
+
+    function deleteRecord(uint256 id) external onlyOwner {
         require(
-            (regionToInfo[region].serialNumber == 0) && (regionToInfo[region].status == Status.NotUsed) && (regionToInfo[region].lockedFor == address(0)), 
-            "Can't delete non empty record"
+            queueInfo[id].status == Status.NotUsed, 
+            "Record is in use"
         );
 
-        delete regionToInfo[region];
+        delete queueInfo[id];
+        emit RecordDeleted(id);
     }
 
     modifier onlyService() {

@@ -86,8 +86,7 @@ contract Service is IService, Ownable {
         uint256 proposalQuorum_,
         uint256 proposalThreshold_,
         ISwapRouter uniswapRouter_,
-        IQuoter uniswapQuoter_,
-        address owner_
+        IQuoter uniswapQuoter_
     ) {
         directory = directory_;
         proposalGateway = proposalGateway_;
@@ -101,7 +100,7 @@ contract Service is IService, Ownable {
         uniswapQuoter = uniswapQuoter_;
 
         queue = IQueue(msg.sender);
-        queue.initialize(owner_);
+        queue.initialize();
 
         emit FeeSet(fee_);
         emit ProposalQuorumSet(proposalQuorum_);
@@ -117,13 +116,11 @@ contract Service is IService, Ownable {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_,
-        address unitOfAccount,
-        uint256 region,
-        uint256 serialNumber
+        uint256 region
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
         require(
-            _tokenWhitelist.contains(unitOfAccount) || unitOfAccount == address(0), 
+            _tokenWhitelist.contains(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
             "Invalid UnitOfAccount"
         );
 
@@ -156,19 +153,21 @@ contract Service is IService, Ownable {
 
         IGovernanceToken(token).initialize(address(pool), tokenInfo);
         pool.setToken(token);
-        ITGE(tge).initialize(msg.sender, token, tgeInfo, unitOfAccount);
+        ITGE(tge).initialize(msg.sender, token, tgeInfo);
         pool.setTGE(tge);
 
-        pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
+        if (address(pool) == address(0)) {
+            pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
+        }        
 
-        queue.createRecord(region, serialNumber);
+        queue.lockRecord(region);
 
         emit PoolCreated(address(pool), token, tge);
     }
 
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
 
-    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo, address unitOfAccount)
+    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo)
         external
         override
         onlyPool
@@ -178,7 +177,7 @@ contract Service is IService, Ownable {
             "Has active TGE"
         );
         require(
-            _tokenWhitelist.contains(unitOfAccount) || unitOfAccount == address(0), 
+            _tokenWhitelist.contains(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
             "Invalid UnitOfAccount"
         );
 
@@ -187,8 +186,7 @@ contract Service is IService, Ownable {
         ITGE(tge).initialize(
             msg.sender,
             address(IPool(msg.sender).token()),
-            tgeInfo,
-            unitOfAccount
+            tgeInfo
         );
         IPool(msg.sender).setTGE(tge);
 

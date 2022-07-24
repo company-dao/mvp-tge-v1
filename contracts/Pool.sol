@@ -67,7 +67,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
-    ) external onlyServiceOwner {
+    ) external onlyPool {
         require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
         require(ballotLifespan_ > 0, "Invalid ballotLifespan");
@@ -188,6 +188,14 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         require(
             msg.sender == service.proposalGateway(),
             "Not proposal gateway"
+        );
+        _;
+    }
+
+    modifier onlyPool() {
+        require(
+            msg.sender == address(this), 
+            "Not a pool"
         );
         _;
     }

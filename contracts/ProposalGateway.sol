@@ -86,7 +86,7 @@ contract ProposalGateway is OwnableUpgradeable {
         );
     }
 
-    function createSetBallotParamsProposal(
+    function createGovernanceSettingsProposal(
         IPool pool,
         uint256 duration,
         uint256 ballotQuorumThreshold, 

@@ -29,6 +29,8 @@ interface IPool {
         string memory description
     ) external returns (uint256 proposalId);
 
+    function getTVL() external returns (uint256);
+
     function owner() external view returns (address);
 
     function service() external view returns (IService);
