@@ -22,7 +22,6 @@ interface IPool {
     ) external;
 
     function proposeSingleAction(
-        uint256 duration,
         address target,
         uint256 value,
         bytes memory cd,

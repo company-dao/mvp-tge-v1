@@ -18,13 +18,11 @@ contract ProposalGateway is OwnableUpgradeable {
 
     function createTransferETHProposal(
         IPool pool,
-        uint256 duration,
         address to,
         uint256 value,
         string memory description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
-            duration,
             to,
             value,
             "",
@@ -34,14 +32,12 @@ contract ProposalGateway is OwnableUpgradeable {
 
     function createTransferERC20Proposal(
         IPool pool,
-        uint256 duration,
         address token,
         address to,
         uint256 value,
         string memory description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
-            duration,
             token,
             0,
             abi.encodeWithSelector(
@@ -55,12 +51,10 @@ contract ProposalGateway is OwnableUpgradeable {
 
     function createTGEProposal(
         IPool pool,
-        uint256 duration,
         ITGE.TGEInfo memory info,
         string memory description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
-            duration,
             address(pool.service()),
             0,
             abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
@@ -70,12 +64,10 @@ contract ProposalGateway is OwnableUpgradeable {
 
     function createSetCompanyDomainProposal(
         IPool pool,
-        uint256 duration,
         string memory companyDomain,
         string memory description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
-            duration,
             address(pool),
             0,
             abi.encodeWithSelector(
@@ -88,14 +80,12 @@ contract ProposalGateway is OwnableUpgradeable {
 
     function createGovernanceSettingsProposal(
         IPool pool,
-        uint256 duration,
         uint256 ballotQuorumThreshold, 
         uint256 ballotDecisionThreshold, 
         uint256 ballotLifespan,
         string memory description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
-            duration,
             address(pool),
             0,
             abi.encodeWithSelector(

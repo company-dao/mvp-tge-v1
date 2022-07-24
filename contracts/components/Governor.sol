@@ -6,19 +6,16 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 abstract contract Governor {
     struct Proposal {
-        uint256 quorum;
-        uint256 threshold;
+        uint256 ballotQuorumThreshold;
+        uint256 ballotDecisionThreshold;
         address[] targets;
         uint256[] values;
         bytes[] calldatas;
         uint256 startBlock;
-        uint256 endBlock;
+        uint256 endBlock; // startBlock + ballotLifespan
         uint256 forVotes;
         uint256 againstVotes;
         bool executed;
-        uint256 ballotQuorumThreshold;
-        uint256 ballotDecisionThreshold; 
-        uint256 ballotLifespan;
     }
 
     mapping(uint256 => Proposal) public proposals;
@@ -98,11 +95,11 @@ abstract contract Governor {
             return ProposalState.Active;
         }
 
-        uint256 quorumVotes = (_getTotalVotes() * proposal.quorum) / 100;
+        uint256 quorumVotes = (_getTotalVotes() * proposal.ballotQuorumThreshold) / 100;
         uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
         if (
             totalVotes >= quorumVotes &&
-            proposal.forVotes > totalVotes * proposal.threshold // rename
+            proposal.forVotes > totalVotes * proposal.ballotDecisionThreshold
         ) {
             return ProposalState.Successful;
         } else {
@@ -131,21 +128,18 @@ abstract contract Governor {
         view
         returns (uint256)
     {
-        return proposals[proposalId].ballotLifespan;
+        return proposals[proposalId].endBlock - proposals[proposalId].startBlock;
     }
 
     // INTERNAL FUNCTIONS
 
     function _propose(
-        uint256 duration,
-        uint256 quorum,
-        uint256 threshold,
+        uint256 ballotLifespan, 
+        uint256 ballotQuorumThreshold, 
+        uint256 ballotDecisionThreshold, 
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
-        uint256 ballotQuorumThreshold,
-        uint256 ballotDecisionThreshold, 
-        uint256 ballotLifespan,
         string memory description
     ) internal returns (uint256 proposalId) {
         require(
@@ -155,25 +149,22 @@ abstract contract Governor {
 
         proposalId = ++lastProposalId;
         proposals[proposalId] = Proposal({
-            quorum: quorum,
-            threshold: threshold,
+            ballotQuorumThreshold: ballotQuorumThreshold,
+            ballotDecisionThreshold: ballotDecisionThreshold,
             targets: targets,
             values: values,
             calldatas: calldatas,
             startBlock: block.number,
-            endBlock: block.number + duration,
+            endBlock: block.number + ballotLifespan,
             forVotes: 0,
             againstVotes: 0,
-            executed: false,
-            ballotQuorumThreshold: ballotQuorumThreshold,
-            ballotDecisionThreshold: ballotDecisionThreshold,
-            ballotLifespan: ballotLifespan
+            executed: false
         });
         _afterProposalCreated(proposalId);
 
         emit ProposalCreated(
             proposalId,
-            quorum,
+            ballotQuorumThreshold,
             targets,
             values,
             calldatas,

@@ -67,7 +67,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
-    ) external onlyPool {
+    ) external onlyPool { // TODO: check modifier
         require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
         require(ballotLifespan_ > 0, "Invalid ballotLifespan");
@@ -98,7 +98,6 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     }
 
     function proposeSingleAction(
-        uint256 duration,
         address target,
         uint256 value,
         bytes memory cd,
@@ -111,15 +110,12 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         bytes[] memory calldatas = new bytes[](1);
         calldatas[0] = cd;
         proposalId = _propose(
-            duration,
-            service.proposalQuorum(),
-            service.proposalThreshold(),
+            ballotLifespan,
+            ballotQuorumThreshold,
+            ballotDecisionThreshold,
             targets,
             values,
             calldatas,
-            ballotQuorumThreshold,
-            ballotDecisionThreshold,
-            ballotLifespan,
             description
         );
     }
