@@ -8,7 +8,7 @@ import "./IDirectory.sol";
 import "./ITGE.sol";
 
 interface IService {
-    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
+    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo, address unitOfAccount) external;
 
     function addProposal(uint256 proposalId) external;
 

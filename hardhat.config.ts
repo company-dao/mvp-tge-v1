@@ -11,17 +11,17 @@ import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "hardhat-dependency-compiler";
-import "./tasks";
+// import "./tasks";
 
 dotenv.config();
 
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
+// task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+//     const accounts = await hre.ethers.getSigners();
 
-    for (const account of accounts) {
-        console.log(account.address);
-    }
-});
+//     for (const account of accounts) {
+//         console.log(account.address);
+//     }
+// });
 
 const networkConfig = (url: string | null | undefined) => ({
     url: url || "",
@@ -53,10 +53,10 @@ const config: HardhatUserConfig = {
     networks: {
         hardhat: {
             chainId: 1337,
-            forking: {
-                url: process.env.FORKING_RPC_URL!,
-                blockNumber: 15050841,
-            },
+            // forking: {
+            //     url: process.env.FORKING_RPC_URL!,
+            //     blockNumber: 15050841,
+            // },
         },
         mainnet: defaultNetworkConfig,
         ropsten: defaultNetworkConfig,

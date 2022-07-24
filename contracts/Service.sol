@@ -109,9 +109,14 @@ contract Service is IService, Ownable {
         ITGE.TGEInfo memory tgeInfo,
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
-        uint256 ballotLifespan_
+        uint256 ballotLifespan_,
+        address unitOfAccount
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
+        require(
+            _tokenWhitelist.contains(unitOfAccount) || unitOfAccount == address(0), 
+            "Invalid UnitOfAccount"
+        );
 
         if (address(pool) == address(0)) {
             pool = IPool(poolMaster.clone());
@@ -142,9 +147,9 @@ contract Service is IService, Ownable {
 
         IGovernanceToken(token).initialize(address(pool), tokenInfo);
         pool.setToken(token);
-        ITGE(tge).initialize(msg.sender, token, tgeInfo);
+        ITGE(tge).initialize(msg.sender, token, tgeInfo, unitOfAccount);
         pool.setTGE(tge);
-        
+
         pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
 
         emit PoolCreated(address(pool), token, tge);
@@ -152,7 +157,7 @@ contract Service is IService, Ownable {
 
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
 
-    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo)
+    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo, address unitOfAccount)
         external
         override
         onlyPool
@@ -161,13 +166,18 @@ contract Service is IService, Ownable {
             IPool(msg.sender).tge().state() != ITGE.State.Active,
             "Has active TGE"
         );
+        require(
+            _tokenWhitelist.contains(unitOfAccount) || unitOfAccount == address(0), 
+            "Invalid UnitOfAccount"
+        );
 
         address tge = tgeMaster.clone();
         directory.addContractRecord(tge, IDirectory.ContractType.TGE);
         ITGE(tge).initialize(
             msg.sender,
             address(IPool(msg.sender).token()),
-            tgeInfo
+            tgeInfo,
+            unitOfAccount
         );
         IPool(msg.sender).setTGE(tge);
 

@@ -28,9 +28,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     // INITIALIZER AND CONFIGURATOR
 
-    function initialize(
-        address owner_, 
-    ) external initializer {
+    function initialize(address owner_) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
     }
@@ -119,8 +117,32 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
             targets,
             values,
             calldatas,
+            ballotQuorumThreshold,
+            ballotDecisionThreshold,
+            ballotLifespan,
             description
         );
+    }
+
+    function getTVL() public returns (uint256) {
+        IQuoter quoter = service.uniswapQuoter();
+        address[] memory tokenWhitelist = service.tokenWhitelist();
+        uint256 tvl;
+        for (uint256 i = 0; i < tokenWhitelist.length; i++) {
+            if (tokenWhitelist[i] == address(0)) {
+                tvl += address(this).balance;
+            } else {
+                uint256 balance = IERC20Upgradeable(tokenWhitelist[i])
+                    .balanceOf(address(this));
+                if (balance > 0) {
+                    tvl += quoter.quoteExactInput(
+                        service.tokenSwapPath(tokenWhitelist[i]),
+                        balance
+                    );
+                }
+            }
+        }
+        return tvl;
     }
 
     // RECEIVE

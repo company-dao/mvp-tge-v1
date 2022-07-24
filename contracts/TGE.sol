@@ -54,12 +54,15 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     mapping(address => uint256) public lockedBalanceOf;
 
+    address public unitOfAccount;
+
     // CONSTRUCTOR
 
     function initialize(
         address owner_,
         address token_,
-        TGEInfo memory info
+        TGEInfo memory info,
+        address unitOfAccount_
     ) external override initializer {
         uint256 remainingSupply = IGovernanceToken(token_).cap() -
             IGovernanceToken(token_).totalSupply();
@@ -97,26 +100,27 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
 
         createdAt = block.number;
+
+        unitOfAccount = unitOfAccount_;
     }
 
     // PUBLIC FUNCTIONS
 
-    function purchase(address currency, uint256 amount)
+    function purchase(uint256 amount)
         external
         payable
         onlyWhitelistedUser
-        onlyWhitelistedCurrency(currency)
         onlyState(State.Active)
     {
-        if (currency == address(0)) {
+        if (unitOfAccount == address(0)) {
             require(msg.value == amount * price, "Invalid ETH value passed");
         } else {
             IService service = token.service();
             uint256 amountIn = service.uniswapQuoter().quoteExactOutput(
-                service.tokenSwapReversePath(currency),
+                service.tokenSwapReversePath(unitOfAccount),
                 amount * price
             );
-            IERC20Upgradeable(currency).safeTransferFrom(
+            IERC20Upgradeable(unitOfAccount).safeTransferFrom(
                 msg.sender,
                 address(this),
                 amountIn
@@ -170,21 +174,21 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     // RESTRICTED FUNCTIONS
-
-    function transferFunds(address currency)
+    // remove currency --> unitOfAccount
+    function transferFunds()
         external
         onlyState(State.Successful)
     {
-        if (currency == address(0)) {
+        if (unitOfAccount == address(0)) {
             payable(token.pool()).sendValue(address(this).balance);
         } else {
             require(
-                currency != address(token),
+                unitOfAccount != address(token),
                 "Impossible to transfer TGE token"
             );
-            IERC20Upgradeable(currency).safeTransfer(
+            IERC20Upgradeable(unitOfAccount).safeTransfer(
                 token.pool(),
-                IERC20Upgradeable(currency).balanceOf(address(this))
+                IERC20Upgradeable(unitOfAccount).balanceOf(address(this))
             );
         }
     }
@@ -222,7 +226,7 @@ contract TGE is ITGE, OwnableUpgradeable {
             : tokenWhitelist;
         uint256 tvl;
         for (uint256 i = 0; i < tokenWhitelist_.length; i++) {
-            if (tokenWhitelist_[i] == address(0)) {
+            if (unitOfAccount == address(0)) {
                 tvl += address(this).balance;
             } else {
                 uint256 balance = IERC20Upgradeable(tokenWhitelist_[i])

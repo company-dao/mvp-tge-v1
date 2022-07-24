@@ -21,7 +21,8 @@ interface ITGE {
     function initialize(
         address owner_,
         address token_,
-        TGEInfo memory info
+        TGEInfo memory info,
+        address unitOfAccount_
     ) external;
 
     function claimBack() external;

@@ -99,7 +99,7 @@ contract ProposalGateway is OwnableUpgradeable {
             address(pool),
             0,
             abi.encodeWithSelector(
-                IPool.setBallotParams.selector, // ?
+                IPool.setBallotParams.selector,
                 ballotQuorumThreshold,
                 ballotDecisionThreshold,
                 ballotLifespan

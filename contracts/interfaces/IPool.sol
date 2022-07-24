@@ -15,6 +15,12 @@ interface IPool {
 
     function setCompanyDomain(string memory companyDomain_) external;
 
+    function setBallotParams(
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external;
+
     function proposeSingleAction(
         uint256 duration,
         address target,
