@@ -64,10 +64,6 @@ contract Service is IService, Ownable {
 
     event FeeSet(uint256 fee);
 
-    event ProposalQuorumSet(uint256 quorum);
-
-    event ProposalThresholdSet(uint256 threshold);
-
     event PoolCreated(address pool, address token, address tge);
 
     event SecondaryTGECreated(address pool, address tge);
@@ -83,8 +79,9 @@ contract Service is IService, Ownable {
         address tokenMaster_,
         address tgeMaster_,
         uint256 fee_,
-        uint256 proposalQuorum_,
-        uint256 proposalThreshold_,
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_,
         ISwapRouter uniswapRouter_,
         IQuoter uniswapQuoter_
     ) {
@@ -94,8 +91,9 @@ contract Service is IService, Ownable {
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
         fee = fee_;
-        proposalQuorum = proposalQuorum_;
-        proposalThreshold = proposalThreshold_;
+        ballotQuorumThreshold = ballotQuorumThreshold_;
+        ballotDecisionThreshold = ballotDecisionThreshold_;
+        ballotLifespan = ballotLifespan_;
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
 
@@ -103,8 +101,7 @@ contract Service is IService, Ownable {
         queue.initialize();
 
         emit FeeSet(fee_);
-        emit ProposalQuorumSet(proposalQuorum_);
-        emit ProposalThresholdSet(proposalThreshold_);
+        emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }
 
     // PUBLIC FUNCTIONS
@@ -124,9 +121,12 @@ contract Service is IService, Ownable {
             "Invalid UnitOfAccount"
         );
 
+        string memory serialNumber = queue.lockRecord(region);
+        require(bytes(serialNumber).length != 0, "No available companies in region");
+
         if (address(pool) == address(0)) {
             pool = IPool(poolMaster.clone());
-            pool.initialize(msg.sender);
+            pool.initialize(msg.sender, region, serialNumber);
             directory.addContractRecord(
                 address(pool),
                 IDirectory.ContractType.Pool
@@ -238,19 +238,6 @@ contract Service is IService, Ownable {
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;
         emit FeeSet(fee_);
-    }
-
-    function setProposalQuorum(uint256 proposalQuorum_) external onlyOwner {
-        proposalQuorum = proposalQuorum_;
-        emit ProposalQuorumSet(proposalQuorum_);
-    }
-
-    function setProposalThreshold(uint256 proposalThreshold_)
-        external
-        onlyOwner
-    {
-        proposalThreshold = proposalThreshold_;
-        emit ProposalThresholdSet(proposalThreshold_);
     }
 
     function transferFunds(address to) external onlyOwner {

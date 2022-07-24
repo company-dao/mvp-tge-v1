@@ -26,11 +26,17 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     uint256 public ballotLifespan;
 
+    string public serialNumber;
+
+    uint256 public region;
+
     // INITIALIZER AND CONFIGURATOR
 
-    function initialize(address owner_) external initializer {
+    function initialize(address owner_, uint256 region_, string memory serialNumber_) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
+        region = region_;
+        serialNumber = serialNumber_;
     }
 
     function setToken(address token_) external onlyService {
@@ -67,7 +73,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
-    ) external onlyPool { // TODO: check modifier
+    ) external onlyPool { 
         require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
         require(ballotLifespan_ > 0, "Invalid ballotLifespan");

@@ -5,5 +5,5 @@ pragma solidity 0.8.13;
 interface IQueue {
     function initialize() external;
 
-    function lockRecord(uint256 region) external;
+    function lockRecord(uint256 region) external returns (string memory);
 }
