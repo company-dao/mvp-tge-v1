@@ -12,10 +12,13 @@ import "./interfaces/IDirectory.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IQueue.sol";
 
 contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
+
+    IQueue public queue;
 
     uint256 public constant ThresholdDecimals = 2;
 
@@ -83,7 +86,8 @@ contract Service is IService, Ownable {
         uint256 proposalQuorum_,
         uint256 proposalThreshold_,
         ISwapRouter uniswapRouter_,
-        IQuoter uniswapQuoter_
+        IQuoter uniswapQuoter_,
+        address owner_
     ) {
         directory = directory_;
         proposalGateway = proposalGateway_;
@@ -95,6 +99,9 @@ contract Service is IService, Ownable {
         proposalThreshold = proposalThreshold_;
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
+
+        queue = IQueue(msg.sender);
+        queue.initialize(owner_);
 
         emit FeeSet(fee_);
         emit ProposalQuorumSet(proposalQuorum_);
@@ -110,7 +117,9 @@ contract Service is IService, Ownable {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_,
-        address unitOfAccount
+        address unitOfAccount,
+        uint256 region,
+        uint256 serialNumber
     ) external payable onlyWhitelisted {
         require(msg.value == fee, "Incorrect fee passed");
         require(
@@ -151,6 +160,8 @@ contract Service is IService, Ownable {
         pool.setTGE(tge);
 
         pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
+
+        queue.createRecord(region, serialNumber);
 
         emit PoolCreated(address(pool), token, tge);
     }
