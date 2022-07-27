@@ -91,6 +91,23 @@ contract Directory is IDirectory, Ownable {
         emit ProposalRecordAdded(index, pool, proposalId);
     }
 
+    // function addContractOrProposalRecord(address addr, ContractType contractType, address pool, uint256 proposalId)
+    //     external
+    //     override
+    //     onlyService
+    //     returns (uint256 index)
+    // {
+    //     index = ++lastContractRecordIndex;
+    //     contractRecordAt[index] = ContractInfo({
+    //         addr: addr,
+    //         contractType: contractType,
+    //         description: ""
+    //     });
+    //     indexOfContract[addr] = index;
+
+    //     emit ContractRecordAdded(index, addr, contractType);
+    // }
+
     function setService(address service_) external onlyOwner {
         service = service_;
         emit ServiceSet(service_);

@@ -32,6 +32,8 @@ contract Service is IService, Ownable {
 
     address public tgeMaster;
 
+    address public queueMaster;
+
     uint256 public fee;
 
     uint256 public proposalQuorum;
@@ -78,6 +80,7 @@ contract Service is IService, Ownable {
         address proposalGateway_,
         address tokenMaster_,
         address tgeMaster_,
+        address queueMaster_,
         uint256 fee_,
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
@@ -90,6 +93,7 @@ contract Service is IService, Ownable {
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
+        queueMaster = queueMaster_;
         fee = fee_;
         _ballotQuorumThreshold = ballotQuorumThreshold_;
         _ballotDecisionThreshold = ballotDecisionThreshold_;
@@ -97,8 +101,7 @@ contract Service is IService, Ownable {
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
 
-        queue = IQueue(msg.sender);
-        queue.initialize();
+        IQueue(queueMaster.clone()).initialize();
 
         emit FeeSet(fee_);
         emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);

@@ -55,9 +55,9 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     mapping(address => uint256) public lockedBalanceOf;
 
-    uint256 public totalPurchased;
+    uint256 private _totalPurchased;
 
-    uint256 public totalLocked;
+    uint256 private _totalLocked;
 
     // CONSTRUCTOR
 
@@ -119,6 +119,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
         require(totalPurchases + amount <= hardcap, "Overflows hardcap");
 
+        _totalPurchased += amount;
         totalPurchases += amount;
         purchaseOf[msg.sender] += amount;
         uint256 lockedAmount = (amount * lockupPercent + 99) / 100;
@@ -127,6 +128,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
         token.mint(address(this), lockedAmount);
         lockedBalanceOf[msg.sender] += lockedAmount;
+        _totalLocked += lockedAmount;
     }
 
     function claimBack() external override onlyState(State.Failed) {
@@ -135,6 +137,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         uint256 refundTokens = balance + lockedBalanceOf[msg.sender];
         if (refundTokens > balance) {
             lockedBalanceOf[msg.sender] -= (refundTokens - balance);
+            _totalLocked -= (refundTokens - balance);
             token.burn(address(this), refundTokens - balance);
             refundTokens = balance;
         }
@@ -157,6 +160,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
         uint256 balance = lockedBalanceOf[msg.sender];
         lockedBalanceOf[msg.sender] = 0;
+        _totalLocked -= balance;
         token.transfer(msg.sender, balance);
     }
 
@@ -207,6 +211,22 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     function getUnitOfAccount() public view returns (address) {
         return _unitOfAccount;
+    }
+
+    function getTotalPurchased() public view returns (uint256) {
+        return _totalPurchased;
+    }
+
+    function getTotalLocked() public view returns (uint256) {
+        return _totalLocked;
+    }
+
+    function getTotalPurchasedValue() public view returns (uint256) {
+        return _totalPurchased * price;
+    }
+
+    function getTotalLockedValue() public view returns (uint256) {
+        return _totalLocked * price;
     }
 
     // MODIFIER
