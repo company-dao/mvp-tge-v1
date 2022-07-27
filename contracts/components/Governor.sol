@@ -16,8 +16,10 @@ abstract contract Governor {
         uint256 forVotes;
         uint256 againstVotes;
         bool executed;
+        bool accepted;
+        ProposalExecutionState state;
     }
-
+// get proposals by id
     mapping(uint256 => Proposal) public proposals;
 
     uint256 public lastProposalId;
@@ -28,6 +30,11 @@ abstract contract Governor {
         Failed,
         Successful,
         Executed
+    }
+
+    enum ProposalExecutionState {
+        Rejected,
+        Accomplished
     }
 
     // EVENTS
@@ -55,12 +62,13 @@ abstract contract Governor {
     function execute(uint256 proposalId) external {
         Proposal memory proposal = proposals[proposalId];
 
+        proposals[proposalId].executed = true;
         require(
             proposalState(proposalId) == ProposalState.Successful,
             "Proposal is in wrong state"
         );
 
-        proposals[proposalId].executed = true;
+        proposals[proposalId].accepted = true;
 
         string memory errorMessage = "Call reverted without message";
         for (uint256 i = 0; i < proposal.targets.length; ++i) {
@@ -73,6 +81,8 @@ abstract contract Governor {
                 errorMessage
             );
         }
+
+        // TODO: handle all exceptions: if good => Accomplished else Rejected
 
         emit ProposalExecuted(proposalId);
     }
@@ -158,7 +168,9 @@ abstract contract Governor {
             endBlock: block.number + ballotLifespan,
             forVotes: 0,
             againstVotes: 0,
-            executed: false
+            executed: false,
+            accepted: false,
+            state: ProposalExecutionState.Rejected
         });
         _afterProposalCreated(proposalId);
 

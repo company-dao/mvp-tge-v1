@@ -55,6 +55,10 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     mapping(address => uint256) public lockedBalanceOf;
 
+    uint256 public totalPurchased;
+
+    uint256 public totalLocked;
+
     // CONSTRUCTOR
 
     function initialize(
@@ -128,11 +132,7 @@ contract TGE is ITGE, OwnableUpgradeable {
     function claimBack() external override onlyState(State.Failed) {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
         uint256 balance = token.balanceOf(msg.sender);
-        uint256 refundTokens = MathUpgradeable.min(
-            balance + lockedBalanceOf[msg.sender],
-            purchaseOf[msg.sender]
-        );
-        purchaseOf[msg.sender] -= refundTokens;
+        uint256 refundTokens = balance + lockedBalanceOf[msg.sender];
         if (refundTokens > balance) {
             lockedBalanceOf[msg.sender] -= (refundTokens - balance);
             token.burn(address(this), refundTokens - balance);
@@ -140,7 +140,15 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
         token.burn(msg.sender, refundTokens);
         uint256 refundValue = refundTokens * price;
-        payable(msg.sender).transfer(refundValue);
+
+        if (unitOfAccount == address(0)) {
+            payable(msg.sender).transfer(refundValue);
+        } else {
+            IERC20Upgradeable(unitOfAccount).transfer(
+                msg.sender,
+                refundValue
+            );
+        }
     }
 
     function unlock() external {
@@ -165,10 +173,6 @@ contract TGE is ITGE, OwnableUpgradeable {
         if (unitOfAccount == address(0)) {
             payable(token.pool()).sendValue(address(this).balance);
         } else {
-            require(
-                unitOfAccount != address(token),
-                "Impossible to transfer TGE token"
-            );
             IERC20Upgradeable(unitOfAccount).safeTransfer(
                 token.pool(),
                 IERC20Upgradeable(unitOfAccount).balanceOf(address(this))
@@ -198,7 +202,7 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     function unlockAvailable() public view returns (bool) {
-        return lockupTVLReached && block.number >= createdAt + lockupDuration;
+        return lockupTVLReached && block.number >= createdAt + lockupDuration && (state()) != State.Failed;
     }
 
     // MODIFIER

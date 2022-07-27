@@ -12,7 +12,7 @@ contract Queue is OwnableUpgradeable {
     enum Status {NotUsed, Used}
 
     struct QueueInfo {
-        uint256 region;
+        uint256 jurisdiction;
         string serialNumber;
         Status status;
         address owner;
@@ -24,37 +24,46 @@ contract Queue is OwnableUpgradeable {
 
     // EVENTS
 
-    event RecordCreated(uint256 id, uint256 region, string serialNumber);
+    event RecordCreated(uint256 id, uint256 jurisdiction, string serialNumber);
 
     event RecordDeleted(uint256 id);
 
-    function initialize() external initializer { // TODO: service owner = Queue owner
+    function initialize() external initializer {
         service = IService(msg.sender);
         currentId = 0;
     }
 
-    function createRecord(uint256 region, string memory serialNumber) external onlyOwner {
+    function createRecord(uint256 jurisdiction, string memory serialNumber) external onlyOwner {
+        require(
+            (jurisdiction > 0) && (bytes(serialNumber).length != 0), 
+            "Invalid jurisdiction or serialNumber"
+        );
+
         for (uint256 i = 0; i < currentId; i++) {
             require(
-                queueInfo[i].region != region && 
+                queueInfo[i].jurisdiction != jurisdiction && 
                 keccak256(abi.encodePacked(queueInfo[i].serialNumber)) != keccak256(abi.encodePacked(serialNumber)),
-                "Region and serial number can't match"
+                "jurisdiction and serial number can't match"
             );
         }
 
         currentId += 1;
-        queueInfo[currentId] = QueueInfo({region: region, serialNumber: serialNumber, status: Status.NotUsed, owner: address(0)});
-        emit RecordCreated(currentId, region, serialNumber);
+        queueInfo[currentId] = QueueInfo({jurisdiction: jurisdiction, serialNumber: serialNumber, status: Status.NotUsed, owner: address(0)});
+        emit RecordCreated(currentId, jurisdiction, serialNumber);
     }
 
-    function lockRecord(uint256 region) external onlyService returns (string memory) {
+    function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {
         for (uint256 i = 0; i < currentId; i++) {
-            if (queueInfo[i].region == region && (queueInfo[region].status == Status.NotUsed)) {
-                queueInfo[i].status = Status.NotUsed;
-                return queueInfo[i].serialNumber;
+            if (queueInfo[i].jurisdiction == jurisdiction && (queueInfo[jurisdiction].status == Status.NotUsed)) {
+                queueInfo[i].status = Status.Used;
+                return i; // queueInfo[i].serialNumber;
             }
         }
-        return "";
+        return 0;
+    }
+
+    function setOwner(uint256 id, address owner) external onlyService {
+        queueInfo[id].owner = owner;
     }
 
     function deleteRecord(uint256 id) external onlyOwner {
@@ -67,9 +76,12 @@ contract Queue is OwnableUpgradeable {
         emit RecordDeleted(id);
     }
 
+    function getSerialNumber(uint256 id) external view returns (string memory) {
+        return queueInfo[id].serialNumber;
+    }
+
     modifier onlyService() {
         require(msg.sender == address(service), "Not service");
         _;
     }
 }
-

@@ -20,22 +20,22 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     string public companyDomain;
 
-    uint256 public ballotQuorumThreshold;
+    uint256 public ballotQuorumThreshold; // move to getter
 
-    uint256 public ballotDecisionThreshold;
+    uint256 public ballotDecisionThreshold; // move to getter
 
-    uint256 public ballotLifespan;
+    uint256 public ballotLifespan; // move to getter
 
-    string public serialNumber;
+    string public serialNumber; // move to getter
 
-    uint256 public region;
+    uint256 public jurisdiction; // move to getter
 
     // INITIALIZER AND CONFIGURATOR
 
-    function initialize(address owner_, uint256 region_, string memory serialNumber_) external initializer {
+    function initialize(address owner_, uint256 jurisdiction_, string memory serialNumber_) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
-        region = region_;
+        jurisdiction = jurisdiction_;
         serialNumber = serialNumber_;
     }
 

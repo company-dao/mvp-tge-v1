@@ -113,20 +113,27 @@ contract Service is IService, Ownable {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_,
-        uint256 region
+        uint256 jurisdiction
     ) external payable onlyWhitelisted {
-        require(msg.value == fee, "Incorrect fee passed");
         require(
             _tokenWhitelist.contains(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
             "Invalid UnitOfAccount"
         );
 
-        string memory serialNumber = queue.lockRecord(region);
-        require(bytes(serialNumber).length != 0, "No available companies in region");
+        // string memory serialNumber = queue.lockRecord(jurisdiction);
+        // require(bytes(serialNumber).length != 0, "No available companies in jurisdiction");
 
         if (address(pool) == address(0)) {
+            require(msg.value == fee, "Incorrect fee passed");
+            
+            uint256 id = queue.lockRecord(jurisdiction);
+            require(id > 0, "Avaliable company not found");
+            string memory serialNumber = queue.getSerialNumber(id);
+
             pool = IPool(poolMaster.clone());
-            pool.initialize(msg.sender, region, serialNumber);
+            pool.initialize(msg.sender, jurisdiction, serialNumber);
+            queue.setOwner(id, address(pool));
+
             directory.addContractRecord(
                 address(pool),
                 IDirectory.ContractType.Pool
@@ -158,9 +165,7 @@ contract Service is IService, Ownable {
 
         if (address(pool) == address(0)) {
             pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
-        }        
-
-        queue.lockRecord(region);
+        }
 
         emit PoolCreated(address(pool), token, tge);
     }
