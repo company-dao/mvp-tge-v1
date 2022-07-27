@@ -81,8 +81,7 @@ abstract contract Governor {
                 errorMessage
             );
         }
-
-        // TODO: handle all exceptions: if good => Accomplished else Rejected
+        proposals[proposalId].state = ProposalExecutionState.Accomplished;
 
         emit ProposalExecuted(proposalId);
     }
@@ -139,6 +138,10 @@ abstract contract Governor {
         returns (uint256)
     {
         return proposals[proposalId].endBlock - proposals[proposalId].startBlock;
+    }
+
+    function getProposal(uint256 proposalId) public view returns (Proposal memory) {
+        return proposals[proposalId];
     }
 
     // INTERNAL FUNCTIONS

@@ -30,6 +30,16 @@ contract Directory is IDirectory, Ownable {
 
     uint256 public lastProposalRecordIndex;
 
+    struct ProposalOrContractInfo {
+        address addr; // address(0) for proposal
+        ContractType contractType; // None for proposal
+        address pool; // address(0) for contracts
+        uint256 proposalId; // 0 for contracts
+        string description;
+    }
+
+    mapping(uint256 => ProposalOrContractInfo) public proposalOrContract;
+
     // EVENTS
 
     event ContractRecordAdded(

@@ -20,23 +20,23 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     string public companyDomain;
 
-    uint256 public ballotQuorumThreshold; // move to getter
+    uint256 private _ballotQuorumThreshold; 
 
-    uint256 public ballotDecisionThreshold; // move to getter
+    uint256 private _ballotDecisionThreshold; 
 
-    uint256 public ballotLifespan; // move to getter
+    uint256 private _ballotLifespan; 
 
-    string public serialNumber; // move to getter
+    string private _serialNumber; 
 
-    uint256 public jurisdiction; // move to getter
+    uint256 private _jurisdiction; 
 
     // INITIALIZER AND CONFIGURATOR
 
     function initialize(address owner_, uint256 jurisdiction_, string memory serialNumber_) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
-        jurisdiction = jurisdiction_;
-        serialNumber = serialNumber_;
+        _jurisdiction = jurisdiction_;
+        _serialNumber = serialNumber_;
     }
 
     function setToken(address token_) external onlyService {
@@ -78,9 +78,9 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
         require(ballotLifespan_ > 0, "Invalid ballotLifespan");
 
-        ballotQuorumThreshold = ballotQuorumThreshold_;
-        ballotDecisionThreshold = ballotDecisionThreshold_;
-        ballotLifespan = ballotLifespan_;
+        _ballotQuorumThreshold = ballotQuorumThreshold_;
+        _ballotDecisionThreshold = ballotDecisionThreshold_;
+        _ballotLifespan = ballotLifespan_;
     }
 
     // PUBLIC FUNCTIONS
@@ -116,9 +116,9 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         bytes[] memory calldatas = new bytes[](1);
         calldatas[0] = cd;
         proposalId = _propose(
-            ballotLifespan,
-            ballotQuorumThreshold,
-            ballotDecisionThreshold,
+            _ballotLifespan,
+            _ballotQuorumThreshold,
+            _ballotDecisionThreshold,
             targets,
             values,
             calldatas,
@@ -162,6 +162,26 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         returns (address)
     {
         return super.owner();
+    }
+
+    function getBallotQuorumThreshold() public view returns (uint256) {
+        return _ballotQuorumThreshold;
+    }
+
+    function getBallotDecisionThreshold() public view returns (uint256) {
+        return _ballotDecisionThreshold;
+    }
+
+    function getBallotLifespan() public view returns (uint256) {
+        return _ballotLifespan;
+    }
+
+    function getJurisdiction() public view returns (uint256) {
+        return _jurisdiction;
+    }
+
+    function getSerialNumber() public view returns (string memory) {
+        return _serialNumber;
     }
 
     // INTERNAL FUNCTIONS

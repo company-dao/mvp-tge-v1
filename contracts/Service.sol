@@ -38,11 +38,11 @@ contract Service is IService, Ownable {
 
     uint256 public proposalThreshold;
 
-    uint256 public ballotQuorumThreshold;
+    uint256 private _ballotQuorumThreshold; 
 
-    uint256 public ballotDecisionThreshold;
+    uint256 private _ballotDecisionThreshold; 
 
-    uint256 public ballotLifespan;
+    uint256 private _ballotLifespan; 
 
     ISwapRouter public uniswapRouter;
 
@@ -91,9 +91,9 @@ contract Service is IService, Ownable {
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
         fee = fee_;
-        ballotQuorumThreshold = ballotQuorumThreshold_;
-        ballotDecisionThreshold = ballotDecisionThreshold_;
-        ballotLifespan = ballotLifespan_;
+        _ballotQuorumThreshold = ballotQuorumThreshold_;
+        _ballotDecisionThreshold = ballotDecisionThreshold_;
+        _ballotLifespan = ballotLifespan_;
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
 
@@ -120,12 +120,9 @@ contract Service is IService, Ownable {
             "Invalid UnitOfAccount"
         );
 
-        // string memory serialNumber = queue.lockRecord(jurisdiction);
-        // require(bytes(serialNumber).length != 0, "No available companies in jurisdiction");
-
         if (address(pool) == address(0)) {
             require(msg.value == fee, "Incorrect fee passed");
-            
+
             uint256 id = queue.lockRecord(jurisdiction);
             require(id > 0, "Avaliable company not found");
             string memory serialNumber = queue.getSerialNumber(id);
@@ -258,9 +255,9 @@ contract Service is IService, Ownable {
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
         require(ballotLifespan_ > 0, "Invalid ballotLifespan");
 
-        ballotQuorumThreshold = ballotQuorumThreshold_;
-        ballotDecisionThreshold = ballotDecisionThreshold_;
-        ballotLifespan = ballotLifespan_;
+        _ballotQuorumThreshold = ballotQuorumThreshold_;
+        _ballotDecisionThreshold = ballotDecisionThreshold_;
+        _ballotLifespan = ballotLifespan_;
 
         emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }
@@ -303,6 +300,18 @@ contract Service is IService, Ownable {
 
     function owner() public view override(IService, Ownable) returns (address) {
         return super.owner();
+    }
+
+    function getBallotQuorumThreshold() public view returns (uint256) {
+        return _ballotQuorumThreshold;
+    }
+
+    function getBallotDecisionThreshold() public view returns (uint256) {
+        return _ballotDecisionThreshold;
+    }
+
+    function getBallotLifespan() public view returns (uint256) {
+        return _ballotLifespan;
     }
 
     // MODIFIERS

@@ -39,7 +39,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     address[] public userWhitelist;
 
-    address public unitOfAccount;
+    address private _unitOfAccount;
 
     mapping(address => bool) public isUserWhitelisted;
 
@@ -87,7 +87,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         lockupTVLReached = (lockupTVL == 0);
         lockupDuration = info.lockupDuration;
         duration = info.duration;
-        unitOfAccount = info.unitOfAccount;
+        _unitOfAccount = info.unitOfAccount;
 
         for (uint256 i = 0; i < info.userWhitelist.length; i++) {
             userWhitelist.push(info.userWhitelist[i]);
@@ -105,10 +105,10 @@ contract TGE is ITGE, OwnableUpgradeable {
         onlyWhitelistedUser
         onlyState(State.Active)
     {
-        if (unitOfAccount == address(0)) {
+        if (_unitOfAccount == address(0)) {
             require(msg.value == amount * price, "Invalid ETH value passed");
         } else {
-            IERC20Upgradeable(unitOfAccount).safeTransferFrom(
+            IERC20Upgradeable(_unitOfAccount).safeTransferFrom(
                 msg.sender,
                 address(this),
                 amount * price
@@ -141,10 +141,10 @@ contract TGE is ITGE, OwnableUpgradeable {
         token.burn(msg.sender, refundTokens);
         uint256 refundValue = refundTokens * price;
 
-        if (unitOfAccount == address(0)) {
+        if (_unitOfAccount == address(0)) {
             payable(msg.sender).transfer(refundValue);
         } else {
-            IERC20Upgradeable(unitOfAccount).transfer(
+            IERC20Upgradeable(_unitOfAccount).transfer(
                 msg.sender,
                 refundValue
             );
@@ -170,12 +170,12 @@ contract TGE is ITGE, OwnableUpgradeable {
         external
         onlyState(State.Successful)
     {
-        if (unitOfAccount == address(0)) {
+        if (_unitOfAccount == address(0)) {
             payable(token.pool()).sendValue(address(this).balance);
         } else {
-            IERC20Upgradeable(unitOfAccount).safeTransfer(
+            IERC20Upgradeable(_unitOfAccount).safeTransfer(
                 token.pool(),
-                IERC20Upgradeable(unitOfAccount).balanceOf(address(this))
+                IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
             );
         }
     }
@@ -203,6 +203,10 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     function unlockAvailable() public view returns (bool) {
         return lockupTVLReached && block.number >= createdAt + lockupDuration && (state()) != State.Failed;
+    }
+
+    function getUnitOfAccount() public view returns (address) {
+        return _unitOfAccount;
     }
 
     // MODIFIER
