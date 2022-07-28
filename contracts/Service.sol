@@ -72,6 +72,8 @@ contract Service is IService, Ownable {
 
     event BallotParamsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
 
+    event QueueCreated(address queueContract);
+
     // CONSTRUCTOR
 
     constructor(
@@ -101,8 +103,11 @@ contract Service is IService, Ownable {
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
 
-        IQueue(queueMaster.clone()).initialize();
+        address queueContract = queueMaster.clone();
+        queue = IQueue(queueContract);
+        queue.initialize(msg.sender);
 
+        emit QueueCreated(queueContract);
         emit FeeSet(fee_);
         emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }

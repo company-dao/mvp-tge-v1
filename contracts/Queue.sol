@@ -28,8 +28,9 @@ contract Queue is OwnableUpgradeable {
 
     event RecordDeleted(uint256 id);
 
-    function initialize() external initializer {
+    function initialize(address owner_) external initializer {
         service = IService(msg.sender);
+        _transferOwnership(owner_);
         currentId = 0;
     }
 

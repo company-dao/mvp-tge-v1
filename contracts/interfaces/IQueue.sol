@@ -3,7 +3,7 @@
 pragma solidity 0.8.13;
 
 interface IQueue {
-    function initialize() external;
+    function initialize(address owner_) external;
 
     function lockRecord(uint256 jurisdiction) external returns (uint256);
 
