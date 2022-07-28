@@ -7,7 +7,17 @@ import "./ITGE.sol";
 import "./IGovernanceToken.sol";
 
 interface IPool {
-    function initialize(address owner_, uint256 jurisdiction_, string memory serialNumber_) external;
+    function initialize(
+        address owner_, 
+        uint256 jurisdiction_, 
+        string memory serialNumber_, 
+        string memory dateOfIncorporation, 
+        string memory legalAddress, 
+        string memory taxationStatus, 
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external;
 
     function setToken(address token_) external;
 

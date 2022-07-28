@@ -26,17 +26,44 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     uint256 private _ballotLifespan; 
 
+    uint256 private _jurisdiction; 
+
     string private _serialNumber; 
 
-    uint256 private _jurisdiction; 
+    string private _dateOfIncorporation; 
+
+    string private _legalAddress; 
+
+    string private _taxationStatus; 
 
     // INITIALIZER AND CONFIGURATOR
 
-    function initialize(address owner_, uint256 jurisdiction_, string memory serialNumber_) external initializer {
+    function initialize(
+        address owner_, 
+        uint256 jurisdiction_, 
+        string memory serialNumber_, 
+        string memory dateOfIncorporation, 
+        string memory legalAddress, 
+        string memory taxationStatus, 
+        uint256 ballotQuorumThreshold_, 
+        uint256 ballotDecisionThreshold_, 
+        uint256 ballotLifespan_
+    ) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
         _jurisdiction = jurisdiction_;
         _serialNumber = serialNumber_;
+        _dateOfIncorporation = dateOfIncorporation;
+        _legalAddress = legalAddress;
+        _taxationStatus = taxationStatus;
+
+        require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
+        require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
+        require(ballotLifespan_ > 0, "Invalid ballotLifespan");
+
+        _ballotQuorumThreshold = ballotQuorumThreshold_;
+        _ballotDecisionThreshold = ballotDecisionThreshold_;
+        _ballotLifespan = ballotLifespan_;
     }
 
     function setToken(address token_) external onlyService {
@@ -182,6 +209,18 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function getSerialNumber() public view returns (string memory) {
         return _serialNumber;
+    }
+
+    function getDateOfIncorporation() public view returns (string memory) {
+        return _dateOfIncorporation;
+    }
+
+    function getLegalAddress() public view returns (string memory) {
+        return _legalAddress;
+    }
+
+    function getTaxationStatus() public view returns (string memory) {
+        return _taxationStatus;
     }
 
     // INTERNAL FUNCTIONS

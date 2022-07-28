@@ -5,18 +5,10 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
+import "./interfaces/IQueue.sol";
 
-contract Queue is OwnableUpgradeable {
+contract Queue is IQueue, OwnableUpgradeable {
     IService public service;
-
-    enum Status {NotUsed, Used}
-
-    struct QueueInfo {
-        uint256 jurisdiction;
-        string serialNumber;
-        Status status;
-        address owner;
-    }
 
     uint256 public currentId;
 
@@ -24,7 +16,14 @@ contract Queue is OwnableUpgradeable {
 
     // EVENTS
 
-    event RecordCreated(uint256 id, uint256 jurisdiction, string serialNumber);
+    event RecordCreated(
+        uint256 id, 
+        uint256 jurisdiction, 
+        string serialNumber, 
+        string dateOfIncorporation, 
+        string legalAddress, 
+        string taxationStatus
+    );
 
     event RecordDeleted(uint256 id);
 
@@ -34,7 +33,13 @@ contract Queue is OwnableUpgradeable {
         currentId = 0;
     }
 
-    function createRecord(uint256 jurisdiction, string memory serialNumber) external onlyOwner {
+    function createRecord(
+        uint256 jurisdiction, 
+        string memory serialNumber, 
+        string memory dateOfIncorporation, 
+        string memory legalAddress, 
+        string memory taxationStatus
+    ) external onlyOwner {
         require(
             (jurisdiction > 0) && (bytes(serialNumber).length != 0), 
             "Invalid jurisdiction or serialNumber"
@@ -42,20 +47,27 @@ contract Queue is OwnableUpgradeable {
 
         for (uint256 i = 0; i < currentId; i++) {
             require(
-                queueInfo[i].jurisdiction != jurisdiction && 
+                queueInfo[i].jurisdiction != jurisdiction || 
                 keccak256(abi.encodePacked(queueInfo[i].serialNumber)) != keccak256(abi.encodePacked(serialNumber)),
-                "jurisdiction and serial number can't match"
+                "jurisdiction must have different serial numbers"
             );
         }
 
         currentId += 1;
-        queueInfo[currentId] = QueueInfo({jurisdiction: jurisdiction, serialNumber: serialNumber, status: Status.NotUsed, owner: address(0)});
-        emit RecordCreated(currentId, jurisdiction, serialNumber);
+        queueInfo[currentId] = QueueInfo({
+            jurisdiction: jurisdiction, 
+            serialNumber: serialNumber, 
+            dateOfIncorporation: dateOfIncorporation, 
+            legalAddress: legalAddress, 
+            taxationStatus: taxationStatus, 
+            status: Status.NotUsed, 
+            owner: address(0)});
+        emit RecordCreated(currentId, jurisdiction, serialNumber, dateOfIncorporation, legalAddress, taxationStatus);
     }
 
     function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {
         for (uint256 i = 0; i < currentId; i++) {
-            if (queueInfo[i].jurisdiction == jurisdiction && (queueInfo[jurisdiction].status == Status.NotUsed)) {
+            if (queueInfo[i].jurisdiction == jurisdiction && (queueInfo[i].status == Status.NotUsed)) {
                 queueInfo[i].status = Status.Used;
                 return i; // queueInfo[i].serialNumber;
             }
@@ -77,8 +89,17 @@ contract Queue is OwnableUpgradeable {
         emit RecordDeleted(id);
     }
 
-    function getSerialNumber(uint256 id) external view returns (string memory) {
-        return queueInfo[id].serialNumber;
+    function getInfo(uint256 id) external view returns (string[4] memory) {
+        return [
+            queueInfo[id].serialNumber, 
+            queueInfo[id].dateOfIncorporation, 
+            queueInfo[id].legalAddress, 
+            queueInfo[id].taxationStatus
+        ];
+    }
+
+    function getQueueInfo(uint256 id) external view returns (QueueInfo memory) {
+        return queueInfo[id];
     }
 
     modifier onlyService() {

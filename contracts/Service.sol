@@ -133,10 +133,20 @@ contract Service is IService, Ownable {
 
             uint256 id = queue.lockRecord(jurisdiction);
             require(id > 0, "Avaliable company not found");
-            string memory serialNumber = queue.getSerialNumber(id);
+            string[4] memory infoParams = queue.getInfo(id);
 
             pool = IPool(poolMaster.clone());
-            pool.initialize(msg.sender, jurisdiction, serialNumber);
+            pool.initialize(
+                msg.sender, 
+                jurisdiction, 
+                infoParams[0], 
+                infoParams[1], 
+                infoParams[2], 
+                infoParams[3], 
+                ballotQuorumThreshold_, 
+                ballotDecisionThreshold_, 
+                ballotLifespan_
+            );
             queue.setOwner(id, address(pool));
 
             directory.addContractRecord(
@@ -167,10 +177,6 @@ contract Service is IService, Ownable {
         pool.setToken(token);
         ITGE(tge).initialize(msg.sender, token, tgeInfo);
         pool.setTGE(tge);
-
-        if (address(pool) == address(0)) {
-            pool.setBallotParams(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
-        }
 
         emit PoolCreated(address(pool), token, tge);
     }
