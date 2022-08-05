@@ -8,24 +8,23 @@ import "./IGovernanceToken.sol";
 
 interface IPool {
     function initialize(
-        address owner_, 
-        uint256 jurisdiction_, 
-        string memory serialNumber_, 
+        address poolCreator_, 
+        uint256 poolJurisdiction_, 
+        string memory poolEIN_, 
         string memory dateOfIncorporation, 
         string memory legalAddress, 
         string memory taxationStatus, 
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
-        uint256 ballotLifespan_
+        uint256 ballotLifespan_, 
+        string memory trademark
     ) external;
 
     function setToken(address token_) external;
 
     function setTGE(address tge_) external;
 
-    function setCompanyDomain(string memory companyDomain_) external;
-
-    function setBallotParams(
+    function setGovernanceSettings(
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
@@ -47,4 +46,6 @@ interface IPool {
     function token() external view returns (IGovernanceToken);
 
     function tge() external view returns (ITGE);
+
+    function getPoolTrademark() external view returns (string memory);
 }

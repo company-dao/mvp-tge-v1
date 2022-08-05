@@ -30,15 +30,15 @@ contract Directory is IDirectory, Ownable {
 
     uint256 public lastProposalRecordIndex;
 
-    struct ProposalOrContractInfo {
-        address addr; // address(0) for proposal
-        ContractType contractType; // None for proposal
-        address pool; // address(0) for contracts
-        uint256 proposalId; // 0 for contracts
-        string description;
-    }
+    // struct ProposalOrContractInfo {
+    //     address addr; // address(0) for proposal
+    //     ContractType contractType; // None for proposal
+    //     address pool; // address(0) for contracts
+    //     uint256 proposalId; // 0 for contracts
+    //     string description;
+    // }
 
-    mapping(uint256 => ProposalOrContractInfo) public proposalOrContract;
+    // mapping(uint256 => ProposalOrContractInfo) public proposalOrContractRecordAt;
 
     // EVENTS
 
@@ -48,6 +48,14 @@ contract Directory is IDirectory, Ownable {
         ContractType contractType
     );
 
+    // event ProposalOrContractRecordAdded(
+    //     uint256 index,
+    //     address addr,
+    //     ContractType contractType,
+    //     address pool,
+    //     uint256 proposalId
+    // );
+
     event ProposalRecordAdded(uint256 index, address pool, uint256 proposalId);
 
     event ServiceSet(address service);
@@ -55,6 +63,8 @@ contract Directory is IDirectory, Ownable {
     event ContractDescriptionSet(uint256 index, string description);
 
     event ProposalDescriptionSet(uint256 index, string description);
+
+    // event ProposalOrContractDescriptionSet(uint256 index, string description);
 
     // PUBLIC FUNCTIONS
 
@@ -97,15 +107,17 @@ contract Directory is IDirectory, Ownable {
     //     onlyService
     //     returns (uint256 index)
     // {
-    //     index = ++lastContractRecordIndex;
+    //     index = ++lastRecordIndex;
     //     contractRecordAt[index] = ContractInfo({
     //         addr: addr,
     //         contractType: contractType,
+    //         pool: pool,
+    //         proposalId: proposalId,
     //         description: ""
     //     });
     //     indexOfContract[addr] = index;
 
-    //     emit ContractRecordAdded(index, addr, contractType);
+    //     emit ProposalOrContractRecordAdded(index, addr, contractType, pool, proposalId);
     // }
 
     function setService(address service_) external onlyOwner {
@@ -128,6 +140,14 @@ contract Directory is IDirectory, Ownable {
         proposalRecordAt[index].description = description;
         emit ProposalDescriptionSet(index, description);
     }
+
+    // function setProposalOrContractDescription(uint256 index, string memory description)
+    //     external
+    //     onlyOwner
+    // {
+    //     proposalOrContractRecordAt[index].description = description;
+    //     emit ProposalOrContractDescriptionSet(index, description);
+    // }
 
     // PUBLIC VIEW FUNCTIONS
 

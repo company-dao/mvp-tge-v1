@@ -8,6 +8,8 @@ import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IWhitelistedTokens.sol";
+import "./interfaces/IMetadata.sol";
 
 contract Pool is IPool, OwnableUpgradeable, Governor {
     IService public service;
@@ -16,46 +18,50 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     ITGE public tge;
 
-    string public companyId;
-
-    string public companyDomain;
-
     uint256 private _ballotQuorumThreshold; 
 
     uint256 private _ballotDecisionThreshold; 
 
     uint256 private _ballotLifespan; 
 
-    uint256 private _jurisdiction; 
+    string private _poolRegisteredName;
 
-    string private _serialNumber; 
+    string private _poolTrademark;
 
-    string private _dateOfIncorporation; 
+    uint256 private _poolJurisdiction; 
 
-    string private _legalAddress; 
+    string private _poolEIN; 
 
-    string private _taxationStatus; 
+    uint256 private _poolMetadataIndex;
+
+    string private _poolDateOfIncorporation; 
+
+    string private _poolLegalAddress; 
+
+    string private _poolTaxationStatus; 
 
     // INITIALIZER AND CONFIGURATOR
 
     function initialize(
-        address owner_, 
+        address poolCreator_, 
         uint256 jurisdiction_, 
-        string memory serialNumber_, 
+        string memory poolEIN_, 
         string memory dateOfIncorporation, 
         string memory legalAddress, 
         string memory taxationStatus, 
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
-        uint256 ballotLifespan_
+        uint256 ballotLifespan_, 
+        string memory trademark
     ) external initializer {
         service = IService(msg.sender);
-        _transferOwnership(owner_);
-        _jurisdiction = jurisdiction_;
-        _serialNumber = serialNumber_;
-        _dateOfIncorporation = dateOfIncorporation;
-        _legalAddress = legalAddress;
-        _taxationStatus = taxationStatus;
+        _transferOwnership(poolCreator_);
+        _poolJurisdiction = jurisdiction_;
+        _poolEIN = poolEIN_;
+        _poolDateOfIncorporation = dateOfIncorporation;
+        _poolLegalAddress = legalAddress;
+        _poolTaxationStatus = taxationStatus;
+        _poolTrademark = trademark;
 
         require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");
         require(ballotDecisionThreshold_ <= 10000, "Invalid ballotDecisionThreshold");
@@ -74,29 +80,13 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         tge = ITGE(tge_);
     }
 
-    function setCompanyId(string memory companyId_) external onlyServiceOwner {
-        require(bytes(companyId).length == 0, "Already set");
-        require(bytes(companyId_).length != 0, "Can not be empty");
-        companyId = companyId_;
+    function setRegisteredName(string memory registeredName) external onlyServiceOwner {
+        require(bytes(_poolRegisteredName).length == 0, "Already set");
+        require(bytes(registeredName).length != 0, "Can not be empty");
+        _poolRegisteredName = registeredName;
     }
 
-    function setCompanyDomain(string memory companyDomain_) external {
-        if (bytes(companyDomain).length == 0) {
-            require(
-                msg.sender == service.owner(),
-                "Initial setter should be admin"
-            );
-        } else {
-            require(
-                msg.sender == address(this),
-                "Changer should be pool governance"
-            );
-        }
-        require(bytes(companyDomain_).length != 0, "Can not be empty");
-        companyDomain = companyDomain_;
-    }
-
-    function setBallotParams(
+    function setGovernanceSettings(
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
@@ -155,7 +145,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     function getTVL() public returns (uint256) {
         IQuoter quoter = service.uniswapQuoter();
-        address[] memory tokenWhitelist = service.tokenWhitelist();
+        IWhitelistedTokens whitelistedTokens = service.whitelistedTokens();
+        address[] memory tokenWhitelist = whitelistedTokens.tokenWhitelist(); // service.tokenWhitelist();
         uint256 tvl;
         for (uint256 i = 0; i < tokenWhitelist.length; i++) {
             if (tokenWhitelist[i] == address(0)) {
@@ -165,7 +156,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
                     .balanceOf(address(this));
                 if (balance > 0) {
                     tvl += quoter.quoteExactInput(
-                        service.tokenSwapPath(tokenWhitelist[i]),
+                        whitelistedTokens.tokenSwapPath(tokenWhitelist[i]),
                         balance
                     );
                 }
@@ -180,15 +171,14 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         // Supposed to be empty
     }
 
+    function getPoolTrademark() external view returns (string memory) {
+        return _poolTrademark;
+    }
+
     // PUBLIC VIEW FUNCTIONS
 
-    function owner()
-        public
-        view
-        override(IPool, OwnableUpgradeable)
-        returns (address)
-    {
-        return super.owner();
+    function getPoolRegisteredName() public view returns (string memory) {
+        return _poolRegisteredName;
     }
 
     function getBallotQuorumThreshold() public view returns (uint256) {
@@ -203,24 +193,36 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         return _ballotLifespan;
     }
 
-    function getJurisdiction() public view returns (uint256) {
-        return _jurisdiction;
+    function getPoolJurisdiction() public view returns (uint256) {
+        return _poolJurisdiction;
     }
 
-    function getSerialNumber() public view returns (string memory) {
-        return _serialNumber;
+    function getPoolEIN() public view returns (string memory) {
+        return _poolEIN;
     }
 
-    function getDateOfIncorporation() public view returns (string memory) {
-        return _dateOfIncorporation;
+    function getPoolDateOfIncorporation() public view returns (string memory) {
+        IMetadata metadata = service.metadata();
+        return metadata.getQueueInfo(_poolMetadataIndex).dateOfIncorporation;
     }
 
-    function getLegalAddress() public view returns (string memory) {
-        return _legalAddress;
+    function getPoolLegalAddress() public view returns (string memory) {
+        IMetadata metadata = service.metadata();
+        return metadata.getQueueInfo(_poolMetadataIndex).legalAddress;
     }
 
-    function getTaxationStatus() public view returns (string memory) {
-        return _taxationStatus;
+    function getPoolTaxationStatus() public view returns (string memory) {
+        IMetadata metadata = service.metadata();
+        return metadata.getQueueInfo(_poolMetadataIndex).taxationStatus;
+    }
+
+    function owner()
+        public
+        view
+        override(IPool, OwnableUpgradeable)
+        returns (address)
+    {
+        return super.owner();
     }
 
     // INTERNAL FUNCTIONS

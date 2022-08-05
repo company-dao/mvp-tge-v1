@@ -18,8 +18,9 @@ abstract contract Governor {
         bool executed;
         bool accepted;
         ProposalExecutionState state;
+        string description;
     }
-// get proposals by id
+
     mapping(uint256 => Proposal) public proposals;
 
     uint256 public lastProposalId;
@@ -59,7 +60,7 @@ abstract contract Governor {
 
     // PUBLIC FUNCTIONS
 
-    function execute(uint256 proposalId) external {
+    function executeBallot(uint256 proposalId) external {
         Proposal memory proposal = proposals[proposalId];
 
         proposals[proposalId].executed = true;
@@ -173,7 +174,8 @@ abstract contract Governor {
             againstVotes: 0,
             executed: false,
             accepted: false,
-            state: ProposalExecutionState.Rejected
+            state: ProposalExecutionState.Rejected,
+            description: description
         });
         _afterProposalCreated(proposalId);
 

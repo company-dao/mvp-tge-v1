@@ -12,17 +12,20 @@ import "./interfaces/IDirectory.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
-import "./interfaces/IQueue.sol";
+import "./interfaces/IMetadata.sol";
+import "./interfaces/IWhitelistedTokens.sol";
 
 contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using Clones for address;
 
-    IQueue public queue;
+    IMetadata public metadata;
 
-    uint256 public constant ThresholdDecimals = 2;
+    // uint256 public constant ThresholdDecimals = 2;
 
     IDirectory public directory;
+
+    IWhitelistedTokens public whitelistedTokens;
 
     address public proposalGateway;
 
@@ -32,7 +35,7 @@ contract Service is IService, Ownable {
 
     address public tgeMaster;
 
-    address public queueMaster;
+    address public metadataMaster;
 
     uint256 public fee;
 
@@ -52,11 +55,11 @@ contract Service is IService, Ownable {
 
     EnumerableSet.AddressSet private _userWhitelist;
 
-    EnumerableSet.AddressSet private _tokenWhitelist;
+    // EnumerableSet.AddressSet private _tokenWhitelist;
 
-    mapping(address => bytes) public tokenSwapPath;
+    // mapping(address => bytes) public tokenSwapPath;
 
-    mapping(address => bytes) public tokenSwapReversePath;
+    // mapping(address => bytes) public tokenSwapReversePath;
 
     // EVENTS
 
@@ -70,7 +73,7 @@ contract Service is IService, Ownable {
 
     event SecondaryTGECreated(address pool, address tge);
 
-    event BallotParamsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
+    event GovernanceSettingsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
 
     event QueueCreated(address queueContract);
 
@@ -82,34 +85,34 @@ contract Service is IService, Ownable {
         address proposalGateway_,
         address tokenMaster_,
         address tgeMaster_,
-        address queueMaster_,
+        address metadataMaster_,
         uint256 fee_,
-        uint256 ballotQuorumThreshold_, 
-        uint256 ballotDecisionThreshold_, 
-        uint256 ballotLifespan_,
+        uint256[3] memory ballotParams,
         ISwapRouter uniswapRouter_,
-        IQuoter uniswapQuoter_
+        IQuoter uniswapQuoter_,
+        IWhitelistedTokens whitelistedTokens_
     ) {
         directory = directory_;
         proposalGateway = proposalGateway_;
         poolMaster = poolMaster_;
         tokenMaster = tokenMaster_;
         tgeMaster = tgeMaster_;
-        queueMaster = queueMaster_;
+        metadataMaster = metadataMaster_;
         fee = fee_;
-        _ballotQuorumThreshold = ballotQuorumThreshold_;
-        _ballotDecisionThreshold = ballotDecisionThreshold_;
-        _ballotLifespan = ballotLifespan_;
+        _ballotQuorumThreshold = ballotParams[0];
+        _ballotDecisionThreshold = ballotParams[1];
+        _ballotLifespan = ballotParams[2];
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
+        whitelistedTokens = whitelistedTokens_;
 
-        address queueContract = queueMaster.clone();
-        queue = IQueue(queueContract);
-        queue.initialize(msg.sender);
+        address metadataContract = metadataMaster.clone();
+        metadata = IMetadata(metadataContract);
+        metadata.initialize(msg.sender);
 
-        emit QueueCreated(queueContract);
+        emit QueueCreated(metadataContract);
         emit FeeSet(fee_);
-        emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
+        emit GovernanceSettingsSet(ballotParams[0], ballotParams[1], ballotParams[2]);
     }
 
     // PUBLIC FUNCTIONS
@@ -121,19 +124,20 @@ contract Service is IService, Ownable {
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_,
-        uint256 jurisdiction
+        uint256 jurisdiction, 
+        string memory trademark
     ) external payable onlyWhitelisted {
         require(
-            _tokenWhitelist.contains(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
+            whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
             "Invalid UnitOfAccount"
         );
 
-        if (address(pool) == address(0)) {
+        if (address(pool) == address(0)) { // TODO: save trademark
             require(msg.value == fee, "Incorrect fee passed");
 
-            uint256 id = queue.lockRecord(jurisdiction);
+            uint256 id = metadata.lockRecord(jurisdiction);
             require(id > 0, "Avaliable company not found");
-            string[4] memory infoParams = queue.getInfo(id);
+            string[4] memory infoParams = metadata.getInfo(id);
 
             pool = IPool(poolMaster.clone());
             pool.initialize(
@@ -145,9 +149,10 @@ contract Service is IService, Ownable {
                 infoParams[3], 
                 ballotQuorumThreshold_, 
                 ballotDecisionThreshold_, 
-                ballotLifespan_
+                ballotLifespan_,
+                trademark
             );
-            queue.setOwner(id, address(pool));
+            metadata.setOwner(id, address(pool));
 
             directory.addContractRecord(
                 address(pool),
@@ -173,7 +178,18 @@ contract Service is IService, Ownable {
         address tge = tgeMaster.clone();
         directory.addContractRecord(tge, IDirectory.ContractType.TGE);
 
-        IGovernanceToken(token).initialize(address(pool), tokenInfo);
+        if (address(pool) == address(0)) {
+            IGovernanceToken(token).initialize(address(pool), tokenInfo); // TODO: set tokenName = from user TokenInfo if first tge not failed else = poolName
+        } else {
+            IGovernanceToken(token).initialize(
+                address(pool), 
+                IGovernanceToken.TokenInfo({
+                    name: pool.getPoolTrademark(),
+                    symbol: tokenInfo.symbol,
+                    cap: tokenInfo.cap
+                })
+            );
+        }
         pool.setToken(token);
         ITGE(tge).initialize(msg.sender, token, tgeInfo);
         pool.setTGE(tge);
@@ -193,7 +209,7 @@ contract Service is IService, Ownable {
             "Has active TGE"
         );
         require(
-            _tokenWhitelist.contains(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
+            whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
             "Invalid UnitOfAccount"
         );
 
@@ -225,31 +241,31 @@ contract Service is IService, Ownable {
         emit UserWhitelistedSet(account, false);
     }
 
-    function addTokensToWhitelist(
-        address[] memory tokens,
-        bytes[] memory swapPaths,
-        bytes[] memory swapReversePaths
-    ) external onlyOwner {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            require(_tokenWhitelist.add(tokens[i]), "Already whitelisted");
-            tokenSwapPath[tokens[i]] = swapPaths[i];
-            tokenSwapReversePath[tokens[i]] = swapReversePaths[i];
-            emit TokenWhitelistedSet(tokens[i], true);
-        }
-    }
+    // function addTokensToWhitelist(
+    //     address[] memory tokens,
+    //     bytes[] memory swapPaths,
+    //     bytes[] memory swapReversePaths
+    // ) external onlyOwner {
+    //     for (uint256 i = 0; i < tokens.length; i++) {
+    //         require(_tokenWhitelist.add(tokens[i]), "Already whitelisted");
+    //         tokenSwapPath[tokens[i]] = swapPaths[i];
+    //         tokenSwapReversePath[tokens[i]] = swapReversePaths[i];
+    //         emit TokenWhitelistedSet(tokens[i], true);
+    //     }
+    // }
 
-    function removeTokensFromWhitelist(address[] memory tokens)
-        external
-        onlyOwner
-    {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            require(
-                _tokenWhitelist.remove(tokens[i]),
-                "Already not whitelisted"
-            );
-            emit TokenWhitelistedSet(tokens[i], false);
-        }
-    }
+    // function removeTokensFromWhitelist(address[] memory tokens)
+    //     external
+    //     onlyOwner
+    // {
+    //     for (uint256 i = 0; i < tokens.length; i++) {
+    //         require(
+    //             _tokenWhitelist.remove(tokens[i]),
+    //             "Already not whitelisted"
+    //         );
+    //         emit TokenWhitelistedSet(tokens[i], false);
+    //     }
+    // }
 
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;
@@ -260,7 +276,7 @@ contract Service is IService, Ownable {
         payable(to).transfer(payable(address(this)).balance);
     }
 
-    function setBallotParams(
+    function setGovernanceSettings(
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_
@@ -273,7 +289,7 @@ contract Service is IService, Ownable {
         _ballotDecisionThreshold = ballotDecisionThreshold_;
         _ballotLifespan = ballotLifespan_;
 
-        emit BallotParamsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
+        emit GovernanceSettingsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }
 
     // VIEW FUNCTIONS
@@ -294,22 +310,17 @@ contract Service is IService, Ownable {
         return _userWhitelist.at(index);
     }
 
-    function isTokenWhitelisted(address token)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return _tokenWhitelist.contains(token);
-    }
+    // function tokenWhitelist()
+    //     external
+    //     view
+    //     override
+    //     returns (address[] memory)
+    // {
+    //     return _tokenWhitelist.values();
+    // }
 
-    function tokenWhitelist()
-        external
-        view
-        override
-        returns (address[] memory)
-    {
-        return _tokenWhitelist.values();
+    function tokenWhitelist() external view returns (address[] memory) {
+        return whitelistedTokens.tokenWhitelist();
     }
 
     function owner() public view override(IService, Ownable) returns (address) {

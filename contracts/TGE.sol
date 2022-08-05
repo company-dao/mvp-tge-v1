@@ -47,8 +47,6 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     uint256 public createdAt;
 
-    uint256 public totalPurchases;
-
     mapping(address => uint256) public purchaseOf;
 
     bool public lockupTVLReached;
@@ -117,10 +115,9 @@ contract TGE is ITGE, OwnableUpgradeable {
 
         require(amount >= minPurchase, "Amount less than min purchase");
         require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
-        require(totalPurchases + amount <= hardcap, "Overflows hardcap");
+        require(_totalPurchased + amount <= hardcap, "Overflows hardcap");
 
         _totalPurchased += amount;
-        totalPurchases += amount;
         purchaseOf[msg.sender] += amount;
         uint256 lockedAmount = (amount * lockupPercent + 99) / 100;
         if (amount - lockedAmount > 0) {
@@ -131,7 +128,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         _totalLocked += lockedAmount;
     }
 
-    function claimBack() external override onlyState(State.Failed) {
+    function redeem() external override onlyState(State.Failed) {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
         uint256 balance = token.balanceOf(msg.sender);
         uint256 refundTokens = balance + lockedBalanceOf[msg.sender];
@@ -154,8 +151,8 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
     }
 
-    function unlock() external {
-        require(unlockAvailable(), "Unlock not yet available");
+    function claim() external {
+        require(claimAvailable(), "claim not yet available");
         require(lockedBalanceOf[msg.sender] > 0, "No locked balance");
 
         uint256 balance = lockedBalanceOf[msg.sender];
@@ -198,14 +195,14 @@ contract TGE is ITGE, OwnableUpgradeable {
     function state() public view override returns (State) {
         if (block.number < createdAt + duration) {
             return State.Active;
-        } else if (totalPurchases >= softcap) {
+        } else if (_totalPurchased >= softcap) {
             return State.Successful;
         } else {
             return State.Failed;
         }
     }
 
-    function unlockAvailable() public view returns (bool) {
+    function claimAvailable() public view returns (bool) {
         return lockupTVLReached && block.number >= createdAt + lockupDuration && (state()) != State.Failed;
     }
 

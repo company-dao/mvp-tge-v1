@@ -62,22 +62,6 @@ contract ProposalGateway is OwnableUpgradeable {
         );
     }
 
-    function createSetCompanyDomainProposal(
-        IPool pool,
-        string memory companyDomain,
-        string memory description
-    ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        proposalId = pool.proposeSingleAction(
-            address(pool),
-            0,
-            abi.encodeWithSelector(
-                IPool.setCompanyDomain.selector,
-                companyDomain
-            ),
-            description
-        );
-    }
-
     function createGovernanceSettingsProposal(
         IPool pool,
         uint256 ballotQuorumThreshold, 
@@ -89,7 +73,7 @@ contract ProposalGateway is OwnableUpgradeable {
             address(pool),
             0,
             abi.encodeWithSelector(
-                IPool.setBallotParams.selector,
+                IPool.setGovernanceSettings.selector,
                 ballotQuorumThreshold,
                 ballotDecisionThreshold,
                 ballotLifespan

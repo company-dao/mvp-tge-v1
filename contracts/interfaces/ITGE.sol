@@ -24,7 +24,7 @@ interface ITGE {
         TGEInfo memory info
     ) external;
 
-    function claimBack() external;
+    function redeem() external;
 
     function maxPurchaseOf(address account) external view returns (uint256);
 

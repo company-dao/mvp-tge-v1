@@ -5,9 +5,9 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
-import "./interfaces/IQueue.sol";
+import "./interfaces/IMetadata.sol";
 
-contract Queue is IQueue, OwnableUpgradeable {
+contract Metadata is IMetadata, OwnableUpgradeable {
     IService public service;
 
     uint256 public currentId;
@@ -30,7 +30,7 @@ contract Queue is IQueue, OwnableUpgradeable {
     function initialize(address owner_) external initializer {
         service = IService(msg.sender);
         _transferOwnership(owner_);
-        currentId = 0;
+        currentId = 1;
     }
 
     function createRecord(
@@ -48,7 +48,10 @@ contract Queue is IQueue, OwnableUpgradeable {
         for (uint256 i = 0; i < currentId; i++) {
             require(
                 queueInfo[i].jurisdiction != jurisdiction || 
-                keccak256(abi.encodePacked(queueInfo[i].serialNumber)) != keccak256(abi.encodePacked(serialNumber)),
+                (
+                    queueInfo[i].jurisdiction == jurisdiction && 
+                    keccak256(abi.encodePacked(queueInfo[i].serialNumber)) != keccak256(abi.encodePacked(serialNumber))
+                ),
                 "jurisdiction must have different serial numbers"
             );
         }
@@ -66,7 +69,7 @@ contract Queue is IQueue, OwnableUpgradeable {
     }
 
     function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {
-        for (uint256 i = 0; i < currentId; i++) {
+        for (uint256 i = 0; i <= currentId; i++) {
             if (queueInfo[i].jurisdiction == jurisdiction && (queueInfo[i].status == Status.NotUsed)) {
                 queueInfo[i].status = Status.Used;
                 return i; // queueInfo[i].serialNumber;
@@ -100,6 +103,26 @@ contract Queue is IQueue, OwnableUpgradeable {
 
     function getQueueInfo(uint256 id) external view returns (QueueInfo memory) {
         return queueInfo[id];
+    }
+
+    /*
+        returns 0 if there are no available companies
+        returns 1 if there are no available companies in current jurisdiction, but exists in other jurisdiction
+        returns 2 if there are available companies in current jurisdiction 
+    */
+    function jurisdictionAvailable(uint256 jurisdiction) external view returns (uint256) {
+        uint256 flag = 0;
+        for (uint256 i = 0; i < currentId; i++) {
+            if (queueInfo[i].jurisdiction != jurisdiction && (queueInfo[i].status == Status.NotUsed)) {
+                flag = 1;
+            }
+
+            if (queueInfo[i].jurisdiction == jurisdiction && (queueInfo[i].status == Status.NotUsed)) {
+                return 2;
+            }
+        }
+
+        return flag;
     }
 
     modifier onlyService() {

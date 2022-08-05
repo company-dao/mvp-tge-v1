@@ -41,6 +41,8 @@ contract GovernanceToken is
         pool = pool_;
     }
 
+    // TODO: override name() with pool.getPoolTrademark();
+
     // RESTRICTED FUNCTIONS
 
     function mint(address to, uint256 amount) external override onlyTGE {

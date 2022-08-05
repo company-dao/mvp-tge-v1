@@ -6,6 +6,8 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./IDirectory.sol";
 import "./ITGE.sol";
+import "./IMetadata.sol";
+import "./IWhitelistedTokens.sol";
 
 interface IService {
     function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
@@ -14,7 +16,7 @@ interface IService {
 
     function directory() external view returns (IDirectory);
 
-    function isTokenWhitelisted(address token) external view returns (bool);
+    // function isTokenWhitelisted(address token) external view returns (bool);
 
     function tokenWhitelist() external view returns (address[] memory);
 
@@ -30,7 +32,11 @@ interface IService {
 
     function uniswapQuoter() external view returns (IQuoter);
 
-    function tokenSwapPath(address) external view returns (bytes memory);
+    function whitelistedTokens() external view returns (IWhitelistedTokens);
 
-    function tokenSwapReversePath(address) external view returns (bytes memory);
+    function metadata() external view returns (IMetadata);
+
+    // function tokenSwapPath(address) external view returns (bytes memory);
+
+    // function tokenSwapReversePath(address) external view returns (bytes memory);
 }
