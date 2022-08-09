@@ -5,6 +5,7 @@ import {
     ERC20Mock,
     IUniswapPositionManager,
     Service,
+    WhitelistedTokens
 } from "../typechain-types";
 
 function sqrt(value: BigNumber): BigNumber {
@@ -157,9 +158,10 @@ task("addUniswapLiquidity", "Add uniswap liquidity to tokens").setAction(
         // Configure swap paths
 
         const service = await getContract<Service>("Service");
+        const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
 
-        await service.addTokensToWhitelist([AddressZero], ["0x"], ["0x"]);
-        await service.addTokensToWhitelist(
+        await whitelistedTokens.addTokensToWhitelist([AddressZero], ["0x"], ["0x"]);
+        await whitelistedTokens.addTokensToWhitelist(
             [token1.address, token2.address],
             [
                 makePath([token1.address, 500, weth.address]),

@@ -5,3 +5,5 @@ import "./ERC20Mock.deploy";
 import "./addUniswapLiquidity";
 import "./addUniswapTestnet";
 import "./whitelistTokens";
+import "./WhitelistedTokens.deploy";
+import "./Metadata.deploy";

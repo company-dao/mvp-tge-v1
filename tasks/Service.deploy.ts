@@ -1,36 +1,60 @@
 import { task } from "hardhat/config";
-import { Directory } from "../typechain-types";
+import { Directory, WhitelistedTokens, Metadata } from "../typechain-types";
 
 task("deploy:service", "Deploy Service contract")
     .addOptionalParam("fee", "Fee for TGE creation", "0")
-    .addOptionalParam("proposalQuorum", "Proposal quorum", "30")
-    .addOptionalParam("proposalThreshold", "Proposal threshold", "50")
+    .addOptionalParam("ballotQuorumThreshold", "Ballot quorum threshold", "50")
+    .addOptionalParam("ballotDecisionThreshold", "Ballot decision threshold", "50")
+    .addOptionalParam("ballotLifespan", "Ballot lifespan", "25")
     .setAction(async function (
-        { fee, proposalQuorum, proposalThreshold },
-        { getNamedAccounts, deployments: { deploy }, ethers: { getContract } }
+        { fee, ballotQuorumThreshold, ballotDecisionThreshold, ballotLifespan },
+        { getNamedAccounts, deployments: { deploy }, ethers: { getContract, getContractFactory }, upgrades: { deployBeacon } }
     ) {
         const { deployer } = await getNamedAccounts();
 
         const directory = await getContract<Directory>("Directory");
         const proposalGateway = await getContract("ProposalGateway");
+        const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
+        const metadata = await getContract<Metadata>("Metadata");
 
-        const poolMaster = await deploy("Pool", {
-            from: deployer,
-            args: [],
-            log: true,
-        });
+        const pool = await getContractFactory("Pool");
+        const poolBeacon = await deployBeacon(pool);
+        await poolBeacon.deployed();
+        console.log("PoolBeacon deployed to: ", poolBeacon.address);
 
-        const tokenMaster = await deploy("GovernanceToken", {
-            from: deployer,
-            args: [],
-            log: true,
-        });
+        const token = await getContractFactory("GovernanceToken");
+        const tokenBeacon = await deployBeacon(token);
+        await tokenBeacon.deployed();
+        console.log("TokenBeacon deployed to: ", tokenBeacon.address);
 
-        const tgeMaster = await deploy("TGE", {
-            from: deployer,
-            args: [],
-            log: true,
-        });
+        const tge = await getContractFactory("TGE");
+        const tgeBeacon = await deployBeacon(tge);
+        await tgeBeacon.deployed();
+        console.log("TGEBeacon deployed to: ", tgeBeacon.address);
+
+        // const poolMaster = await deploy("Pool", {
+        //     from: deployer,
+        //     args: [],
+        //     log: true,
+        // });
+
+        // const tokenMaster = await deploy("GovernanceToken", {
+        //     from: deployer,
+        //     args: [],
+        //     log: true,
+        // });
+
+        // const tgeMaster = await deploy("TGE", {
+        //     from: deployer,
+        //     args: [],
+        //     log: true,
+        // });
+
+        // const metadataMaster = await deploy("Metadata", {
+        //     from: deployer,
+        //     args: [],
+        //     log: true,
+        // });
 
         const UNISWAP_ROUTER_ADDRESS =
             "0xe592427a0aece92de3edee1f18e0157c05861564";
@@ -41,18 +65,25 @@ task("deploy:service", "Deploy Service contract")
             from: deployer,
             args: [
                 directory.address,
-                poolMaster.address,
+                poolBeacon.address,
                 proposalGateway.address,
-                tokenMaster.address,
-                tgeMaster.address,
+                tokenBeacon.address,
+                tgeBeacon.address,
+                metadata.address, 
                 fee,
-                proposalQuorum,
-                proposalThreshold,
+                [
+                    ballotQuorumThreshold, 
+                    ballotLifespan, 
+                    ballotDecisionThreshold,
+                ],
                 UNISWAP_ROUTER_ADDRESS,
                 UNISWAP_QUOTER_ADDRESS,
+                whitelistedTokens.address
             ],
             log: true,
         });
 
         await directory.setService(service.address);
+
+        await metadata.setService(service.address);
     });

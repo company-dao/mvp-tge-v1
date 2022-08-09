@@ -1,7 +1,7 @@
 import { BigNumber, utils } from "ethers";
 import { task } from "hardhat/config";
 import bn from "bignumber.js";
-import { ERC20Mock, Service } from "../typechain-types";
+import { ERC20Mock, Service, WhitelistedTokens } from "../typechain-types";
 
 function makePath(path: Array<string | number>) {
     let res = "";
@@ -34,6 +34,7 @@ task("whitelistTokens", "Whitelist tokens in Service").setAction(
         console.log("Adding to whitelist");
 
         const service = await getContract<Service>("Service");
+        const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
 
         const WETH_ADDRESS = "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6"; // WETH in Goerli
         const weth = await getContractAt("IWETH", WETH_ADDRESS);
@@ -41,7 +42,7 @@ task("whitelistTokens", "Whitelist tokens in Service").setAction(
         const token1 = await getContract<ERC20Mock>("ONE");
         const token2 = await getContract<ERC20Mock>("TWO");
 
-        await service
+        await whitelistedTokens
             .addTokensToWhitelist(
                 [AddressZero, token1.address, token2.address],
                 [
