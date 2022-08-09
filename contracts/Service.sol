@@ -3,7 +3,8 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
+// import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
@@ -17,11 +18,11 @@ import "./interfaces/IWhitelistedTokens.sol";
 
 contract Service is IService, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
-    using Clones for address;
+    // using Clones for address;
 
     IMetadata public metadata;
 
-    // uint256 public constant ThresholdDecimals = 2;
+    uint256 public constant ThresholdDecimals = 2;
 
     IDirectory public directory;
 
@@ -29,11 +30,11 @@ contract Service is IService, Ownable {
 
     address public proposalGateway;
 
-    address public poolMaster;
+    address public poolBeacon;
 
-    address public tokenMaster;
+    address public tokenBeacon;
 
-    address public tgeMaster;
+    address public tgeBeacon;
 
     address public metadataMaster;
 
@@ -75,17 +76,17 @@ contract Service is IService, Ownable {
 
     event GovernanceSettingsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
 
-    event QueueCreated(address queueContract);
+    // event QueueCreated(address queueContract);
 
     // CONSTRUCTOR
 
     constructor(
         IDirectory directory_,
-        address poolMaster_,
+        address poolBeacon_,
         address proposalGateway_,
-        address tokenMaster_,
-        address tgeMaster_,
-        address metadataMaster_,
+        address tokenBeacon_,
+        address tgeBeacon_,
+        IMetadata metadata_,
         uint256 fee_,
         uint256[3] memory ballotParams,
         ISwapRouter uniswapRouter_,
@@ -94,10 +95,10 @@ contract Service is IService, Ownable {
     ) {
         directory = directory_;
         proposalGateway = proposalGateway_;
-        poolMaster = poolMaster_;
-        tokenMaster = tokenMaster_;
-        tgeMaster = tgeMaster_;
-        metadataMaster = metadataMaster_;
+        poolBeacon = poolBeacon_;
+        tokenBeacon = tokenBeacon_;
+        tgeBeacon = tgeBeacon_;
+        metadata = metadata_;
         fee = fee_;
         _ballotQuorumThreshold = ballotParams[0];
         _ballotDecisionThreshold = ballotParams[1];
@@ -106,11 +107,11 @@ contract Service is IService, Ownable {
         uniswapQuoter = uniswapQuoter_;
         whitelistedTokens = whitelistedTokens_;
 
-        address metadataContract = metadataMaster.clone();
-        metadata = IMetadata(metadataContract);
-        metadata.initialize(msg.sender);
+        // address metadataContract = metadataMaster.clone();
+        // metadata = IMetadata(metadataContract);
+        // metadata.initialize(msg.sender);
 
-        emit QueueCreated(metadataContract);
+        // emit QueueCreated(metadataContract);
         emit FeeSet(fee_);
         emit GovernanceSettingsSet(ballotParams[0], ballotParams[1], ballotParams[2]);
     }
@@ -132,14 +133,15 @@ contract Service is IService, Ownable {
             "Invalid UnitOfAccount"
         );
 
-        if (address(pool) == address(0)) { // TODO: save trademark
+        if (address(pool) == address(0)) {
             require(msg.value == fee, "Incorrect fee passed");
 
             uint256 id = metadata.lockRecord(jurisdiction);
             require(id > 0, "Avaliable company not found");
             string[4] memory infoParams = metadata.getInfo(id);
 
-            pool = IPool(poolMaster.clone());
+            // pool = IPool(poolMaster.clone());
+            pool = IPool(address(new BeaconProxy(poolBeacon, "")));
             pool.initialize(
                 msg.sender, 
                 jurisdiction, 
@@ -170,18 +172,20 @@ contract Service is IService, Ownable {
             );
         }
 
-        address token = tokenMaster.clone();
+        // address token = tokenMaster.clone();
+        IGovernanceToken token = IGovernanceToken(address(new BeaconProxy(tokenBeacon, "")));
         directory.addContractRecord(
-            token,
+            address(token),
             IDirectory.ContractType.GovernanceToken
         );
-        address tge = tgeMaster.clone();
-        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
+        // address tge = tgeMaster.clone();
+        ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
+        directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
 
         if (address(pool) == address(0)) {
-            IGovernanceToken(token).initialize(address(pool), tokenInfo); // TODO: set tokenName = from user TokenInfo if first tge not failed else = poolName
+            token.initialize(address(pool), tokenInfo);
         } else {
-            IGovernanceToken(token).initialize(
+            token.initialize(
                 address(pool), 
                 IGovernanceToken.TokenInfo({
                     name: pool.getPoolTrademark(),
@@ -190,11 +194,11 @@ contract Service is IService, Ownable {
                 })
             );
         }
-        pool.setToken(token);
-        ITGE(tge).initialize(msg.sender, token, tgeInfo);
-        pool.setTGE(tge);
+        pool.setToken(address(token));
+        tge.initialize(msg.sender, address(token), tgeInfo);
+        pool.setTGE(address(tge));
 
-        emit PoolCreated(address(pool), token, tge);
+        emit PoolCreated(address(pool), address(token), address(tge));
     }
 
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
@@ -213,16 +217,17 @@ contract Service is IService, Ownable {
             "Invalid UnitOfAccount"
         );
 
-        address tge = tgeMaster.clone();
-        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
-        ITGE(tge).initialize(
+        // address tge = tgeMaster.clone();
+        ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
+        directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
+        tge.initialize(
             msg.sender,
             address(IPool(msg.sender).token()),
             tgeInfo
         );
-        IPool(msg.sender).setTGE(tge);
+        IPool(msg.sender).setTGE(address(tge));
 
-        emit SecondaryTGECreated(msg.sender, tge);
+        emit SecondaryTGECreated(msg.sender, address(tge));
     }
 
     function addProposal(uint256 proposalId) external onlyPool {
@@ -266,6 +271,21 @@ contract Service is IService, Ownable {
     //         emit TokenWhitelistedSet(tokens[i], false);
     //     }
     // }
+
+    function setPoolBeacon(address poolBeacon_) external onlyOwner {
+        require(poolBeacon_ != address(0), "Invalid address");
+        poolBeacon = poolBeacon_;
+    }
+
+    function setTokenBeacon(address tokenBeacon_) external onlyOwner {
+        require(tokenBeacon_ != address(0), "Invalid address");
+        tokenBeacon = tokenBeacon_;
+    }
+
+    function setTGEBeacon(address tgeBeacon_) external onlyOwner {
+        require(tgeBeacon_ != address(0), "Invalid address");
+        tgeBeacon = tgeBeacon_;
+    }
 
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;

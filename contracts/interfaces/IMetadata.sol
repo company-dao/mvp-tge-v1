@@ -15,7 +15,7 @@ interface IMetadata {
         address owner;
     }
 
-    function initialize(address owner_) external;
+    function initialize() external;
 
     function lockRecord(uint256 jurisdiction) external returns (uint256);
 

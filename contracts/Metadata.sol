@@ -27,10 +27,13 @@ contract Metadata is IMetadata, OwnableUpgradeable {
 
     event RecordDeleted(uint256 id);
 
-    function initialize(address owner_) external initializer {
-        service = IService(msg.sender);
-        _transferOwnership(owner_);
+    function initialize() external initializer {
+        __Ownable_init();
         currentId = 1;
+    }
+
+    function setService(address service_) external onlyOwner {
+        service = IService(service_);
     }
 
     function createRecord(
