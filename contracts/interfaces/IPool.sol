@@ -9,11 +9,12 @@ import "./IGovernanceToken.sol";
 interface IPool {
     function initialize(
         address poolCreator_, 
-        uint256 poolJurisdiction_, 
+        uint256 jurisdiction_, 
         string memory poolEIN_, 
         string memory dateOfIncorporation, 
         string memory legalAddress, 
         string memory taxationStatus, 
+        string memory registeredName, 
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_, 

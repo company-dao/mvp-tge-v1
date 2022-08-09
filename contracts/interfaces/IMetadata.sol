@@ -11,6 +11,7 @@ interface IMetadata {
         string dateOfIncorporation;
         string legalAddress;
         string taxationStatus;
+        string registeredName;
         Status status;
         address owner;
     }
@@ -19,7 +20,7 @@ interface IMetadata {
 
     function lockRecord(uint256 jurisdiction) external returns (uint256);
 
-    function getInfo(uint256 id) external view returns (string[4] memory);
+    function getInfo(uint256 id) external view returns (string[5] memory);
 
     function getQueueInfo(uint256 id) external view returns (QueueInfo memory);
 

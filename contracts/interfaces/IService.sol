@@ -10,6 +10,20 @@ import "./IMetadata.sol";
 import "./IWhitelistedTokens.sol";
 
 interface IService {
+    // function initialize(
+    //     IDirectory directory_,
+    //     address poolBeacon_,
+    //     address proposalGateway_,
+    //     address tokenBeacon_,
+    //     address tgeBeacon_,
+    //     IMetadata metadata_,
+    //     uint256 fee_,
+    //     uint256[3] memory ballotParams,
+    //     ISwapRouter uniswapRouter_,
+    //     IQuoter uniswapQuoter_,
+    //     IWhitelistedTokens whitelistedTokens_
+    // ) external;
+
     function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
 
     function addProposal(uint256 proposalId) external;

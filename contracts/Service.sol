@@ -2,9 +2,10 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/proxy/Clones.sol";
+// import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+// import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
@@ -16,9 +17,9 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IMetadata.sol";
 import "./interfaces/IWhitelistedTokens.sol";
 
-contract Service is IService, Ownable {
+contract Service is IService, Ownable { // OwnableUpgradeable {
+    // using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-    // using Clones for address;
 
     IMetadata public metadata;
 
@@ -56,6 +57,8 @@ contract Service is IService, Ownable {
 
     EnumerableSet.AddressSet private _userWhitelist;
 
+    // EnumerableSetUpgradeable.AddressSet private _userWhitelist;
+
     // EnumerableSet.AddressSet private _tokenWhitelist;
 
     // mapping(address => bytes) public tokenSwapPath;
@@ -80,7 +83,7 @@ contract Service is IService, Ownable {
 
     // CONSTRUCTOR
 
-    constructor(
+    constructor( // function initialize(
         IDirectory directory_,
         address poolBeacon_,
         address proposalGateway_,
@@ -92,7 +95,8 @@ contract Service is IService, Ownable {
         ISwapRouter uniswapRouter_,
         IQuoter uniswapQuoter_,
         IWhitelistedTokens whitelistedTokens_
-    ) {
+    ) { // external initializer {
+        // __Ownable_init();
         directory = directory_;
         proposalGateway = proposalGateway_;
         poolBeacon = poolBeacon_;
@@ -138,7 +142,7 @@ contract Service is IService, Ownable {
 
             uint256 id = metadata.lockRecord(jurisdiction);
             require(id > 0, "Avaliable company not found");
-            string[4] memory infoParams = metadata.getInfo(id);
+            string[5] memory infoParams = metadata.getInfo(id);
 
             // pool = IPool(poolMaster.clone());
             pool = IPool(address(new BeaconProxy(poolBeacon, "")));
@@ -149,6 +153,7 @@ contract Service is IService, Ownable {
                 infoParams[1], 
                 infoParams[2], 
                 infoParams[3], 
+                infoParams[4], 
                 ballotQuorumThreshold_, 
                 ballotDecisionThreshold_, 
                 ballotLifespan_,

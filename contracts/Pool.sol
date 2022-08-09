@@ -49,6 +49,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         string memory dateOfIncorporation, 
         string memory legalAddress, 
         string memory taxationStatus, 
+        string memory registeredName, 
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
         uint256 ballotLifespan_, 
@@ -61,6 +62,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         _poolDateOfIncorporation = dateOfIncorporation;
         _poolLegalAddress = legalAddress;
         _poolTaxationStatus = taxationStatus;
+        _poolRegisteredName = registeredName;
         _poolTrademark = trademark;
 
         require(ballotQuorumThreshold_ <= 10000, "Invalid ballotQuorumThreshold");

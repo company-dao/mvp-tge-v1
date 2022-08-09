@@ -22,7 +22,8 @@ contract Metadata is IMetadata, OwnableUpgradeable {
         string serialNumber, 
         string dateOfIncorporation, 
         string legalAddress, 
-        string taxationStatus
+        string taxationStatus, 
+        string registeredName
     );
 
     event RecordDeleted(uint256 id);
@@ -41,7 +42,8 @@ contract Metadata is IMetadata, OwnableUpgradeable {
         string memory serialNumber, 
         string memory dateOfIncorporation, 
         string memory legalAddress, 
-        string memory taxationStatus
+        string memory taxationStatus, 
+        string memory registeredName
     ) external onlyOwner {
         require(
             (jurisdiction > 0) && (bytes(serialNumber).length != 0), 
@@ -66,9 +68,10 @@ contract Metadata is IMetadata, OwnableUpgradeable {
             dateOfIncorporation: dateOfIncorporation, 
             legalAddress: legalAddress, 
             taxationStatus: taxationStatus, 
+            registeredName: registeredName,
             status: Status.NotUsed, 
             owner: address(0)});
-        emit RecordCreated(currentId, jurisdiction, serialNumber, dateOfIncorporation, legalAddress, taxationStatus);
+        emit RecordCreated(currentId, jurisdiction, serialNumber, dateOfIncorporation, legalAddress, taxationStatus, registeredName);
     }
 
     function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {
@@ -95,12 +98,13 @@ contract Metadata is IMetadata, OwnableUpgradeable {
         emit RecordDeleted(id);
     }
 
-    function getInfo(uint256 id) external view returns (string[4] memory) {
+    function getInfo(uint256 id) external view returns (string[5] memory) {
         return [
             queueInfo[id].serialNumber, 
             queueInfo[id].dateOfIncorporation, 
             queueInfo[id].legalAddress, 
-            queueInfo[id].taxationStatus
+            queueInfo[id].taxationStatus, 
+            queueInfo[id].registeredName 
         ];
     }
 

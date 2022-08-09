@@ -109,7 +109,7 @@ abstract contract Governor {
         uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
         if (
             totalVotes >= quorumVotes &&
-            proposal.forVotes > totalVotes * proposal.ballotDecisionThreshold
+            proposal.forVotes * 100 > totalVotes * proposal.ballotDecisionThreshold
         ) {
             return ProposalState.Successful;
         } else {
