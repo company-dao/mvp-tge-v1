@@ -8,7 +8,7 @@ task("deploy:service", "Deploy Service contract")
     .addOptionalParam("ballotLifespan", "Ballot lifespan", "25")
     .setAction(async function (
         { fee, ballotQuorumThreshold, ballotDecisionThreshold, ballotLifespan },
-        { getNamedAccounts, deployments: { deploy }, ethers: { getContract, getContractFactory }, upgrades: { deployBeacon } }
+        { getNamedAccounts, deployments: { deploy }, ethers: { getContract, getContractFactory }, upgrades: { deployBeacon, deployProxy } }
     ) {
         const { deployer } = await getNamedAccounts();
 
@@ -60,7 +60,33 @@ task("deploy:service", "Deploy Service contract")
             "0xe592427a0aece92de3edee1f18e0157c05861564";
         const UNISWAP_QUOTER_ADDRESS =
             "0xb27308f9f90d607463bb33ea1bebb41c27ce5ab6";
-
+        
+        // const Service = await getContractFactory("Service");
+        // const service = await deployProxy(Service, 
+        //     [
+        //         directory.address,
+        //         poolBeacon.address,
+        //         proposalGateway.address,
+        //         tokenBeacon.address,
+        //         tgeBeacon.address,
+        //         metadata.address, 
+        //         fee,
+        //         [
+        //             ballotQuorumThreshold, 
+        //             ballotLifespan, 
+        //             ballotDecisionThreshold,
+        //         ],
+        //         UNISWAP_ROUTER_ADDRESS,
+        //         UNISWAP_QUOTER_ADDRESS,
+        //         whitelistedTokens.address
+        //     ],
+        //     {
+        //         initializer: 'initialize',
+        //     },
+            
+        // );
+        // await service.deployed();
+        // console.log("Service deployed to: ", service.address);
         const service = await deploy("Service", {
             from: deployer,
             args: [

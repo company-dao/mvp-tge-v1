@@ -37,8 +37,6 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
 
     address public tgeBeacon;
 
-    address public metadataMaster;
-
     uint256 public fee;
 
     uint256 public proposalQuorum;

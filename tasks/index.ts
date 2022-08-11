@@ -7,3 +7,4 @@ import "./addUniswapTestnet";
 import "./whitelistTokens";
 import "./WhitelistedTokens.deploy";
 import "./Metadata.deploy";
+import "./UpgradePool";

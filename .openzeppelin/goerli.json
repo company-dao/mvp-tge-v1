@@ -1,0 +1,2580 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x0d9B2095C884BfaD4649e745650a2B9D892F2BfA",
+    "txHash": "0x02dd476f835a444a8302b41f5a21a299f9d107dd97751d0c5e3a19577bd5f92b"
+  },
+  "proxies": [
+    {
+      "address": "0x43a6771B0897ffA1b1116dfE7a1EE7FD107A6879",
+      "txHash": "0xa8adea5d62631a58268ec0d2922f7404e5e0dce6ad8a66871321ad7561abffc8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x619C83D77Cd430E19Ce754792a6019F96862Eb4C",
+      "txHash": "0x071b528dbaafadf11bce984b4ed2388c0f8c90fd96715bd63c8351d7ed7f0ccd",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x04959d451504b729B8BC3380A8b50a115394c2Bb",
+      "txHash": "0xeb9458cd82a2d9db44088d4890162b7c8c3a7874b8526298de2a33bd6a4e3b7f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6f1F61941aF512a0b193E405048Ba9C6Ac0Dcb45",
+      "txHash": "0x983cd68fd4e4f27f6e12913da4d6f37dafa0d1aa2905abce9dfb2e010f74b27b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x1A2917cCA5F00791EAcd1280B48622dAAab9e9a6",
+      "txHash": "0x79218b72efc71eb1e4cd16de60d40c9602d55c94e90234af587c2a271ebbb98b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x2c68834A12Ea2B90653A29fb3A49f18363E81701",
+      "txHash": "0x824e04e3b10a365954f32d1af9484dac7060ad969268791063ab3fd6b44f7b52",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "ff41abfbd4265c4b462a992597784e569504b95c78fb2ac8639c43ef4f8dee1c": {
+      "address": "0xaa4F450E19bAa9776de045981a68000780620F1A",
+      "txHash": "0xd32af8bb6f48508d94fbd612df20760e1f5cd2448f9d1a1b76b1095d0e2732fc",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)11075_storage)",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:24"
+          },
+          {
+            "label": "lastProposalId",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:26"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IService)11819",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:15"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IGovernanceToken)11593",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:17"
+          },
+          {
+            "label": "tge",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_contract(ITGE)11878",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:19"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:21"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:23"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:25"
+          },
+          {
+            "label": "_poolRegisteredName",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:27"
+          },
+          {
+            "label": "_poolTrademark",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:29"
+          },
+          {
+            "label": "_poolJurisdiction",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:31"
+          },
+          {
+            "label": "_poolEIN",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:33"
+          },
+          {
+            "label": "_poolMetadataIndex",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:35"
+          },
+          {
+            "label": "_poolDateOfIncorporation",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:37"
+          },
+          {
+            "label": "_poolLegalAddress",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:39"
+          },
+          {
+            "label": "_poolTaxationStatus",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:41"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IGovernanceToken)11593": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)11819": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITGE)11878": {
+            "label": "contract ITGE",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalExecutionState)11091": {
+            "label": "enum Governor.ProposalExecutionState",
+            "members": [
+              "Rejected",
+              "Accomplished"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)11075_storage)": {
+            "label": "mapping(uint256 => struct Governor.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)11075_storage": {
+            "label": "struct Governor.Proposal",
+            "members": [
+              {
+                "label": "ballotQuorumThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ballotDecisionThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "targets",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "calldatas",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "forVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "againstVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ProposalExecutionState)11091",
+                "offset": 2,
+                "slot": "9"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "fbcff4e18b9f4708d4769ed5f8293ce52a56509a6cd95ddd4f23c80c75c85365": {
+      "address": "0x06e6295858Ac25db94A1b54512FFeb6c5f7E3C5c",
+      "txHash": "0x2e2b3398745ae4c4d3760237bb2f529130dff38eea78c80007608a723c3be26c",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:37"
+          },
+          {
+            "label": "_allowances",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:39"
+          },
+          {
+            "label": "_totalSupply",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_uint256",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:41"
+          },
+          {
+            "label": "_name",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:43"
+          },
+          {
+            "label": "_symbol",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:394"
+          },
+          {
+            "label": "_HASHED_NAME",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_bytes32",
+            "contract": "EIP712Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol:32"
+          },
+          {
+            "label": "_HASHED_VERSION",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_bytes32",
+            "contract": "EIP712Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol:33"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "EIP712Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol:120"
+          },
+          {
+            "label": "_nonces",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_mapping(t_address,t_struct(Counter)2543_storage)",
+            "contract": "ERC20PermitUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol:28"
+          },
+          {
+            "label": "_PERMIT_TYPEHASH_DEPRECATED_SLOT",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_bytes32",
+            "contract": "ERC20PermitUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol:40",
+            "renamedFrom": "_PERMIT_TYPEHASH"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ERC20PermitUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol:108"
+          },
+          {
+            "label": "_delegates",
+            "offset": 0,
+            "slot": "254",
+            "type": "t_mapping(t_address,t_address)",
+            "contract": "ERC20VotesUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:42"
+          },
+          {
+            "label": "_checkpoints",
+            "offset": 0,
+            "slot": "255",
+            "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)1151_storage)dyn_storage)",
+            "contract": "ERC20VotesUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:43"
+          },
+          {
+            "label": "_totalSupplyCheckpoints",
+            "offset": 0,
+            "slot": "256",
+            "type": "t_array(t_struct(Checkpoint)1151_storage)dyn_storage",
+            "contract": "ERC20VotesUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "257",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC20VotesUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol:261"
+          },
+          {
+            "label": "_cap",
+            "offset": 0,
+            "slot": "304",
+            "type": "t_uint256",
+            "contract": "ERC20CappedUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol:15"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "305",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC20CappedUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol:50"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "355",
+            "type": "t_contract(IService)11819",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken.sol:18"
+          },
+          {
+            "label": "pool",
+            "offset": 0,
+            "slot": "356",
+            "type": "t_address",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken.sol:20"
+          },
+          {
+            "label": "_locked",
+            "offset": 0,
+            "slot": "357",
+            "type": "t_mapping(t_address,t_struct(LockedBalance)7623_storage)",
+            "contract": "GovernanceToken",
+            "src": "contracts/GovernanceToken.sol:27"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(Checkpoint)1151_storage)dyn_storage": {
+            "label": "struct ERC20VotesUpgradeable.Checkpoint[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IService)11819": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_address)": {
+            "label": "mapping(address => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_array(t_struct(Checkpoint)1151_storage)dyn_storage)": {
+            "label": "mapping(address => struct ERC20VotesUpgradeable.Checkpoint[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Counter)2543_storage)": {
+            "label": "mapping(address => struct CountersUpgradeable.Counter)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(LockedBalance)7623_storage)": {
+            "label": "mapping(address => struct GovernanceToken.LockedBalance)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Checkpoint)1151_storage": {
+            "label": "struct ERC20VotesUpgradeable.Checkpoint",
+            "members": [
+              {
+                "label": "fromBlock",
+                "type": "t_uint32",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "votes",
+                "type": "t_uint224",
+                "offset": 4,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(Counter)2543_storage": {
+            "label": "struct CountersUpgradeable.Counter",
+            "members": [
+              {
+                "label": "_value",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(LockedBalance)7623_storage": {
+            "label": "struct GovernanceToken.LockedBalance",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint224": {
+            "label": "uint224",
+            "numberOfBytes": "28"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint32": {
+            "label": "uint32",
+            "numberOfBytes": "4"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "65bce893d45c470f147b2afa25bf4f230f2fcfed84743180ac7309fd17303301": {
+      "address": "0x7917f72093847115f1E88f1A1a50aF0CCfdFCe95",
+      "txHash": "0xf4983cbd174387ff4ceb345e82fe6c78865ae4f689bc95884ae7d654cc31ca67",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_contract(IGovernanceToken)11593",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:18"
+          },
+          {
+            "label": "metadataURI",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_string_storage",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:20"
+          },
+          {
+            "label": "price",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:22"
+          },
+          {
+            "label": "hardcap",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:24"
+          },
+          {
+            "label": "softcap",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:26"
+          },
+          {
+            "label": "minPurchase",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:28"
+          },
+          {
+            "label": "maxPurchase",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:30"
+          },
+          {
+            "label": "lockupPercent",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:32"
+          },
+          {
+            "label": "lockupTVL",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:34"
+          },
+          {
+            "label": "lockupDuration",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:36"
+          },
+          {
+            "label": "duration",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:38"
+          },
+          {
+            "label": "userWhitelist",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:40"
+          },
+          {
+            "label": "_unitOfAccount",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_address",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:42"
+          },
+          {
+            "label": "isUserWhitelisted",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:44"
+          },
+          {
+            "label": "isTokenWhitelisted",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:46"
+          },
+          {
+            "label": "createdAt",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:48"
+          },
+          {
+            "label": "purchaseOf",
+            "offset": 0,
+            "slot": "117",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:50"
+          },
+          {
+            "label": "lockupTVLReached",
+            "offset": 0,
+            "slot": "118",
+            "type": "t_bool",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:52"
+          },
+          {
+            "label": "lockedBalanceOf",
+            "offset": 0,
+            "slot": "119",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:54"
+          },
+          {
+            "label": "_totalPurchased",
+            "offset": 0,
+            "slot": "120",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:56"
+          },
+          {
+            "label": "_totalLocked",
+            "offset": 0,
+            "slot": "121",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IGovernanceToken)11593": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "7c8d4c55109efa6891ef4a0427c9e2367869f5bd335e60d4c16f8710458fad0a": {
+      "address": "0xd42B38245a0234D1038D2Daebe9E11bD012Cad89",
+      "txHash": "0x9116c7338fdda37934a90aeb4385e5e3ef2bc2dedeaafc4d7093e40ecf3d784c",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)11080_storage)",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:24"
+          },
+          {
+            "label": "lastProposalId",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:26"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IService)11826",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:15"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IGovernanceToken)11600",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:17"
+          },
+          {
+            "label": "tge",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_contract(ITGE)11885",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:19"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:21"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:23"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:25"
+          },
+          {
+            "label": "_poolRegisteredName",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:27"
+          },
+          {
+            "label": "_poolTrademark",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:29"
+          },
+          {
+            "label": "_poolJurisdiction",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:31"
+          },
+          {
+            "label": "_poolEIN",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:33"
+          },
+          {
+            "label": "_poolMetadataIndex",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:35"
+          },
+          {
+            "label": "_poolDateOfIncorporation",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:37"
+          },
+          {
+            "label": "_poolLegalAddress",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:39"
+          },
+          {
+            "label": "_poolTaxationStatus",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:41"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IGovernanceToken)11600": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)11826": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITGE)11885": {
+            "label": "contract ITGE",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalExecutionState)11096": {
+            "label": "enum Governor.ProposalExecutionState",
+            "members": [
+              "Rejected",
+              "Accomplished"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)11080_storage)": {
+            "label": "mapping(uint256 => struct Governor.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)11080_storage": {
+            "label": "struct Governor.Proposal",
+            "members": [
+              {
+                "label": "ballotQuorumThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ballotDecisionThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "targets",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "calldatas",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "forVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "againstVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ProposalExecutionState)11096",
+                "offset": 2,
+                "slot": "9"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "406c0c6177e50e960a3d048d310b5d485f30f9866022bcf6b514726b9210eb7e": {
+      "address": "0x710b5403638f42a9Cf08d7b3BFFE6356c8251d4A",
+      "txHash": "0x140129883edfab062db2df64afdbfdd103937e4dcf934ed2637afd62adba6401",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "metadata",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_contract(IMetadata)11656",
+            "contract": "Service",
+            "src": "contracts/Service.sol:24"
+          },
+          {
+            "label": "directory",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_contract(IDirectory)11532",
+            "contract": "Service",
+            "src": "contracts/Service.sol:28"
+          },
+          {
+            "label": "whitelistedTokens",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IWhitelistedTokens)11947",
+            "contract": "Service",
+            "src": "contracts/Service.sol:30"
+          },
+          {
+            "label": "proposalGateway",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:32"
+          },
+          {
+            "label": "poolBeacon",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:34"
+          },
+          {
+            "label": "tokenBeacon",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:36"
+          },
+          {
+            "label": "tgeBeacon",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:38"
+          },
+          {
+            "label": "metadataMaster",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:40"
+          },
+          {
+            "label": "fee",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:42"
+          },
+          {
+            "label": "proposalQuorum",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:44"
+          },
+          {
+            "label": "proposalThreshold",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:46"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:48"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:50"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_uint256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:52"
+          },
+          {
+            "label": "uniswapRouter",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_contract(ISwapRouter)7356",
+            "contract": "Service",
+            "src": "contracts/Service.sol:54"
+          },
+          {
+            "label": "uniswapQuoter",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_contract(IQuoter)7256",
+            "contract": "Service",
+            "src": "contracts/Service.sol:56"
+          },
+          {
+            "label": "_userWhitelist",
+            "offset": 0,
+            "slot": "117",
+            "type": "t_struct(AddressSet)6898_storage",
+            "contract": "Service",
+            "src": "contracts/Service.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IDirectory)11532": {
+            "label": "contract IDirectory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IMetadata)11656": {
+            "label": "contract IMetadata",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IQuoter)7256": {
+            "label": "contract IQuoter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ISwapRouter)7356": {
+            "label": "contract ISwapRouter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IWhitelistedTokens)11947": {
+            "label": "contract IWhitelistedTokens",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_bytes32,t_uint256)": {
+            "label": "mapping(bytes32 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(AddressSet)6898_storage": {
+            "label": "struct EnumerableSet.AddressSet",
+            "members": [
+              {
+                "label": "_inner",
+                "type": "t_struct(Set)6597_storage",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Set)6597_storage": {
+            "label": "struct EnumerableSet.Set",
+            "members": [
+              {
+                "label": "_values",
+                "type": "t_array(t_bytes32)dyn_storage",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_indexes",
+                "type": "t_mapping(t_bytes32,t_uint256)",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "22eb8ff7cd22ad3e26002e61d3e3d27df06ae9e1033017a31b820120048df3b6": {
+      "address": "0x2097E70Ba29f3264BF26980549d5cC6FCBf4f1a5",
+      "txHash": "0x9e210829f8645b255f57f41a2a3b9ac614814fcfa1879a4bb64ef0c073ea7fcd",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)1541_storage)",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:24"
+          },
+          {
+            "label": "lastProposalId",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:26"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IService)2291",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:15"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IGovernanceToken)2061",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:17"
+          },
+          {
+            "label": "tge",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_contract(ITGE)2350",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:19"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:21"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:23"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:25"
+          },
+          {
+            "label": "_poolRegisteredName",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:27"
+          },
+          {
+            "label": "_poolTrademark",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:29"
+          },
+          {
+            "label": "_poolJurisdiction",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:31"
+          },
+          {
+            "label": "_poolEIN",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:33"
+          },
+          {
+            "label": "_poolMetadataIndex",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:35"
+          },
+          {
+            "label": "_poolDateOfIncorporation",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:37"
+          },
+          {
+            "label": "_poolLegalAddress",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:39"
+          },
+          {
+            "label": "_poolTaxationStatus",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:41"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IGovernanceToken)2061": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)2291": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITGE)2350": {
+            "label": "contract ITGE",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalExecutionState)1557": {
+            "label": "enum Governor.ProposalExecutionState",
+            "members": [
+              "Rejected",
+              "Accomplished"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)1541_storage)": {
+            "label": "mapping(uint256 => struct Governor.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)1541_storage": {
+            "label": "struct Governor.Proposal",
+            "members": [
+              {
+                "label": "ballotQuorumThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ballotDecisionThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "targets",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "calldatas",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "forVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "againstVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ProposalExecutionState)1557",
+                "offset": 2,
+                "slot": "9"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "d3236ff51b4358a7b89eb604019b9e94e2bcfca0f02b759d3235372cd0e1b430": {
+      "address": "0x8f0F6BC377Ee3c14866B8ba12EB448E6Bb13Ade8",
+      "txHash": "0x9532a08d9ea8f077ea930f12d0c93a8d25ff8ecb717566c27af755070382ae78",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)1508_storage)",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:24"
+          },
+          {
+            "label": "lastProposalId",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:26"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IService)2258",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:15"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IGovernanceToken)2028",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:17"
+          },
+          {
+            "label": "tge",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_contract(ITGE)2317",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:19"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:21"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:23"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:25"
+          },
+          {
+            "label": "_poolRegisteredName",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:27"
+          },
+          {
+            "label": "_poolTrademark",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:29"
+          },
+          {
+            "label": "_poolJurisdiction",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:31"
+          },
+          {
+            "label": "_poolEIN",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:33"
+          },
+          {
+            "label": "_poolMetadataIndex",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:35"
+          },
+          {
+            "label": "_poolDateOfIncorporation",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:37"
+          },
+          {
+            "label": "_poolLegalAddress",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:39"
+          },
+          {
+            "label": "_poolTaxationStatus",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:41"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IGovernanceToken)2028": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)2258": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITGE)2317": {
+            "label": "contract ITGE",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalExecutionState)1524": {
+            "label": "enum Governor.ProposalExecutionState",
+            "members": [
+              "Rejected",
+              "Accomplished"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)1508_storage)": {
+            "label": "mapping(uint256 => struct Governor.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)1508_storage": {
+            "label": "struct Governor.Proposal",
+            "members": [
+              {
+                "label": "ballotQuorumThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ballotDecisionThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "targets",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "calldatas",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "forVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "againstVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ProposalExecutionState)1524",
+                "offset": 2,
+                "slot": "9"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "3f070168377c056b9db39cd96162e534258e54d9d253b56ff1edc67402f07114": {
+      "address": "0x2fd6084BCE9B9F4542D15fa18EFf27d70bA6D211",
+      "txHash": "0x246dae1fbab651fb424ca2a274e001a4b71783b1fa400bc1c13a293e453006e1",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "proposals",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)11059_storage)",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:24"
+          },
+          {
+            "label": "lastProposalId",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "Governor",
+            "src": "contracts/components/Governor.sol:26"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_contract(IService)11809",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:15"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IGovernanceToken)11579",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:17"
+          },
+          {
+            "label": "tge",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_contract(ITGE)11868",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:19"
+          },
+          {
+            "label": "_ballotQuorumThreshold",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:21"
+          },
+          {
+            "label": "_ballotDecisionThreshold",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:23"
+          },
+          {
+            "label": "_ballotLifespan",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:25"
+          },
+          {
+            "label": "_poolRegisteredName",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:27"
+          },
+          {
+            "label": "_poolTrademark",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:29"
+          },
+          {
+            "label": "_poolJurisdiction",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:31"
+          },
+          {
+            "label": "_poolEIN",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:33"
+          },
+          {
+            "label": "_poolMetadataIndex",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:35"
+          },
+          {
+            "label": "_poolDateOfIncorporation",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:37"
+          },
+          {
+            "label": "_poolLegalAddress",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:39"
+          },
+          {
+            "label": "_poolTaxationStatus",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_string_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:41"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes_storage)dyn_storage": {
+            "label": "bytes[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes_storage": {
+            "label": "bytes",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IGovernanceToken)11579": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)11809": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_contract(ITGE)11868": {
+            "label": "contract ITGE",
+            "numberOfBytes": "20"
+          },
+          "t_enum(ProposalExecutionState)11075": {
+            "label": "enum Governor.ProposalExecutionState",
+            "members": [
+              "Rejected",
+              "Accomplished"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Proposal)11059_storage)": {
+            "label": "mapping(uint256 => struct Governor.Proposal)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Proposal)11059_storage": {
+            "label": "struct Governor.Proposal",
+            "members": [
+              {
+                "label": "ballotQuorumThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ballotDecisionThreshold",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "targets",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "values",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "calldatas",
+                "type": "t_array(t_bytes_storage)dyn_storage",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endBlock",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "forVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "againstVotes",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "executed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 1,
+                "slot": "9"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ProposalExecutionState)11075",
+                "offset": 2,
+                "slot": "9"
+              },
+              {
+                "label": "description",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}

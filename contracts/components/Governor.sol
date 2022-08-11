@@ -105,11 +105,11 @@ abstract contract Governor {
             return ProposalState.Active;
         }
 
-        uint256 quorumVotes = (_getTotalVotes() * proposal.ballotQuorumThreshold) / 100;
+        uint256 quorumVotes = (_getTotalVotes() * proposal.ballotQuorumThreshold) / 10000; // / 10000 because 10000 = 100% 
         uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
         if (
             totalVotes >= quorumVotes &&
-            proposal.forVotes * 100 > totalVotes * proposal.ballotDecisionThreshold
+            proposal.forVotes * 10000 > totalVotes * proposal.ballotDecisionThreshold // * 10000 because 10000 = 100% 
         ) {
             return ProposalState.Successful;
         } else {

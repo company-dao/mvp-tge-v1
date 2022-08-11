@@ -11,17 +11,17 @@ import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "hardhat-dependency-compiler";
-// import "./tasks";
+import "./tasks";
 
 dotenv.config();
 
-// task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-//     const accounts = await hre.ethers.getSigners();
+task("accounts", "Prints the list of accounts", async (taskArgs, hre, getNamedAccounts) => {
+    const accounts = await hre.ethers.getSigners();
 
-//     for (const account of accounts) {
-//         console.log(account.address);
-//     }
-// });
+    for (const account of accounts) {
+        console.log(account.address);
+    }
+});
 
 const networkConfig = (url: string | null | undefined) => ({
     url: url || "",
@@ -47,29 +47,29 @@ const config: HardhatUserConfig = {
     },
     namedAccounts: {
         deployer: {
-            default: 0,
+            default: 0, // "0xF89e3d72F182BBcccEfFB7F7d2c9ce796D6547e6",
         },
     },
     networks: {
-        hardhat: {
-            chainId: 1337,
-            // forking: {
-            //     url: process.env.FORKING_RPC_URL!,
-            //     blockNumber: 15050841,
-            // },
-        },
-        mainnet: defaultNetworkConfig,
-        ropsten: defaultNetworkConfig,
-        rinkeby: defaultNetworkConfig,
-        kovan: defaultNetworkConfig,
+        // hardhat: {
+        //     chainId: 1337,
+        //     // forking: {
+        //     //     url: process.env.FORKING_RPC_URL!,
+        //     //     blockNumber: 15050841,
+        //     // },
+        // },
+        // mainnet: defaultNetworkConfig,
+        // ropsten: defaultNetworkConfig,
+        // rinkeby: defaultNetworkConfig,
+        // kovan: defaultNetworkConfig,
         goerli: defaultNetworkConfig,
-        BSCTest: networkConfig(
-            "https://data-seed-prebsc-1-s1.binance.org:8545/"
-        ),
-        BSC: networkConfig("https://bsc-dataseed.binance.org/"),
-        fantom: networkConfig("https://rpc.ftm.tools/"),
-        mumbai: defaultNetworkConfig,
-        polygon: defaultNetworkConfig,
+        // BSCTest: networkConfig(
+        //     "https://data-seed-prebsc-1-s1.binance.org:8545/"
+        // ),
+        // BSC: networkConfig("https://bsc-dataseed.binance.org/"),
+        // fantom: networkConfig("https://rpc.ftm.tools/"),
+        // mumbai: defaultNetworkConfig,
+        // polygon: defaultNetworkConfig,
     },
     gasReporter: {
         enabled: process.env.REPORT_GAS !== undefined,

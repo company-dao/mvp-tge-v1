@@ -61,7 +61,6 @@ contract Metadata is IMetadata, OwnableUpgradeable {
             );
         }
 
-        currentId += 1;
         queueInfo[currentId] = QueueInfo({
             jurisdiction: jurisdiction, 
             serialNumber: serialNumber, 
@@ -72,6 +71,7 @@ contract Metadata is IMetadata, OwnableUpgradeable {
             status: Status.NotUsed, 
             owner: address(0)});
         emit RecordCreated(currentId, jurisdiction, serialNumber, dateOfIncorporation, legalAddress, taxationStatus, registeredName);
+        currentId += 1;
     }
 
     function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {

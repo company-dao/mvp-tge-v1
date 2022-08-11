@@ -204,18 +204,21 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     }
 
     function getPoolDateOfIncorporation() public view returns (string memory) {
-        IMetadata metadata = service.metadata();
-        return metadata.getQueueInfo(_poolMetadataIndex).dateOfIncorporation;
+        return _poolDateOfIncorporation;
+        // IMetadata metadata = service.metadata();
+        // return metadata.getQueueInfo(_poolMetadataIndex).dateOfIncorporation;
     }
 
     function getPoolLegalAddress() public view returns (string memory) {
-        IMetadata metadata = service.metadata();
-        return metadata.getQueueInfo(_poolMetadataIndex).legalAddress;
+        return _poolLegalAddress;
+        // IMetadata metadata = service.metadata();
+        // return metadata.getQueueInfo(_poolMetadataIndex).legalAddress;
     }
 
     function getPoolTaxationStatus() public view returns (string memory) {
-        IMetadata metadata = service.metadata();
-        return metadata.getQueueInfo(_poolMetadataIndex).taxationStatus;
+        return _poolTaxationStatus;
+        // IMetadata metadata = service.metadata();
+        //return metadata.getQueueInfo(_poolMetadataIndex).taxationStatus;
     }
 
     function owner()
