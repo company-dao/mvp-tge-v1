@@ -21,12 +21,13 @@ interface IGovernanceToken is IERC20Upgradeable {
     function lock(
         address account,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline,
+        uint256 proposalId
     ) external;
 
     function cap() external view returns (uint256);
 
-    function unlockedBalanceOf(address account) external view returns (uint256);
+    function unlockedBalanceOf(address account, uint256 proposalId) external view returns (uint256);
 
     function pool() external view returns (address);
 

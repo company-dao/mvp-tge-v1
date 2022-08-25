@@ -48,5 +48,7 @@ interface IPool {
 
     function tge() external view returns (ITGE);
 
+    function maxProposalId() external view returns (uint256);
+
     function getPoolTrademark() external view returns (string memory);
 }

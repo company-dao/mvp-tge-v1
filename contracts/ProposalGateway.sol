@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IService.sol";
+import "./interfaces/ITGE.sol";
 
 contract ProposalGateway is OwnableUpgradeable {
     // INITIALIZER
@@ -86,6 +87,7 @@ contract ProposalGateway is OwnableUpgradeable {
 
     modifier onlyPoolShareholder(IPool pool) {
         require(pool.token().balanceOf(msg.sender) > 0, "Not shareholder");
+        require(pool.tge().state() == ITGE.State.Successful, "Previous tge is not successful");
         _;
     }
 }

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUp
 import "./interfaces/IService.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IPool.sol";
 
 contract GovernanceToken is
     IGovernanceToken,
@@ -22,9 +23,14 @@ contract GovernanceToken is
     struct LockedBalance {
         uint256 amount;
         uint256 deadline;
+        // uint256 forVotes;
+        // uint256 againstVotes;
     }
 
     mapping(address => LockedBalance) private _locked;
+
+    mapping(address => mapping(uint256 => LockedBalance)) private _lockedInProposal;
+    // mapping(address => mapping(address => uint256)) private _delegated;
 
     // CONSTRUCTOR
 
@@ -41,8 +47,6 @@ contract GovernanceToken is
         pool = pool_;
     }
 
-    // TODO: override name() with pool.getPoolTrademark();
-
     // RESTRICTED FUNCTIONS
 
     function mint(address to, uint256 amount) external override onlyTGE {
@@ -56,25 +60,26 @@ contract GovernanceToken is
     function lock(
         address account,
         uint256 amount,
-        uint256 deadline
+        uint256 deadline, 
+        uint256 proposalId
     ) external override onlyPool {
-        _locked[account] = LockedBalance({
-            amount: lockedBalanceOf(account) + amount,
+        _lockedInProposal[account][proposalId] = LockedBalance({
+            amount: lockedBalanceOf(account, proposalId) + amount,
             deadline: deadline
         });
     }
 
     // VIEW FUNCTIONS
 
-    function unlockedBalanceOf(address account) public view returns (uint256) {
-        return balanceOf(account) - lockedBalanceOf(account);
+    function unlockedBalanceOf(address account, uint256 proposalId) public view returns (uint256) {
+        return balanceOf(account) - lockedBalanceOf(account, proposalId);
     }
 
-    function lockedBalanceOf(address account) public view returns (uint256) {
-        if (block.number >= _locked[account].deadline) {
+    function lockedBalanceOf(address account, uint256 proposalId) public view returns (uint256) {
+        if (block.number >= _lockedInProposal[account][proposalId].deadline) {
             return 0;
         } else {
-            return _locked[account].amount;
+            return _lockedInProposal[account][proposalId].amount;
         }
     }
 
@@ -98,8 +103,15 @@ contract GovernanceToken is
         address to,
         uint256 amount
     ) internal override {
+        uint256 max = 0;
+        for (uint256 i = 0; i <= IPool(pool).maxProposalId(); i++) {
+            uint256 current = unlockedBalanceOf(from, i);
+            if (current > max) {
+                max = current;
+            }
+        }
         require(
-            amount <= unlockedBalanceOf(from),
+            amount <= max,
             "Not enough unlocked balance"
         );
         super._transfer(from, to, amount);

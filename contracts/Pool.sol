@@ -110,15 +110,19 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         bool support
     ) external {
         if (votes == type(uint256).max) {
-            votes = token.unlockedBalanceOf(msg.sender);
+            votes = token.unlockedBalanceOf(msg.sender, proposalId);
         } else {
             require(
-                votes <= token.unlockedBalanceOf(msg.sender),
+                votes <= token.unlockedBalanceOf(msg.sender, proposalId),
                 "Not enough unlocked balance"
             );
         }
         require(votes > 0, "No votes");
-        token.lock(msg.sender, votes, proposals[proposalId].endBlock);
+        // TODO: do not let to change votes (if have forVotes dont let vote against)
+        // if (support) {
+        //     proposals[proposalId].againstVotes
+        // }
+        token.lock(msg.sender, votes, proposals[proposalId].endBlock, proposalId);
         _castVote(proposalId, votes, support);
     }
 
@@ -219,6 +223,10 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         return _poolTaxationStatus;
         // IMetadata metadata = service.metadata();
         //return metadata.getQueueInfo(_poolMetadataIndex).taxationStatus;
+    }
+
+    function maxProposalId() public view returns (uint256) {
+        return lastProposalId;
     }
 
     function owner()

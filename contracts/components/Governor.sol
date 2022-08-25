@@ -63,12 +63,11 @@ abstract contract Governor {
     function executeBallot(uint256 proposalId) external {
         Proposal memory proposal = proposals[proposalId];
 
-        proposals[proposalId].executed = true;
         require(
             proposalState(proposalId) == ProposalState.Successful,
             "Proposal is in wrong state"
         );
-
+        proposals[proposalId].executed = true;
         proposals[proposalId].accepted = true;
 
         string memory errorMessage = "Call reverted without message";
@@ -105,7 +104,7 @@ abstract contract Governor {
             return ProposalState.Active;
         }
 
-        uint256 quorumVotes = (_getTotalVotes() * proposal.ballotQuorumThreshold) / 10000; // / 10000 because 10000 = 100% 
+        uint256 quorumVotes = (_getTotalVotes() * proposal.ballotQuorumThreshold) / 10000; // /10000 because 10000 = 100% 
         uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
         if (
             totalVotes >= quorumVotes &&
@@ -156,10 +155,11 @@ abstract contract Governor {
         bytes[] memory calldatas,
         string memory description
     ) internal returns (uint256 proposalId) {
-        require(
-            proposals[lastProposalId].endBlock <= block.number,
-            "Already has active proposal"
-        );
+        // TODO: remove
+        // require(
+        //     proposals[lastProposalId].endBlock <= block.number,
+        //     "Already has active proposal"
+        // );
 
         proposalId = ++lastProposalId;
         proposals[proposalId] = Proposal({
