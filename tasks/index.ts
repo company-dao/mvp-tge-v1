@@ -8,3 +8,4 @@ import "./whitelistTokens";
 import "./WhitelistedTokens.deploy";
 import "./Metadata.deploy";
 import "./UpgradePool";
+import "./UpgradeProposalGateway";

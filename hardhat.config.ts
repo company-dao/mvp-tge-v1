@@ -58,11 +58,16 @@ const config: HardhatUserConfig = {
         //     //     blockNumber: 15050841,
         //     // },
         // },
-        // mainnet: defaultNetworkConfig,
-        // ropsten: defaultNetworkConfig,
+        // mainnet: defaultNetworkConfig,8000000000
+        // ropsten: defaultNetworkConfig,1322222229
         // rinkeby: defaultNetworkConfig,
         // kovan: defaultNetworkConfig,
-        goerli: defaultNetworkConfig,
+        goerli: defaultNetworkConfig, 
+            // gas: 2100000,
+            // gasPrice: 8500000000, // 8000000000,
+            // url: defaultNetworkConfig.url, 
+            // accounts: defaultNetworkConfig.accounts,
+        
         // BSCTest: networkConfig(
         //     "https://data-seed-prebsc-1-s1.binance.org:8545/"
         // ),

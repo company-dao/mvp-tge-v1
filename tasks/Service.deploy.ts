@@ -17,20 +17,50 @@ task("deploy:service", "Deploy Service contract")
         const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
         const metadata = await getContract<Metadata>("Metadata");
 
-        const pool = await getContractFactory("Pool");
-        const poolBeacon = await deployBeacon(pool);
-        await poolBeacon.deployed();
-        console.log("PoolBeacon deployed to: ", poolBeacon.address);
+        // const poolBeacon = await deploy("Pool", {
+        //     from: deployer,
+        //     proxy: {
+        //         proxyContract: "OpenZeppelinBeaconProxy",
+        //         methodName: "initialize",
+        //     },
+        //     args: [],
+        //     log: true,
+        // });
 
-        const token = await getContractFactory("GovernanceToken");
-        const tokenBeacon = await deployBeacon(token);
-        await tokenBeacon.deployed();
-        console.log("TokenBeacon deployed to: ", tokenBeacon.address);
+        // const tokenBeacon = await deploy("GovernanceToken", {
+        //     from: deployer,
+        //     proxy: {
+        //         proxyContract: "OpenZeppelinBeaconProxy",
+        //         methodName: "initialize",
+        //     },
+        //     args: [],
+        //     log: true,
+        // });
 
-        const tge = await getContractFactory("TGE");
-        const tgeBeacon = await deployBeacon(tge);
-        await tgeBeacon.deployed();
-        console.log("TGEBeacon deployed to: ", tgeBeacon.address);
+        // const tgeBeacon = await deploy("TGE", {
+        //     from: deployer,
+        //     proxy: {
+        //         proxyContract: "OpenZeppelinBeaconProxy",
+        //         methodName: "initialize",
+        //     },
+        //     args: [],
+        //     log: true,
+        // });
+
+        // const pool = await getContractFactory("Pool");
+        // const poolBeacon = await deployBeacon(pool);
+        // await poolBeacon.deployed();
+        // console.log("PoolBeacon deployed to: ", poolBeacon.address);
+
+        // const token = await getContractFactory("GovernanceToken");
+        // const tokenBeacon = await deployBeacon(token);
+        // await tokenBeacon.deployed();
+        // console.log("TokenBeacon deployed to: ", tokenBeacon.address);
+
+        // const tge = await getContractFactory("TGE");
+        // const tgeBeacon = await deployBeacon(tge);
+        // await tgeBeacon.deployed();
+        // console.log("TGEBeacon deployed to: ", tgeBeacon.address);
 
         // const poolMaster = await deploy("Pool", {
         //     from: deployer,
@@ -87,14 +117,23 @@ task("deploy:service", "Deploy Service contract")
         // );
         // await service.deployed();
         // console.log("Service deployed to: ", service.address);
+
+        const PoolBeacon = "0x83B2bF6ef4De89101D6C82Ed06812D4aED7aCd07";
+        const TokenBeacon = "0xE76017Cec890827a4f604855Dba30Ef2063A55d1";
+        const TGEBeacon = "0x697E11d70bBc001c93C512307905F37136aA40fC";
+
         const service = await deploy("Service", {
             from: deployer,
+            proxy: {
+                // proxyContract: "OpenZeppelinTransparentProxy",
+                methodName: "initialize",
+            },
             args: [
                 directory.address,
-                poolBeacon.address,
+                PoolBeacon, // poolBeacon.address,
                 proposalGateway.address,
-                tokenBeacon.address,
-                tgeBeacon.address,
+                TokenBeacon, // tokenBeacon.address,
+                TGEBeacon, // tgeBeacon.address,
                 metadata.address, 
                 fee,
                 [
@@ -110,6 +149,8 @@ task("deploy:service", "Deploy Service contract")
         });
 
         await directory.setService(service.address);
+        console.log("Service is set in Directory");
 
         await metadata.setService(service.address);
+        console.log("Service is set in Metadata");
     });
