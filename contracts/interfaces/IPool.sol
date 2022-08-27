@@ -25,6 +25,8 @@ interface IPool {
 
     function setTGE(address tge_) external;
 
+    function setSeedTGE(address tge_) external;
+
     function setGovernanceSettings(
         uint256 ballotQuorumThreshold_, 
         uint256 ballotDecisionThreshold_, 
@@ -49,6 +51,8 @@ interface IPool {
     function tge() external view returns (ITGE);
 
     function maxProposalId() external view returns (uint256);
+
+    function isDAO() external view returns (bool);
 
     function getPoolTrademark() external view returns (string memory);
 }

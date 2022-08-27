@@ -87,7 +87,8 @@ contract ProposalGateway is OwnableUpgradeable {
 
     modifier onlyPoolShareholder(IPool pool) {
         require(pool.token().balanceOf(msg.sender) > 0, "Not shareholder");
-        require(pool.tge().state() == ITGE.State.Successful, "Previous tge is not successful");
+        require(pool.isDAO(), "Not a DAO");
+        // require(pool.tge().state() == ITGE.State.Successful, "Previous tge is not successful");
         _;
     }
 }

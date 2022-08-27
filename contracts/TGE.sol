@@ -193,9 +193,12 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     function state() public view override returns (State) {
+        if (_totalPurchased == hardcap) {
+            return State.Successful;
+        }
         if (block.number < createdAt + duration) {
             return State.Active;
-        } else if (_totalPurchased >= softcap) {
+        } else if ((_totalPurchased >= softcap)) {
             return State.Successful;
         } else {
             return State.Failed;

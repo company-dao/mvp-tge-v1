@@ -7,6 +7,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
@@ -130,10 +131,11 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         uint256 jurisdiction, 
         string memory trademark
     ) external payable onlyWhitelisted {
-        require(
-            whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
-            "Invalid UnitOfAccount"
-        );
+        require(IERC20(tgeInfo.unitOfAccount).totalSupply() >= 0, "Contract does not support IERC20");
+        // require(
+        //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
+        //     "Invalid UnitOfAccount"
+        // );
 
         if (address(pool) == address(0)) {
             require(msg.value == fee, "Incorrect fee passed");
@@ -200,6 +202,7 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         pool.setToken(address(token));
         tge.initialize(msg.sender, address(token), tgeInfo);
         pool.setTGE(address(tge));
+        pool.setSeedTGE(address(tge));
 
         emit PoolCreated(address(pool), address(token), address(tge));
     }
@@ -215,10 +218,11 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
             IPool(msg.sender).tge().state() != ITGE.State.Active,
             "Has active TGE"
         );
-        require(
-            whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
-            "Invalid UnitOfAccount"
-        );
+        require(IERC20(tgeInfo.unitOfAccount).totalSupply() >= 0, "Contract does not support IERC20");
+        // require(
+        //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
+        //     "Invalid UnitOfAccount"
+        // );
 
         // address tge = tgeMaster.clone();
         ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
