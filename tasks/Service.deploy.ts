@@ -47,20 +47,20 @@ task("deploy:service", "Deploy Service contract")
         //     log: true,
         // });
 
-        const pool = await getContractFactory("Pool");
-        const poolBeacon = await deployBeacon(pool);
-        await poolBeacon.deployed();
-        console.log("PoolBeacon deployed to: ", poolBeacon.address);
+        // const pool = await getContractFactory("Pool");
+        // const poolBeacon = await deployBeacon(pool);
+        // await poolBeacon.deployed();
+        // console.log("PoolBeacon deployed to: ", poolBeacon.address);
 
-        const token = await getContractFactory("GovernanceToken");
-        const tokenBeacon = await deployBeacon(token);
-        await tokenBeacon.deployed();
-        console.log("TokenBeacon deployed to: ", tokenBeacon.address);
+        // const token = await getContractFactory("GovernanceToken");
+        // const tokenBeacon = await deployBeacon(token);
+        // await tokenBeacon.deployed();
+        // console.log("TokenBeacon deployed to: ", tokenBeacon.address);
 
-        const tge = await getContractFactory("TGE");
-        const tgeBeacon = await deployBeacon(tge);
-        await tgeBeacon.deployed();
-        console.log("TGEBeacon deployed to: ", tgeBeacon.address);
+        // const tge = await getContractFactory("TGE");
+        // const tgeBeacon = await deployBeacon(tge);
+        // await tgeBeacon.deployed();
+        // console.log("TGEBeacon deployed to: ", tgeBeacon.address);
 
         // const poolMaster = await deploy("Pool", {
         //     from: deployer,
@@ -118,9 +118,15 @@ task("deploy:service", "Deploy Service contract")
         // await service.deployed();
         // console.log("Service deployed to: ", service.address);
 
-        // const poolBeacon = "0x5001702EFf704C1BEAac8e5EbA6fc2fDd304be77";
-        // const tokenBeacon = "0xE76017Cec890827a4f604855Dba30Ef2063A55d1";
-        // const tgeBeacon = "0xB4E927dA419bBD2D8436742F6F9d0b3F885d7eE7";
+        const poolBeacon = "0x7e7d6b30a450970bdd38973cbe988bED21Ddb29F";
+        const tokenBeacon = "0x28d36c55F8eA60d5FD38891e3e0C1548A53E7C8D";
+        const tgeBeacon = "0xC76b19F549d3770CA038305138754c8B0769666d";
+
+        console.log("Directory:", directory.address);
+        console.log("ProposalGateway:", proposalGateway.address);
+        console.log("Metadata:", metadata.address);
+        console.log("WhitelistedTokens:", whitelistedTokens.address);        
+
 
         const Service = await getContractFactory("Service");
         const service = await deployProxy(
@@ -145,6 +151,8 @@ task("deploy:service", "Deploy Service contract")
         );
         await service.deployed();
         console.log("Service deployed to ", service.address);
+
+        // const service = "0xBbD6E51dA4b87406aFDA77793E8E8e051F7a83A6";
 
         // const service = await deploy("Service", {
         //     from: deployer,
