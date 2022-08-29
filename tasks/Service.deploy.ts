@@ -11,7 +11,7 @@ task("deploy:service", "Deploy Service contract")
         { getNamedAccounts, deployments: { deploy }, ethers: { getContract, getContractFactory }, upgrades: { deployBeacon, deployProxy } }
     ) {
         const { deployer } = await getNamedAccounts();
-
+        console.log("Deployer:", deployer);
         const directory = await getContract<Directory>("Directory");
         const proposalGateway = await getContract("ProposalGateway");
         const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
@@ -47,20 +47,20 @@ task("deploy:service", "Deploy Service contract")
         //     log: true,
         // });
 
-        // const pool = await getContractFactory("Pool");
-        // const poolBeacon = await deployBeacon(pool);
-        // await poolBeacon.deployed();
-        // console.log("PoolBeacon deployed to: ", poolBeacon.address);
+        const pool = await getContractFactory("Pool");
+        const poolBeacon = await deployBeacon(pool);
+        await poolBeacon.deployed();
+        console.log("PoolBeacon deployed to: ", poolBeacon.address);
 
-        // const token = await getContractFactory("GovernanceToken");
-        // const tokenBeacon = await deployBeacon(token);
-        // await tokenBeacon.deployed();
-        // console.log("TokenBeacon deployed to: ", tokenBeacon.address);
+        const token = await getContractFactory("GovernanceToken");
+        const tokenBeacon = await deployBeacon(token);
+        await tokenBeacon.deployed();
+        console.log("TokenBeacon deployed to: ", tokenBeacon.address);
 
-        // const tge = await getContractFactory("TGE");
-        // const tgeBeacon = await deployBeacon(tge);
-        // await tgeBeacon.deployed();
-        // console.log("TGEBeacon deployed to: ", tgeBeacon.address);
+        const tge = await getContractFactory("TGE");
+        const tgeBeacon = await deployBeacon(tge);
+        await tgeBeacon.deployed();
+        console.log("TGEBeacon deployed to: ", tgeBeacon.address);
 
         // const poolMaster = await deploy("Pool", {
         //     from: deployer,
@@ -118,22 +118,19 @@ task("deploy:service", "Deploy Service contract")
         // await service.deployed();
         // console.log("Service deployed to: ", service.address);
 
-        const PoolBeacon = "0x83B2bF6ef4De89101D6C82Ed06812D4aED7aCd07";
-        const TokenBeacon = "0xE76017Cec890827a4f604855Dba30Ef2063A55d1";
-        const TGEBeacon = "0x697E11d70bBc001c93C512307905F37136aA40fC";
+        // const poolBeacon = "0x5001702EFf704C1BEAac8e5EbA6fc2fDd304be77";
+        // const tokenBeacon = "0xE76017Cec890827a4f604855Dba30Ef2063A55d1";
+        // const tgeBeacon = "0xB4E927dA419bBD2D8436742F6F9d0b3F885d7eE7";
 
-        const service = await deploy("Service", {
-            from: deployer,
-            proxy: {
-                // proxyContract: "OpenZeppelinTransparentProxy",
-                methodName: "initialize",
-            },
-            args: [
+        const Service = await getContractFactory("Service");
+        const service = await deployProxy(
+            Service, 
+            [
                 directory.address,
-                PoolBeacon, // poolBeacon.address,
+                poolBeacon, // poolBeacon.address,
                 proposalGateway.address,
-                TokenBeacon, // tokenBeacon.address,
-                TGEBeacon, // tgeBeacon.address,
+                tokenBeacon, // tokenBeacon.address,
+                tgeBeacon, // tgeBeacon.address,
                 metadata.address, 
                 fee,
                 [
@@ -144,9 +141,37 @@ task("deploy:service", "Deploy Service contract")
                 UNISWAP_ROUTER_ADDRESS,
                 UNISWAP_QUOTER_ADDRESS,
                 whitelistedTokens.address
-            ],
-            log: true,
-        });
+            ]
+        );
+        await service.deployed();
+        console.log("Service deployed to ", service.address);
+
+        // const service = await deploy("Service", {
+        //     from: deployer,
+        //     proxy: {
+        //         proxyContract: "OpenZeppelinTransparentProxy",
+        //         methodName: "initialize",
+        //         proxyArgs: [
+        //             directory.address,
+        //             PoolBeacon, // poolBeacon.address,
+        //             proposalGateway.address,
+        //             TokenBeacon, // tokenBeacon.address,
+        //             TGEBeacon, // tgeBeacon.address,
+        //             metadata.address, 
+        //             fee,
+        //             [
+        //                 ballotQuorumThreshold, 
+        //                 ballotLifespan, 
+        //                 ballotDecisionThreshold,
+        //             ],
+        //             UNISWAP_ROUTER_ADDRESS,
+        //             UNISWAP_QUOTER_ADDRESS,
+        //             whitelistedTokens.address
+        //         ]
+        //     },
+        //     args: [],
+        //     log: true,
+        // });
 
         await directory.setService(service.address);
         console.log("Service is set in Directory");

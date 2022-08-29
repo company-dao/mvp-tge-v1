@@ -33,7 +33,7 @@ task("whitelistTokens", "Whitelist tokens in Service").setAction(
 
         console.log("Adding to whitelist");
 
-        const service = await getContract<Service>("Service");
+        // const service = await getContract<Service>("Service");
         const whitelistedTokens = await getContract<WhitelistedTokens>("WhitelistedTokens");
 
         const WETH_ADDRESS = "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6"; // WETH in Goerli
