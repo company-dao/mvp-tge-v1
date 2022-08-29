@@ -25,7 +25,7 @@ interface IPool {
 
     function setTGE(address tge_) external;
 
-    function setSeedTGE(address tge_) external;
+    function setPrimaryTGE(address tge_) external;
 
     function setGovernanceSettings(
         uint256 ballotQuorumThreshold_, 

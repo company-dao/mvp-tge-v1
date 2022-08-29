@@ -40,7 +40,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     string private _poolTaxationStatus; 
 
-    address public seedTGE;
+    address public primaryTGE;
 
     // INITIALIZER AND CONFIGURATOR
 
@@ -84,8 +84,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         tge = ITGE(tge_);
     }
 
-    function setSeedTGE(address tge_) external onlyService {
-        seedTGE = tge_;
+    function setPrimaryTGE(address tge_) external onlyService {
+        primaryTGE = tge_;
     }
 
     function setRegisteredName(string memory registeredName) external onlyServiceOwner {
@@ -236,7 +236,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     }
 
     function isDAO() public view returns (bool) {
-        return (ITGE(seedTGE).state() == ITGE.State.Successful);
+        return (ITGE(primaryTGE).state() == ITGE.State.Successful);
     }
 
     function owner()

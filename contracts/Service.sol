@@ -2,12 +2,15 @@
 
 pragma solidity 0.8.13;
 
-// import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
@@ -18,9 +21,9 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IMetadata.sol";
 import "./interfaces/IWhitelistedTokens.sol";
 
-contract Service is IService, Ownable { // OwnableUpgradeable {
-    // using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-    using EnumerableSet for EnumerableSet.AddressSet;
+contract Service is IService, OwnableUpgradeable { // Ownable {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    // using EnumerableSet for EnumerableSet.AddressSet;
 
     IMetadata public metadata;
 
@@ -54,9 +57,9 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
 
     IQuoter public uniswapQuoter;
 
-    EnumerableSet.AddressSet private _userWhitelist;
+    // EnumerableSet.AddressSet private _userWhitelist;
 
-    // EnumerableSetUpgradeable.AddressSet private _userWhitelist;
+    EnumerableSetUpgradeable.AddressSet private _userWhitelist;
 
     // EnumerableSet.AddressSet private _tokenWhitelist;
 
@@ -82,7 +85,7 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
 
     // CONSTRUCTOR
 
-    constructor( // function initialize(
+    function initialize(
         IDirectory directory_,
         address poolBeacon_,
         address proposalGateway_,
@@ -94,8 +97,8 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         ISwapRouter uniswapRouter_,
         IQuoter uniswapQuoter_,
         IWhitelistedTokens whitelistedTokens_
-    ) { // external initializer {
-        // __Ownable_init();
+    ) external initializer {
+        __Ownable_init();
         directory = directory_;
         proposalGateway = proposalGateway_;
         poolBeacon = poolBeacon_;
@@ -131,7 +134,10 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         uint256 jurisdiction, 
         string memory trademark
     ) external payable onlyWhitelisted {
-        require(IERC20(tgeInfo.unitOfAccount).totalSupply() >= 0, "Contract does not support IERC20");
+        require(
+            IERC20Upgradeable(tgeInfo.unitOfAccount).totalSupply() >= 0 || tgeInfo.unitOfAccount == address(0), 
+            "Contract does not support IERC20"
+        );
         // require(
         //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
         //     "Invalid UnitOfAccount"
@@ -172,7 +178,8 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
             );
             require(msg.sender == pool.owner(), "Sender is not pool owner");
             require(
-                pool.tge().state() == ITGE.State.Failed,
+                pool.isDAO() == false, 
+                // pool.tge().state() == ITGE.State.Failed,
                 "Previous TGE not failed"
             );
         }
@@ -202,7 +209,7 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         pool.setToken(address(token));
         tge.initialize(msg.sender, address(token), tgeInfo);
         pool.setTGE(address(tge));
-        pool.setSeedTGE(address(tge));
+        pool.setPrimaryTGE(address(tge));
 
         emit PoolCreated(address(pool), address(token), address(tge));
     }
@@ -218,7 +225,10 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
             IPool(msg.sender).tge().state() != ITGE.State.Active,
             "Has active TGE"
         );
-        require(IERC20(tgeInfo.unitOfAccount).totalSupply() >= 0, "Contract does not support IERC20");
+        require(
+            IERC20Upgradeable(tgeInfo.unitOfAccount).totalSupply() >= 0 || tgeInfo.unitOfAccount == address(0), 
+            "Contract does not support IERC20"
+        );
         // require(
         //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0), 
         //     "Invalid UnitOfAccount"
@@ -350,7 +360,7 @@ contract Service is IService, Ownable { // OwnableUpgradeable {
         return whitelistedTokens.tokenWhitelist();
     }
 
-    function owner() public view override(IService, Ownable) returns (address) {
+    function owner() public view override(IService, OwnableUpgradeable) returns (address) { // Ownable
         return super.owner();
     }
 
