@@ -30,7 +30,7 @@ contract Metadata is IMetadata, OwnableUpgradeable {
 
     function initialize() external initializer {
         __Ownable_init();
-        currentId = 1;
+        currentId = 0;
     }
 
     function setService(address service_) external onlyOwner {
@@ -49,6 +49,7 @@ contract Metadata is IMetadata, OwnableUpgradeable {
             (jurisdiction > 0) && (bytes(serialNumber).length != 0), 
             "Invalid jurisdiction or serialNumber"
         );
+        currentId += 1;
 
         for (uint256 i = 0; i < currentId; i++) {
             require(
@@ -71,7 +72,6 @@ contract Metadata is IMetadata, OwnableUpgradeable {
             status: Status.NotUsed, 
             owner: address(0)});
         emit RecordCreated(currentId, jurisdiction, serialNumber, dateOfIncorporation, legalAddress, taxationStatus, registeredName);
-        currentId += 1;
     }
 
     function lockRecord(uint256 jurisdiction) external onlyService returns (uint256) {
