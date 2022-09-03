@@ -121,6 +121,8 @@ contract Directory is IDirectory, Ownable {
     // }
 
     function setService(address service_) external onlyOwner {
+        require(service_ != address(0), "Invalid service address");
+
         service = service_;
         emit ServiceSet(service_);
     }

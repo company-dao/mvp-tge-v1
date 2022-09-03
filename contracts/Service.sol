@@ -310,6 +310,8 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
     }
 
     function transferFunds(address to) external onlyOwner {
+        require(to != address(0), "Can not transfer to zero address");
+
         payable(to).transfer(payable(address(this)).balance);
     }
 

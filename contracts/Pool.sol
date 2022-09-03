@@ -85,6 +85,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     }
 
     function setPrimaryTGE(address tge_) external onlyService {
+        require(tge_ != address(0), "Can not set primary tge to zero address");
+
         primaryTGE = tge_;
     }
 
