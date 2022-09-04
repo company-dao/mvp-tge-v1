@@ -39,6 +39,8 @@ contract GovernanceToken is
         override
         initializer
     {
+        require(pool_ != address(0), "Invalid pool address");
+
         __ERC20_init(info.name, info.symbol);
         __ERC20Capped_init(info.cap);
         __Ownable_init();

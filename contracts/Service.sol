@@ -5,12 +5,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
@@ -21,9 +17,8 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IMetadata.sol";
 import "./interfaces/IWhitelistedTokens.sol";
 
-contract Service is IService, OwnableUpgradeable { // Ownable {
+contract Service is IService, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-    // using EnumerableSet for EnumerableSet.AddressSet;
 
     IMetadata public metadata;
 
@@ -42,10 +37,6 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
     address public tgeBeacon;
 
     uint256 public fee;
-
-    uint256 public proposalQuorum;
-
-    uint256 public proposalThreshold;
 
     uint256 private _ballotQuorumThreshold; 
 
@@ -81,8 +72,6 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
 
     event GovernanceSettingsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
 
-    // event QueueCreated(address queueContract);
-
     // CONSTRUCTOR
 
     function initialize(
@@ -98,6 +87,16 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
         IQuoter uniswapQuoter_,
         IWhitelistedTokens whitelistedTokens_
     ) external initializer {
+        require(address(directory_) != address(0), "Invalid Directory address");
+        require(poolBeacon_ != address(0), "Invalid Pool Beacon address");
+        require(proposalGateway_ != address(0), "Invalid ProposalGateway address");
+        require(tokenBeacon_ != address(0), "Invalid Token Beacon address");
+        require(tgeBeacon_ != address(0), "Invalid TGE Beacon address");
+        require(address(metadata_) != address(0), "Invalid Metadata address");
+        require(address(uniswapRouter_) != address(0), "Invalid UniswapRouter address");
+        require(address(uniswapQuoter_) != address(0), "Invalid UniswapQuoter address");
+        require(address(whitelistedTokens_) != address(0), "Invalid WhitelistedTokens address");
+
         __Ownable_init();
         directory = directory_;
         proposalGateway = proposalGateway_;
@@ -113,11 +112,6 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
         uniswapQuoter = uniswapQuoter_;
         whitelistedTokens = whitelistedTokens_;
 
-        // address metadataContract = metadataMaster.clone();
-        // metadata = IMetadata(metadataContract);
-        // metadata.initialize(msg.sender);
-
-        // emit QueueCreated(metadataContract);
         emit FeeSet(fee_);
         emit GovernanceSettingsSet(ballotParams[0], ballotParams[1], ballotParams[2]);
     }
@@ -133,7 +127,7 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
         uint256 ballotLifespan_,
         uint256 jurisdiction, 
         string memory trademark
-    ) external payable onlyWhitelisted {
+    ) external payable onlyWhitelisted nonReentrant {
         require(
             IERC20Upgradeable(tgeInfo.unitOfAccount).totalSupply() >= 0 || tgeInfo.unitOfAccount == address(0), 
             "Contract does not support IERC20"
@@ -220,6 +214,7 @@ contract Service is IService, OwnableUpgradeable { // Ownable {
         external
         override
         onlyPool
+        nonReentrant
     {
         require(
             IPool(msg.sender).tge().state() != ITGE.State.Active,

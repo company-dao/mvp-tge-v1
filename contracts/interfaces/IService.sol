@@ -38,10 +38,6 @@ interface IService {
 
     function proposalGateway() external view returns (address);
 
-    function proposalQuorum() external view returns (uint256);
-
-    function proposalThreshold() external view returns (uint256);
-
     function uniswapRouter() external view returns (ISwapRouter);
 
     function uniswapQuoter() external view returns (IQuoter);

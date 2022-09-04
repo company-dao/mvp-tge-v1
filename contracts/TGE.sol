@@ -5,13 +5,14 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 
-contract TGE is ITGE, OwnableUpgradeable {
+contract TGE is ITGE, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address payable;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -56,6 +57,10 @@ contract TGE is ITGE, OwnableUpgradeable {
     uint256 private _totalPurchased;
 
     uint256 private _totalLocked;
+
+    // EVENTS
+
+    event Purchased(address buyer, uint256 amount);
 
     // CONSTRUCTOR
 
@@ -102,6 +107,7 @@ contract TGE is ITGE, OwnableUpgradeable {
         payable
         onlyWhitelistedUser
         onlyState(State.Active)
+        nonReentrant
     {
         if (_unitOfAccount == address(0)) {
             require(msg.value == amount * price, "Invalid ETH value passed");
@@ -126,6 +132,8 @@ contract TGE is ITGE, OwnableUpgradeable {
         token.mint(address(this), lockedAmount);
         lockedBalanceOf[msg.sender] += lockedAmount;
         _totalLocked += lockedAmount;
+
+        emit Purchased(msg.sender, amount);
     }
 
     function redeem() external override onlyState(State.Failed) {
@@ -158,12 +166,13 @@ contract TGE is ITGE, OwnableUpgradeable {
         uint256 balance = lockedBalanceOf[msg.sender];
         lockedBalanceOf[msg.sender] = 0;
         _totalLocked -= balance;
-        token.transfer(msg.sender, balance);
+        bool status = token.transfer(msg.sender, balance);
+        require(status, "Token transfer failed");
     }
 
     function setLockupTVLReached() external {
-        require(IPool(token.pool()).getTVL() >= lockupTVL, "Lockup TVL not yet reached");
         lockupTVLReached = true;
+        require(IPool(token.pool()).getTVL() >= lockupTVL, "Lockup TVL not yet reached");
     }
 
     // RESTRICTED FUNCTIONS

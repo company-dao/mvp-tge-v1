@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./components/Governor.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
@@ -11,7 +12,7 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IWhitelistedTokens.sol";
 import "./interfaces/IMetadata.sol";
 
-contract Pool is IPool, OwnableUpgradeable, Governor {
+contract Pool is IPool, OwnableUpgradeable, Governor, ReentrancyGuardUpgradeable {
     IService public service;
 
     IGovernanceToken public token;
@@ -42,6 +43,10 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
 
     address public primaryTGE;
 
+    // EVENTS
+
+    event GovernanceSettingsSet(uint256 quorumThreshold, uint256 decisionThreshold, uint256 lifespan);
+
     // INITIALIZER AND CONFIGURATOR
 
     function initialize(
@@ -57,6 +62,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         uint256 ballotLifespan_, 
         string memory trademark
     ) external initializer {
+        require(poolCreator_ != address(0), "Invalid pool creator address");
+
         service = IService(msg.sender);
         _transferOwnership(poolCreator_);
         _poolJurisdiction = jurisdiction_;
@@ -77,16 +84,17 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
     }
 
     function setToken(address token_) external onlyService {
+        require(token_ != address(0), "Can not set token to zero address");
         token = IGovernanceToken(token_);
     }
 
     function setTGE(address tge_) external onlyService {
+        require(tge_ != address(0), "Can not set tge to zero address");
         tge = ITGE(tge_);
     }
 
     function setPrimaryTGE(address tge_) external onlyService {
         require(tge_ != address(0), "Can not set primary tge to zero address");
-
         primaryTGE = tge_;
     }
 
@@ -108,6 +116,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         _ballotQuorumThreshold = ballotQuorumThreshold_;
         _ballotDecisionThreshold = ballotDecisionThreshold_;
         _ballotLifespan = ballotLifespan_;
+
+        emit GovernanceSettingsSet(ballotQuorumThreshold_, ballotDecisionThreshold_, ballotLifespan_);
     }
 
     // PUBLIC FUNCTIONS
@@ -116,7 +126,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         uint256 proposalId,
         uint256 votes,
         bool support
-    ) external {
+    ) external nonReentrant {
         if (votes == type(uint256).max) {
             votes = token.unlockedBalanceOf(msg.sender, proposalId);
         } else {
@@ -130,8 +140,8 @@ contract Pool is IPool, OwnableUpgradeable, Governor {
         // if (support) {
         //     proposals[proposalId].againstVotes
         // }
-        token.lock(msg.sender, votes, proposals[proposalId].endBlock, proposalId);
         _castVote(proposalId, votes, support);
+        token.lock(msg.sender, votes, proposals[proposalId].endBlock, proposalId);
     }
 
     function proposeSingleAction(

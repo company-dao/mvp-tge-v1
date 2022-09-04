@@ -80,8 +80,6 @@ abstract contract Governor {
                 returndata,
                 errorMessage
             );
-            
-            require(success, "Verify call result failed");
         }
         proposals[proposalId].state = ProposalExecutionState.Accomplished;
 
