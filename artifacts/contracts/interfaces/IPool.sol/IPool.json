@@ -1,0 +1,274 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IPool",
+  "sourceName": "contracts/interfaces/IPool.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getPoolTrademark",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTVL",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "poolCreator_",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "jurisdiction_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "poolEIN_",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "dateOfIncorporation",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "legalAddress",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "taxationStatus",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "registeredName",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ballotQuorumThreshold_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ballotDecisionThreshold_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ballotLifespan_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "trademark",
+          "type": "string"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isDAO",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxProposalId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "cd",
+          "type": "bytes"
+        },
+        {
+          "internalType": "string",
+          "name": "description",
+          "type": "string"
+        }
+      ],
+      "name": "proposeSingleAction",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "service",
+      "outputs": [
+        {
+          "internalType": "contract IService",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "ballotQuorumThreshold_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ballotDecisionThreshold_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ballotLifespan_",
+          "type": "uint256"
+        }
+      ],
+      "name": "setGovernanceSettings",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tge_",
+          "type": "address"
+        }
+      ],
+      "name": "setPrimaryTGE",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tge_",
+          "type": "address"
+        }
+      ],
+      "name": "setTGE",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token_",
+          "type": "address"
+        }
+      ],
+      "name": "setToken",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tge",
+      "outputs": [
+        {
+          "internalType": "contract ITGE",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token",
+      "outputs": [
+        {
+          "internalType": "contract IGovernanceToken",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

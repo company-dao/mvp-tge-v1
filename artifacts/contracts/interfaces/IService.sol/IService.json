@@ -1,0 +1,292 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IService",
+  "sourceName": "contracts/interfaces/IService.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "addProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "price",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "hardcap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "softcap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minPurchase",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxPurchase",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupPercent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupDuration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupTVL",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "duration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "userWhitelist",
+              "type": "address[]"
+            },
+            {
+              "internalType": "address",
+              "name": "unitOfAccount",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct ITGE.TGEInfo",
+          "name": "tgeInfo",
+          "type": "tuple"
+        }
+      ],
+      "name": "createSecondaryTGE",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "directory",
+      "outputs": [
+        {
+          "internalType": "contract IDirectory",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract IDirectory",
+          "name": "directory_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "poolBeacon_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "proposalGateway_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenBeacon_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tgeBeacon_",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IMetadata",
+          "name": "metadata_",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "fee_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[3]",
+          "name": "ballotParams",
+          "type": "uint256[3]"
+        },
+        {
+          "internalType": "contract ISwapRouter",
+          "name": "uniswapRouter_",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IQuoter",
+          "name": "uniswapQuoter_",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IWhitelistedTokens",
+          "name": "whitelistedTokens_",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "metadata",
+      "outputs": [
+        {
+          "internalType": "contract IMetadata",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposalGateway",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposalQuorum",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proposalThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokenWhitelist",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "uniswapQuoter",
+      "outputs": [
+        {
+          "internalType": "contract IQuoter",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "uniswapRouter",
+      "outputs": [
+        {
+          "internalType": "contract ISwapRouter",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "whitelistedTokens",
+      "outputs": [
+        {
+          "internalType": "contract IWhitelistedTokens",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

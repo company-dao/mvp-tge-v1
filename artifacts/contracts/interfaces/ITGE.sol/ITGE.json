@@ -1,0 +1,135 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITGE",
+  "sourceName": "contracts/interfaces/ITGE.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "token_",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "metadataURI",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "price",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "hardcap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "softcap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minPurchase",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxPurchase",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupPercent",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupDuration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lockupTVL",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "duration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "userWhitelist",
+              "type": "address[]"
+            },
+            {
+              "internalType": "address",
+              "name": "unitOfAccount",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct ITGE.TGEInfo",
+          "name": "info",
+          "type": "tuple"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "maxPurchaseOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "redeem",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "state",
+      "outputs": [
+        {
+          "internalType": "enum ITGE.State",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
