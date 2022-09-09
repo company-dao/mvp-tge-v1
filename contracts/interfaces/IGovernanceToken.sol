@@ -21,6 +21,7 @@ interface IGovernanceToken is IERC20Upgradeable {
     function lock(
         address account,
         uint256 amount,
+        bool support, 
         uint256 deadline,
         uint256 proposalId
     ) external;

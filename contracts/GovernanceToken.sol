@@ -23,11 +23,11 @@ contract GovernanceToken is
     struct LockedBalance {
         uint256 amount;
         uint256 deadline;
-        // uint256 forVotes;
-        // uint256 againstVotes;
+        uint256 forVotes;
+        uint256 againstVotes;
     }
 
-    mapping(address => LockedBalance) private _locked;
+    // mapping(address => LockedBalance) private _locked;
 
     mapping(address => mapping(uint256 => LockedBalance)) private _lockedInProposal;
     // mapping(address => mapping(address => uint256)) private _delegated;
@@ -62,13 +62,26 @@ contract GovernanceToken is
     function lock(
         address account,
         uint256 amount,
+        bool support, 
         uint256 deadline, 
         uint256 proposalId
     ) external override onlyPool {
-        _lockedInProposal[account][proposalId] = LockedBalance({
-            amount: lockedBalanceOf(account, proposalId) + amount,
-            deadline: deadline
-        });
+        if (support) {
+            _lockedInProposal[account][proposalId] = LockedBalance({
+                amount: lockedBalanceOf(account, proposalId) + amount,
+                deadline: deadline, 
+                forVotes: _lockedInProposal[account][proposalId].forVotes + amount, 
+                againstVotes: _lockedInProposal[account][proposalId].againstVotes
+            });
+        }
+        else {
+            _lockedInProposal[account][proposalId] = LockedBalance({
+                amount: lockedBalanceOf(account, proposalId) + amount,
+                deadline: deadline,
+                forVotes: _lockedInProposal[account][proposalId].forVotes,
+                againstVotes: _lockedInProposal[account][proposalId].againstVotes + amount
+            });
+        }
     }
 
     // VIEW FUNCTIONS
@@ -83,6 +96,10 @@ contract GovernanceToken is
         } else {
             return _lockedInProposal[account][proposalId].amount;
         }
+    }
+
+    function getLockedInPrposal(address account, uint256 proposalId) public view returns (LockedBalance memory) {
+        return _lockedInProposal[account][proposalId];
     }
 
     function decimals() public pure override returns (uint8) {

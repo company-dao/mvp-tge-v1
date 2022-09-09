@@ -8,9 +8,9 @@ abstract contract Governor {
     struct Proposal {
         uint256 ballotQuorumThreshold;
         uint256 ballotDecisionThreshold;
-        address[] targets;
-        uint256[] values;
-        bytes[] calldatas;
+        address target;
+        uint256 value;
+        bytes callData;
         uint256 startBlock;
         uint256 endBlock; // startBlock + ballotLifespan
         uint256 forVotes;
@@ -43,9 +43,9 @@ abstract contract Governor {
     event ProposalCreated(
         uint256 proposalId,
         uint256 quorum,
-        address[] targets,
-        uint256[] values,
-        bytes[] calldatas,
+        address targets,
+        uint256 values,
+        bytes calldatas,
         string description
     );
 
@@ -70,17 +70,11 @@ abstract contract Governor {
         proposals[proposalId].executed = true;
         proposals[proposalId].accepted = true;
 
-        string memory errorMessage = "Call reverted without message";
-        for (uint256 i = 0; i < proposal.targets.length; ++i) {
-            (bool success, bytes memory returndata) = proposal.targets[i].call{
-                value: proposal.values[i]
-            }(proposal.calldatas[i]);
-            AddressUpgradeable.verifyCallResult(
-                success,
-                returndata,
-                errorMessage
-            );
-        }
+        (bool success, ) = proposal.target.call{
+            value: proposal.value
+        }(proposal.callData);
+        require(success, "Invail execution result");
+
         proposals[proposalId].state = ProposalExecutionState.Accomplished;
 
         emit ProposalExecuted(proposalId);
@@ -150,9 +144,9 @@ abstract contract Governor {
         uint256 ballotLifespan, 
         uint256 ballotQuorumThreshold, 
         uint256 ballotDecisionThreshold, 
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
+        address target,
+        uint256 value,
+        bytes memory callData,
         string memory description
     ) internal returns (uint256 proposalId) {
         // TODO: remove
@@ -165,9 +159,9 @@ abstract contract Governor {
         proposals[proposalId] = Proposal({
             ballotQuorumThreshold: ballotQuorumThreshold,
             ballotDecisionThreshold: ballotDecisionThreshold,
-            targets: targets,
-            values: values,
-            calldatas: calldatas,
+            target: target,
+            value: value,
+            callData: callData,
             startBlock: block.number,
             endBlock: block.number + ballotLifespan,
             forVotes: 0,
@@ -182,9 +176,9 @@ abstract contract Governor {
         emit ProposalCreated(
             proposalId,
             ballotQuorumThreshold,
-            targets,
-            values,
-            calldatas,
+            target,
+            value,
+            callData,
             description
         );
     }

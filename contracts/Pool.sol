@@ -141,7 +141,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor, ReentrancyGuardUpgradeable
         //     proposals[proposalId].againstVotes
         // }
         _castVote(proposalId, votes, support);
-        token.lock(msg.sender, votes, proposals[proposalId].endBlock, proposalId);
+        token.lock(msg.sender, votes, support, proposals[proposalId].endBlock, proposalId);
     }
 
     function proposeSingleAction(
@@ -150,19 +150,13 @@ contract Pool is IPool, OwnableUpgradeable, Governor, ReentrancyGuardUpgradeable
         bytes memory cd,
         string memory description
     ) external onlyProposalGateway returns (uint256 proposalId) {
-        address[] memory targets = new address[](1);
-        targets[0] = target;
-        uint256[] memory values = new uint256[](1);
-        values[0] = value;
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = cd;
         proposalId = _propose(
             _ballotLifespan,
             _ballotQuorumThreshold,
             _ballotDecisionThreshold,
-            targets,
-            values,
-            calldatas,
+            target,
+            value,
+            cd,
             description
         );
     }
@@ -171,7 +165,7 @@ contract Pool is IPool, OwnableUpgradeable, Governor, ReentrancyGuardUpgradeable
         IQuoter quoter = service.uniswapQuoter();
         IWhitelistedTokens whitelistedTokens = service.whitelistedTokens();
         address[] memory tokenWhitelist = whitelistedTokens.tokenWhitelist(); // service.tokenWhitelist();
-        uint256 tvl;
+        uint256 tvl = 0;
         for (uint256 i = 0; i < tokenWhitelist.length; i++) {
             if (tokenWhitelist[i] == address(0)) {
                 tvl += address(this).balance;
