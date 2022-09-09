@@ -3,11 +3,11 @@
 pragma solidity 0.8.13;
 
 interface IWhitelistedTokens {
-  function tokenWhitelist() external view returns (address[] memory);
+    function tokenWhitelist() external view returns (address[] memory);
 
-  function isTokenWhitelisted(address token) external view returns (bool);
+    function isTokenWhitelisted(address token) external view returns (bool);
 
-  function tokenSwapPath(address) external view returns (bytes memory);
+    function tokenSwapPath(address) external view returns (bytes memory);
 
-  function tokenSwapReversePath(address) external view returns (bytes memory);
+    function tokenSwapReversePath(address) external view returns (bytes memory);
 }

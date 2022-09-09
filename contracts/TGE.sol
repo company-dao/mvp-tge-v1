@@ -7,12 +7,13 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 
-contract TGE is Initializable, OwnableUpgradeable, ITGE {
+contract TGE is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, ITGE {
   using AddressUpgradeable for address payable;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -57,6 +58,10 @@ contract TGE is Initializable, OwnableUpgradeable, ITGE {
   uint256 private _totalPurchased;
 
   uint256 private _totalLocked;
+
+  // EVENTS
+
+  event Purchased(address buyer, uint256 amount);
 
   // CONSTRUCTOR
 
@@ -110,6 +115,7 @@ contract TGE is Initializable, OwnableUpgradeable, ITGE {
     payable
     onlyWhitelistedUser
     onlyState(State.Active)
+    nonReentrant
   {
     if (_unitOfAccount == address(0)) {
       require(msg.value == amount * price, "Invalid ETH value passed");
@@ -134,6 +140,8 @@ contract TGE is Initializable, OwnableUpgradeable, ITGE {
     token.mint(address(this), lockedAmount);
     lockedBalanceOf[msg.sender] += lockedAmount;
     _totalLocked += lockedAmount;
+
+    emit Purchased(msg.sender, amount);
   }
 
   function redeem() external override onlyState(State.Failed) {
@@ -163,15 +171,16 @@ contract TGE is Initializable, OwnableUpgradeable, ITGE {
     uint256 balance = lockedBalanceOf[msg.sender];
     lockedBalanceOf[msg.sender] = 0;
     _totalLocked -= balance;
-    token.transfer(msg.sender, balance);
+    bool status = token.transfer(msg.sender, balance);
+    require(status, "Token transfer failed");
   }
 
   function setLockupTVLReached() external {
+    lockupTVLReached = true;
     require(
       IPool(token.pool()).getTVL() >= lockupTVL,
       "Lockup TVL not yet reached"
     );
-    lockupTVLReached = true;
   }
 
   // RESTRICTED FUNCTIONS

@@ -20,21 +20,21 @@
         },
         {
           "indexed": false,
-          "internalType": "address[]",
+          "internalType": "address",
           "name": "targets",
-          "type": "address[]"
+          "type": "address"
         },
         {
           "indexed": false,
-          "internalType": "uint256[]",
+          "internalType": "uint256",
           "name": "values",
-          "type": "uint256[]"
+          "type": "uint256"
         },
         {
           "indexed": false,
-          "internalType": "bytes[]",
+          "internalType": "bytes",
           "name": "calldatas",
-          "type": "bytes[]"
+          "type": "bytes"
         },
         {
           "indexed": false,
@@ -126,19 +126,19 @@
               "type": "uint256"
             },
             {
-              "internalType": "address[]",
-              "name": "targets",
-              "type": "address[]"
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
             },
             {
-              "internalType": "uint256[]",
-              "name": "values",
-              "type": "uint256[]"
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
             },
             {
-              "internalType": "bytes[]",
-              "name": "calldatas",
-              "type": "bytes[]"
+              "internalType": "bytes",
+              "name": "callData",
+              "type": "bytes"
             },
             {
               "internalType": "uint256",
@@ -297,6 +297,21 @@
           "internalType": "uint256",
           "name": "ballotDecisionThreshold",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "callData",
+          "type": "bytes"
         },
         {
           "internalType": "uint256",

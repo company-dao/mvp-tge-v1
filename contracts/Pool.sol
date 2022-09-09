@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./components/Governor.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
@@ -12,7 +13,7 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IWhitelistedTokens.sol";
 import "./interfaces/IMetadata.sol";
 
-contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
+contract Pool is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, IPool, Governor {
   IService public service;
 
   IGovernanceToken public token;
@@ -63,6 +64,8 @@ contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
     uint256 ballotLifespan_,
     string memory trademark
   ) public initializer {
+    require(poolCreator_ != address(0), "Invalid pool creator address");
+    
     __Ownable_init();
 
     service = IService(msg.sender);
@@ -88,10 +91,14 @@ contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
   }
 
   function setToken(address token_) external onlyService {
+    require(token_ != address(0), "Can not set token to zero address");
+
     token = IGovernanceToken(token_);
   }
 
   function setTGE(address tge_) external onlyService {
+    require(tge_ != address(0), "Can not set tge to zero address");
+
     tge = ITGE(tge_);
   }
 
@@ -133,7 +140,7 @@ contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
     uint256 proposalId,
     uint256 votes,
     bool support
-  ) external {
+  ) external nonReentrant {
     if (votes == type(uint256).max) {
       votes = token.unlockedBalanceOf(msg.sender, proposalId);
     } else {
@@ -147,8 +154,8 @@ contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
     // if (support) {
     //     proposals[proposalId].againstVotes
     // }
-    token.lock(msg.sender, votes, proposals[proposalId].endBlock, proposalId);
     _castVote(proposalId, votes, support);
+    token.lock(msg.sender, votes, support, proposals[proposalId].endBlock, proposalId);
   }
 
   function proposeSingleAction(
@@ -157,19 +164,13 @@ contract Pool is Initializable, OwnableUpgradeable, IPool, Governor {
     bytes memory cd,
     string memory description
   ) external onlyProposalGateway returns (uint256 proposalId) {
-    address[] memory targets = new address[](1);
-    targets[0] = target;
-    uint256[] memory values = new uint256[](1);
-    values[0] = value;
-    bytes[] memory calldatas = new bytes[](1);
-    calldatas[0] = cd;
     proposalId = _propose(
       _ballotLifespan,
       _ballotQuorumThreshold,
       _ballotDecisionThreshold,
-      targets,
-      values,
-      calldatas,
+      target,
+      value,
+      cd,
       description
     );
   }

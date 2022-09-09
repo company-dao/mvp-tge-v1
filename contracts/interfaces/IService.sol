@@ -10,47 +10,43 @@ import "./IMetadata.sol";
 import "./IWhitelistedTokens.sol";
 
 interface IService {
-  function initialize(
-    IDirectory directory_,
-    address poolBeacon_,
-    address proposalGateway_,
-    address tokenBeacon_,
-    address tgeBeacon_,
-    IMetadata metadata_,
-    uint256 fee_,
-    uint256[3] memory ballotParams,
-    ISwapRouter uniswapRouter_,
-    IQuoter uniswapQuoter_,
-    IWhitelistedTokens whitelistedTokens_
-  ) external;
+    function initialize(
+        IDirectory directory_,
+        address poolBeacon_,
+        address proposalGateway_,
+        address tokenBeacon_,
+        address tgeBeacon_,
+        IMetadata metadata_,
+        uint256 fee_,
+        uint256[3] memory ballotParams,
+        ISwapRouter uniswapRouter_,
+        IQuoter uniswapQuoter_,
+        IWhitelistedTokens whitelistedTokens_
+    ) external;
 
-  function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
+    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
 
-  function addProposal(uint256 proposalId) external;
+    function addProposal(uint256 proposalId) external;
 
-  function directory() external view returns (IDirectory);
+    function directory() external view returns (IDirectory);
 
-  // function isTokenWhitelisted(address token) external view returns (bool);
+    // function isTokenWhitelisted(address token) external view returns (bool);
 
-  function tokenWhitelist() external view returns (address[] memory);
+    function tokenWhitelist() external view returns (address[] memory);
 
-  function owner() external view returns (address);
+    function owner() external view returns (address);
 
-  function proposalGateway() external view returns (address);
+    function proposalGateway() external view returns (address);
 
-  function proposalQuorum() external view returns (uint256);
+    function uniswapRouter() external view returns (ISwapRouter);
 
-  function proposalThreshold() external view returns (uint256);
+    function uniswapQuoter() external view returns (IQuoter);
 
-  function uniswapRouter() external view returns (ISwapRouter);
+    function whitelistedTokens() external view returns (IWhitelistedTokens);
 
-  function uniswapQuoter() external view returns (IQuoter);
+    function metadata() external view returns (IMetadata);
 
-  function whitelistedTokens() external view returns (IWhitelistedTokens);
+    // function tokenSwapPath(address) external view returns (bytes memory);
 
-  function metadata() external view returns (IMetadata);
-
-  // function tokenSwapPath(address) external view returns (bytes memory);
-
-  // function tokenSwapReversePath(address) external view returns (bytes memory);
+    // function tokenSwapReversePath(address) external view returns (bytes memory);
 }

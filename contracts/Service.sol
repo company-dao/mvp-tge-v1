@@ -7,9 +7,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
@@ -23,11 +23,12 @@ import "./interfaces/IWhitelistedTokens.sol";
 contract Service is
   Initializable,
   OwnableUpgradeable,
-  UUPSUpgradeable,
+  UUPSUpgradeable, 
+  ReentrancyGuardUpgradeable, 
   IService
 {
   using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-  // using EnumerableSet for EnumerableSet.AddressSet;
+  using AddressUpgradeable for address;
 
   IMetadata public metadata;
 
@@ -46,10 +47,6 @@ contract Service is
   address public tgeBeacon;
 
   uint256 public fee;
-
-  uint256 public proposalQuorum;
-
-  uint256 public proposalThreshold;
 
   uint256 private _ballotQuorumThreshold;
 
@@ -89,8 +86,6 @@ contract Service is
     uint256 lifespan
   );
 
-  // event QueueCreated(address queueContract);
-
   // CONSTRUCTOR
 
   /// @custom:oz-upgrades-unsafe-allow constructor
@@ -111,6 +106,16 @@ contract Service is
     IQuoter uniswapQuoter_,
     IWhitelistedTokens whitelistedTokens_
   ) public initializer {
+    require(address(directory_) != address(0), "Invalid Directory address");
+    require(poolBeacon_ != address(0), "Invalid Pool Beacon address");
+    require(proposalGateway_ != address(0), "Invalid ProposalGateway address");
+    require(tokenBeacon_ != address(0), "Invalid Token Beacon address");
+    require(tgeBeacon_ != address(0), "Invalid TGE Beacon address");
+    require(address(metadata_) != address(0), "Invalid Metadata address");
+    require(address(uniswapRouter_) != address(0), "Invalid UniswapRouter address");
+    require(address(uniswapQuoter_) != address(0), "Invalid UniswapQuoter address");
+    require(address(whitelistedTokens_) != address(0), "Invalid WhitelistedTokens address");
+
     __Ownable_init();
     __UUPSUpgradeable_init();
 
@@ -128,11 +133,6 @@ contract Service is
     uniswapQuoter = uniswapQuoter_;
     whitelistedTokens = whitelistedTokens_;
 
-    // address metadataContract = metadataMaster.clone();
-    // metadata = IMetadata(metadataContract);
-    // metadata.initialize(msg.sender);
-
-    // emit QueueCreated(metadataContract);
     emit FeeSet(fee_);
     emit GovernanceSettingsSet(
       ballotParams[0],
@@ -158,11 +158,11 @@ contract Service is
     uint256 ballotLifespan_,
     uint256 jurisdiction,
     string memory trademark
-  ) external payable onlyWhitelisted {
+  ) external payable onlyWhitelisted nonReentrant {
     require(
-      IERC20Upgradeable(tgeInfo.unitOfAccount).totalSupply() >= 0 ||
-        tgeInfo.unitOfAccount == address(0),
-      "Contract does not support IERC20"
+        tgeInfo.unitOfAccount == address(0) ||
+        tgeInfo.unitOfAccount.isContract(),
+      "Contract does not support valid payment"
     );
     // require(
     //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0),
@@ -245,15 +245,16 @@ contract Service is
     external
     override
     onlyPool
+    nonReentrant
   {
     require(
       IPool(msg.sender).tge().state() != ITGE.State.Active,
       "Has active TGE"
     );
     require(
-      IERC20Upgradeable(tgeInfo.unitOfAccount).totalSupply() >= 0 ||
-        tgeInfo.unitOfAccount == address(0),
-      "Contract does not support IERC20"
+        tgeInfo.unitOfAccount == address(0) ||
+        tgeInfo.unitOfAccount.isContract(),
+      "Contract does not support valid payment"
     );
     // require(
     //     whitelistedTokens.isTokenWhitelisted(tgeInfo.unitOfAccount) || tgeInfo.unitOfAccount == address(0),

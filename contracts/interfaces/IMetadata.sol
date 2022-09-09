@@ -3,29 +3,26 @@
 pragma solidity 0.8.13;
 
 interface IMetadata {
-  enum Status {
-    NotUsed,
-    Used
-  }
+    enum Status {NotUsed, Used}
 
-  struct QueueInfo {
-    uint256 jurisdiction;
-    string serialNumber;
-    string dateOfIncorporation;
-    string legalAddress;
-    string taxationStatus;
-    string registeredName;
-    Status status;
-    address owner;
-  }
+    struct QueueInfo {
+        uint256 jurisdiction;
+        string serialNumber;
+        string dateOfIncorporation;
+        string legalAddress;
+        string taxationStatus;
+        string registeredName;
+        Status status;
+        address owner;
+    }
 
-  function initialize() external;
+    function initialize() external;
 
-  function lockRecord(uint256 jurisdiction) external returns (uint256);
+    function lockRecord(uint256 jurisdiction) external returns (uint256);
 
-  function getInfo(uint256 id) external view returns (string[5] memory);
+    function getInfo(uint256 id) external view returns (string[5] memory);
 
-  function getQueueInfo(uint256 id) external view returns (QueueInfo memory);
+    function getQueueInfo(uint256 id) external view returns (QueueInfo memory);
 
-  function setOwner(uint256 id, address owner) external;
+    function setOwner(uint256 id, address owner) external;
 }

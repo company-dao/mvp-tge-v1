@@ -71,7 +71,7 @@ contract Metadata is
     );
     currentId += 1;
 
-    for (uint256 i = 0; i < currentId; i++) {
+    for (uint256 i = 1; i < currentId; i++) {
       require(
         queueInfo[i].jurisdiction != jurisdiction ||
           (queueInfo[i].jurisdiction == jurisdiction &&
@@ -107,7 +107,7 @@ contract Metadata is
     onlyService
     returns (uint256)
   {
-    for (uint256 i = 0; i <= currentId; i++) {
+    for (uint256 i = 1; i <= currentId; i++) {
       if (
         queueInfo[i].jurisdiction == jurisdiction &&
         (queueInfo[i].status == Status.NotUsed)
@@ -155,7 +155,7 @@ contract Metadata is
     returns (uint256)
   {
     uint256 flag = 0;
-    for (uint256 i = 0; i < currentId; i++) {
+    for (uint256 i = 1; i <= currentId; i++) {
       if (
         queueInfo[i].jurisdiction != jurisdiction &&
         (queueInfo[i].status == Status.NotUsed)
