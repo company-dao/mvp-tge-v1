@@ -64,7 +64,7 @@ describe("Test initial TGE", function () {
             await expect(
                 service
                     .connect(other)
-                    .createPool(AddressZero, tokenData, tgeData, {
+                    .createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                         value: parseUnits("0.01"),
                     })
             ).to.be.revertedWith("Not whitelisted");
@@ -82,7 +82,7 @@ describe("Test initial TGE", function () {
 
         it("Can't create pool with incorrect fee", async function () {
             await expect(
-                service.createPool(AddressZero, tokenData, tgeData, {
+                service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                     value: parseUnits("0.005"),
                 })
             ).to.be.revertedWith("Incorrect fee passed");
@@ -91,7 +91,7 @@ describe("Test initial TGE", function () {
         it("Can't create pool with hardcap higher than token cap", async function () {
             tgeData.hardcap = 20000;
             await expect(
-                service.createPool(AddressZero, tokenData, tgeData, {
+                service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                     value: parseUnits("0.01"),
                 })
             ).to.be.revertedWith("Hardcap higher than remaining supply");
@@ -101,7 +101,7 @@ describe("Test initial TGE", function () {
             await expect(
                 tge
                     .connect(other)
-                    .purchase(AddressZero, 5, { value: parseUnits("0.05") })
+                    .purchase(5, { value: parseUnits("0.05") })
             ).to.be.revertedWith("Amount less than min purchase");
         });
 
@@ -109,7 +109,7 @@ describe("Test initial TGE", function () {
             await expect(
                 tge
                     .connect(other)
-                    .purchase(AddressZero, 50, { value: parseUnits("0.1") })
+                    .purchase(50, { value: parseUnits("0.1") })
             ).to.be.revertedWith("Invalid ETH value passed");
         });
 
@@ -117,29 +117,29 @@ describe("Test initial TGE", function () {
             await expect(
                 tge
                     .connect(other)
-                    .purchase(AddressZero, 4000, { value: parseUnits("40") })
+                    .purchase(4000, { value: parseUnits("40") })
             ).to.be.revertedWith("Overflows max purchase");
         });
 
         it("Can't purchase over max purchase in several tx", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 2000, { value: parseUnits("20") });
+                .purchase(2000, { value: parseUnits("20") });
 
             await expect(
                 tge
                     .connect(other)
-                    .purchase(AddressZero, 2000, { value: parseUnits("20") })
+                    .purchase(2000, { value: parseUnits("20") })
             ).to.be.revertedWith("Overflows max purchase");
         });
 
         it("Can't purchase over hardcap", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 3000, { value: parseUnits("30") });
+                .purchase(3000, { value: parseUnits("30") });
 
             await expect(
-                tge.purchase(AddressZero, 3000, { value: parseUnits("30") })
+                tge.purchase(3000, { value: parseUnits("30") })
             ).to.be.revertedWith("Overflows hardcap");
         });
 
@@ -152,7 +152,7 @@ describe("Test initial TGE", function () {
         it("Purchasing works", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
 
             expect(await token.balanceOf(other.address)).to.equal(500);
             expect(await provider.getBalance(tge.address)).to.equal(
@@ -165,7 +165,7 @@ describe("Test initial TGE", function () {
             await token1.mint(other.address, parseUnits("203")); // Because of slippage we need a bit more than 200
             await token1.connect(other).approve(tge.address, parseUnits("203"));
 
-            await tge.connect(other).purchase(token1.address, 100);
+            await tge.connect(other).purchase(100);
             expect(await token1.balanceOf(other.address)).to.be.lt(
                 parseUnits("1")
             );
@@ -178,7 +178,7 @@ describe("Test initial TGE", function () {
             await token2.mint(other.address, parseUnits("102")); // Because of slippage we need a bit more than 100
             await token2.connect(other).approve(tge.address, parseUnits("102"));
 
-            await tge.connect(other).purchase(token2.address, 100);
+            await tge.connect(other).purchase(100);
             expect(await token2.balanceOf(other.address)).to.be.lt(
                 parseUnits("1")
             );
@@ -194,21 +194,21 @@ describe("Test initial TGE", function () {
                 .approve(tge.address, parseUnits("1000"));
 
             await expect(
-                tge.connect(other).purchase(token3.address, 100)
+                tge.connect(other).purchase(100)
             ).to.be.revertedWith("Token not whitelisted");
         });
 
         it("Locking is rounded up", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1001, { value: parseUnits("10.01") });
+                .purchase(1001, { value: parseUnits("10.01") });
             expect(await tge.lockedBalanceOf(other.address)).to.equal(501);
         });
 
         it("Can't transfer lockup tokens", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
 
             await expect(
                 token.connect(other).transfer(owner.address, 1000)
@@ -221,25 +221,25 @@ describe("Test initial TGE", function () {
             await expect(
                 tge
                     .connect(other)
-                    .purchase(AddressZero, 1000, { value: parseUnits("10") })
+                    .purchase(1000, { value: parseUnits("10") })
             ).to.be.revertedWith("TGE in wrong state");
         });
 
         it("Can't claim back if event is not failed", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 500, { value: parseUnits("5") });
+                .purchase(500, { value: parseUnits("5") });
 
-            await expect(tge.connect(third).claimBack()).to.be.revertedWith(
+            await expect(tge.connect(third).redeem()).to.be.revertedWith(
                 "TGE in wrong state"
             );
 
             await tge
                 .connect(other)
-                .purchase(AddressZero, 500, { value: parseUnits("5") });
+                .purchase(500, { value: parseUnits("5") });
             await mineBlock(20);
 
-            await expect(tge.connect(third).claimBack()).to.be.revertedWith(
+            await expect(tge.connect(third).redeem()).to.be.revertedWith(
                 "TGE in wrong state"
             );
         });
@@ -247,18 +247,18 @@ describe("Test initial TGE", function () {
         it("Claiming back works if TGE is failed", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 400, { value: parseUnits("4") });
+                .purchase(400, { value: parseUnits("4") });
 
             await mineBlock(20);
 
-            await tge.connect(other).claimBack();
+            await tge.connect(other).redeem();
             expect(await token.balanceOf(other.address)).to.equal(0);
         });
 
         it("Burn can't be called on token directly, should be done though TGE", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 400, { value: parseUnits("4") });
+                .purchase(400, { value: parseUnits("4") });
             await mineBlock(20);
             await expect(
                 token.connect(other).burn(other.address, 100)
@@ -268,15 +268,15 @@ describe("Test initial TGE", function () {
         it("Can't transfer funds if event is not successful", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 500, { value: parseUnits("5") });
+                .purchase(500, { value: parseUnits("5") });
 
-            await expect(tge.transferFunds(AddressZero)).to.be.revertedWith(
+            await expect(tge.transferFunds()).to.be.revertedWith(
                 "TGE in wrong state"
             );
 
             await mineBlock(20);
 
-            await expect(tge.transferFunds(AddressZero)).to.be.revertedWith(
+            await expect(tge.transferFunds()).to.be.revertedWith(
                 "TGE in wrong state"
             );
         });
@@ -284,10 +284,10 @@ describe("Test initial TGE", function () {
         it("Transferring funds for successful TGE by owner should work", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
-            await tge.transferFunds(AddressZero);
+            await tge.transferFunds();
             expect(await provider.getBalance(pool.address)).to.equal(
                 parseUnits("10")
             );
@@ -296,11 +296,11 @@ describe("Test initial TGE", function () {
         it("In successful TGE purchased funds are still locked until conditions are met", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
             expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
-            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+            await expect(tge.connect(other).claim()).to.be.revertedWith(
                 "Unlock not yet available"
             );
         });
@@ -308,14 +308,14 @@ describe("Test initial TGE", function () {
         it("Funds are still locked if only TVL condition is met", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 2000, { value: parseUnits("20") });
+                .purchase(2000, { value: parseUnits("20") });
             await mineBlock(20);
 
-            expect(await tge.callStatic.getTVL()).to.equal(parseUnits("20"));
+            expect(await pool.callStatic.getTVL()).to.equal(parseUnits("20"));
             await tge.setLockupTVLReached();
 
             expect(await tge.lockedBalanceOf(other.address)).to.equal(1000);
-            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+            await expect(tge.connect(other).claim()).to.be.revertedWith(
                 "Unlock not yet available"
             );
         });
@@ -323,11 +323,11 @@ describe("Test initial TGE", function () {
         it("Funds are still locked if only duration condition is met", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
             expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
-            await expect(tge.connect(other).unlock()).to.be.revertedWith(
+            await expect(tge.connect(other).claim()).to.be.revertedWith(
                 "Unlock not yet available"
             );
         });
@@ -335,12 +335,12 @@ describe("Test initial TGE", function () {
         it("Funds can be unlocked as soon as all unlocked conditions are met", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 2000, { value: parseUnits("20") });
+                .purchase(2000, { value: parseUnits("20") });
             await mineBlock(50);
 
             await tge.setLockupTVLReached();
 
-            await tge.connect(other).unlock();
+            await tge.connect(other).claim();
             expect(await tge.lockedBalanceOf(other.address)).to.equal(0);
             expect(await token.balanceOf(other.address)).to.equal(2000);
         });
@@ -348,23 +348,23 @@ describe("Test initial TGE", function () {
         it("TVL unlock works with multiple currencies in TVL", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1500, { value: parseUnits("15") });
+                .purchase(1500, { value: parseUnits("15") });
 
             await token1.mint(other.address, parseUnits("1000"));
             await token1
                 .connect(other)
                 .approve(tge.address, parseUnits("1000"));
-            await tge.connect(other).purchase(token1.address, 250);
+            await tge.connect(other).purchase(250);
 
             await token2.mint(other.address, parseUnits("1000"));
             await token2
                 .connect(other)
                 .approve(tge.address, parseUnits("1000"));
-            await tge.connect(other).purchase(token2.address, 250);
+            await tge.connect(other).purchase(250);
 
             await tge.setLockupTVLReached();
             await mineBlock(50);
-            await tge.connect(other).unlock();
+            await tge.connect(other).claim();
         });
 
         it("Token has zero decimals", async function () {
@@ -432,7 +432,7 @@ describe("Test initial TGE", function () {
     describe("Recreating failed TGE", async function () {
         it("Can't recreate TGE for non-pool", async function () {
             await expect(
-                service.createPool(token.address, tokenData, tgeData, {
+                service.createPool(token.address, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                     value: parseUnits("0.01"),
                 })
             ).to.be.revertedWith("Not a pool");
@@ -443,7 +443,7 @@ describe("Test initial TGE", function () {
             await expect(
                 service
                     .connect(other)
-                    .createPool(pool.address, tokenData, tgeData, {
+                    .createPool(pool.address, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                         value: parseUnits("0.01"),
                     })
             ).to.be.revertedWith("Sender is not pool owner");
@@ -451,7 +451,7 @@ describe("Test initial TGE", function () {
 
         it("Can't recreate active TGE", async function () {
             await expect(
-                service.createPool(pool.address, tokenData, tgeData, {
+                service.createPool(pool.address, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                     value: parseUnits("0.01"),
                 })
             ).to.be.revertedWith("Previous TGE not failed");
@@ -460,11 +460,11 @@ describe("Test initial TGE", function () {
         it("Can't recreate successful TGE", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 1000, { value: parseUnits("10") });
+                .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
 
             await expect(
-                service.createPool(pool.address, tokenData, tgeData, {
+                service.createPool(pool.address, tokenData, tgeData, 50, 50, 25, 1, "Name", {
                     value: parseUnits("0.01"),
                 })
             ).to.be.revertedWith("Previous TGE not failed");
@@ -473,7 +473,7 @@ describe("Test initial TGE", function () {
         it("Failed TGE can be recreated", async function () {
             await tge
                 .connect(other)
-                .purchase(AddressZero, 500, { value: parseUnits("5") });
+                .purchase(500, { value: parseUnits("5") });
             await mineBlock(20);
 
             // TGE is failed
@@ -486,8 +486,9 @@ describe("Test initial TGE", function () {
 
             const tx = await service.createPool(
                 pool.address,
-                tokenData,
-                tgeData,
+                tokenData, 
+                tgeData, 
+                50, 50, 25, 1, "Name", 
                 {
                     value: parseUnits("0.01"),
                 }

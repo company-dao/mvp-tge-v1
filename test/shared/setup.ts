@@ -3,6 +3,7 @@ import {
     ERC20Mock,
     Pool,
     ProposalGateway,
+    Metadata,
     Service,
     TGE,
 } from "../../typechain-types";
@@ -52,9 +53,9 @@ export async function setup() {
         lockupTVL: parseUnits("20"),
         duration: 20,
         userWhitelist: [owner.address, other.address],
-        tokenWhitelist: [],
+        unitOfAccount: AddressZero
     };
-    const tx = await service.createPool(AddressZero, tokenData, tgeData, {
+    const tx = await service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
         value: parseUnits("0.01"),
     });
     const receipt = await tx.wait();
