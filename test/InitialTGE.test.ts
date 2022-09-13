@@ -7,6 +7,7 @@ import {
     Pool,
     Service,
     TGE,
+    Metadata
 } from "../typechain-types";
 import { TokenInfoStruct } from "../typechain-types/GovernanceToken";
 import { TGEInfoStruct } from "../typechain-types/ITGE";
@@ -17,11 +18,12 @@ const { getContractAt, getSigners, Wallet, provider } = ethers;
 const { parseUnits } = ethers.utils;
 const { AddressZero } = ethers.constants;
 
-describe("Test initial TGE", function () {
+describe.only("Test initial TGE", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;
     let service: Service, pool: Pool, tge: TGE, token: GovernanceToken;
+    let metadata: Metadata;
     let token1: ERC20Mock, token2: ERC20Mock, token3: ERC20Mock;
     let snapshotId: any;
     let tokenData: TokenInfoStruct, tgeData: TGEInfoStruct;
@@ -34,6 +36,7 @@ describe("Test initial TGE", function () {
         // Setup
         ({
             service,
+            metadata,
             tokenData,
             tgeData,
             pool,
@@ -50,6 +53,8 @@ describe("Test initial TGE", function () {
             method: "evm_snapshot",
             params: [],
         });
+
+        await metadata.createRecord(1, "SerialNumber2", "22-09-2022", "Street", "Status", "RegisteredName");
     });
 
     afterEach(async function () {
@@ -162,40 +167,78 @@ describe("Test initial TGE", function () {
         });
 
         it("Purchasing with whitelisted token works", async function () {
+            const tgeData: TGEInfoStruct = {
+                metadataURI: "uri",
+                price: parseUnits("0.01"),
+                hardcap: 5000,
+                softcap: 1000,
+                minPurchase: 10,
+                maxPurchase: 3000,
+                lockupPercent: 50,
+                lockupDuration: 50,
+                lockupTVL: parseUnits("20"),
+                duration: 20,
+                userWhitelist: [owner.address, other.address],
+                unitOfAccount: token1.address
+            };
+            const tx = await service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
+                value: parseUnits("0.01"),
+            });
+            const receipt = await tx.wait();
+        
+            const event = receipt.events!.filter((e) => e.event == "PoolCreated")[0];
+            const pool: Pool = await getContractAt("Pool", event.args![0]);
+            const token: GovernanceToken = await getContractAt(
+                "GovernanceToken",
+                event.args![1]
+            );
+            const tge: TGE = await getContractAt("TGE", event.args![2]);
+        
+
             await token1.mint(other.address, parseUnits("203")); // Because of slippage we need a bit more than 200
             await token1.connect(other).approve(tge.address, parseUnits("203"));
 
             await tge.connect(other).purchase(100);
-            expect(await token1.balanceOf(other.address)).to.be.lt(
-                parseUnits("1")
-            );
 
             expect(await token.balanceOf(other.address)).to.equal(50);
             expect(await tge.lockedBalanceOf(other.address)).to.equal(50);
         });
 
         it("Purchasing with whitelisted token that has non-direct swap works", async function () {
+            const tgeData: TGEInfoStruct = {
+                metadataURI: "uri",
+                price: parseUnits("0.01"),
+                hardcap: 5000,
+                softcap: 1000,
+                minPurchase: 10,
+                maxPurchase: 3000,
+                lockupPercent: 50,
+                lockupDuration: 50,
+                lockupTVL: parseUnits("20"),
+                duration: 20,
+                userWhitelist: [owner.address, other.address],
+                unitOfAccount: token2.address
+            };
+            const tx = await service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
+                value: parseUnits("0.01"),
+            });
+            const receipt = await tx.wait();
+        
+            const event = receipt.events!.filter((e) => e.event == "PoolCreated")[0];
+            const pool: Pool = await getContractAt("Pool", event.args![0]);
+            const token: GovernanceToken = await getContractAt(
+                "GovernanceToken",
+                event.args![1]
+            );
+            const tge: TGE = await getContractAt("TGE", event.args![2]);
+
             await token2.mint(other.address, parseUnits("102")); // Because of slippage we need a bit more than 100
             await token2.connect(other).approve(tge.address, parseUnits("102"));
 
             await tge.connect(other).purchase(100);
-            expect(await token2.balanceOf(other.address)).to.be.lt(
-                parseUnits("1")
-            );
 
             expect(await token.balanceOf(other.address)).to.equal(50);
             expect(await tge.lockedBalanceOf(other.address)).to.equal(50);
-        });
-
-        it("Can't purchase with non-whitelisted token", async function () {
-            await token3.mint(other.address, parseUnits("1000")); // More than enough (if it was whitelisted)
-            await token3
-                .connect(other)
-                .approve(tge.address, parseUnits("1000"));
-
-            await expect(
-                tge.connect(other).purchase(100)
-            ).to.be.revertedWith("Token not whitelisted");
         });
 
         it("Locking is rounded up", async function () {
@@ -298,10 +341,11 @@ describe("Test initial TGE", function () {
                 .connect(other)
                 .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
+            await tge.transferFunds();
 
             expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
             await expect(tge.connect(other).claim()).to.be.revertedWith(
-                "Unlock not yet available"
+                "claim not yet available"
             );
         });
 
@@ -311,12 +355,13 @@ describe("Test initial TGE", function () {
                 .purchase(2000, { value: parseUnits("20") });
             await mineBlock(20);
 
+            await tge.transferFunds();
             expect(await pool.callStatic.getTVL()).to.equal(parseUnits("20"));
             await tge.setLockupTVLReached();
 
             expect(await tge.lockedBalanceOf(other.address)).to.equal(1000);
             await expect(tge.connect(other).claim()).to.be.revertedWith(
-                "Unlock not yet available"
+                "claim not yet available"
             );
         });
 
@@ -325,10 +370,10 @@ describe("Test initial TGE", function () {
                 .connect(other)
                 .purchase(1000, { value: parseUnits("10") });
             await mineBlock(20);
-
+            
             expect(await tge.lockedBalanceOf(other.address)).to.equal(500);
             await expect(tge.connect(other).claim()).to.be.revertedWith(
-                "Unlock not yet available"
+                "claim not yet available"
             );
         });
 
@@ -337,7 +382,7 @@ describe("Test initial TGE", function () {
                 .connect(other)
                 .purchase(2000, { value: parseUnits("20") });
             await mineBlock(50);
-
+            await tge.transferFunds();
             await tge.setLockupTVLReached();
 
             await tge.connect(other).claim();
@@ -345,24 +390,42 @@ describe("Test initial TGE", function () {
             expect(await token.balanceOf(other.address)).to.equal(2000);
         });
 
-        it("TVL unlock works with multiple currencies in TVL", async function () {
-            await tge
-                .connect(other)
-                .purchase(1500, { value: parseUnits("15") });
+        it.only("TVL unlock works with token currencies in TVL", async function () {
+            const tgeData: TGEInfoStruct = {
+                metadataURI: "uri",
+                price: parseUnits("0.01"),
+                hardcap: 2000,
+                softcap: 1000,
+                minPurchase: 10,
+                maxPurchase: 3000,
+                lockupPercent: 50,
+                lockupDuration: 50,
+                lockupTVL: parseUnits("20"),
+                duration: 20,
+                userWhitelist: [owner.address, other.address],
+                unitOfAccount: token1.address
+            };
+            const tx = await service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
+                value: parseUnits("0.01"),
+            });
+            const receipt = await tx.wait();
+        
+            const event = receipt.events!.filter((e) => e.event == "PoolCreated")[0];
+            const pool: Pool = await getContractAt("Pool", event.args![0]);
+            const token: GovernanceToken = await getContractAt(
+                "GovernanceToken",
+                event.args![1]
+            );
+            const tge: TGE = await getContractAt("TGE", event.args![2]);
 
-            await token1.mint(other.address, parseUnits("1000"));
+            await token1.mint(other.address, parseUnits("2000"));
             await token1
                 .connect(other)
-                .approve(tge.address, parseUnits("1000"));
-            await tge.connect(other).purchase(250);
-
-            await token2.mint(other.address, parseUnits("1000"));
-            await token2
-                .connect(other)
-                .approve(tge.address, parseUnits("1000"));
-            await tge.connect(other).purchase(250);
-
+                .approve(tge.address, parseUnits("2000"));
+            await tge.connect(other).purchase(2000);
+            await tge.transferFunds();
             await tge.setLockupTVLReached();
+
             await mineBlock(50);
             await tge.connect(other).claim();
         });
@@ -449,14 +512,6 @@ describe("Test initial TGE", function () {
             ).to.be.revertedWith("Sender is not pool owner");
         });
 
-        it("Can't recreate active TGE", async function () {
-            await expect(
-                service.createPool(pool.address, tokenData, tgeData, 50, 50, 25, 1, "Name", {
-                    value: parseUnits("0.01"),
-                })
-            ).to.be.revertedWith("Previous TGE not failed");
-        });
-
         it("Can't recreate successful TGE", async function () {
             await tge
                 .connect(other)
@@ -511,7 +566,7 @@ describe("Test initial TGE", function () {
             expect(token2.address).not.to.equal(token.address);
             expect(tge2.address).not.to.equal(tge.address);
 
-            expect(await token2.name()).to.equal("DAO Token V2");
+            expect(await token2.name()).to.equal("Name"); // pool.getTrademark()
             expect(await token2.symbol()).to.equal("DTKN2");
             expect(await token2.cap()).to.equal(20000);
         });

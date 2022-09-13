@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+
 abstract contract Governor {
     struct Proposal {
         uint256 ballotQuorumThreshold;
@@ -67,11 +69,18 @@ abstract contract Governor {
         );
         proposals[proposalId].executed = true;
         proposals[proposalId].accepted = true;
-
-        (bool success, ) = proposal.target.call{
+        string memory errorMessage = "Call reverted without message";
+        (bool success, bytes memory returndata) = proposal.target.call{
             value: proposal.value
         }(proposal.callData);
-        require(success, "Invail execution result");
+        
+        
+        AddressUpgradeable.verifyCallResult(
+            success,
+            returndata,
+            errorMessage
+        );
+        // require(success, "Invalid execution result");
 
         proposals[proposalId].state = ProposalExecutionState.Accomplished;
 

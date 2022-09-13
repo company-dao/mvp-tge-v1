@@ -179,7 +179,8 @@ contract Pool is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, 
     IQuoter quoter = service.uniswapQuoter();
     IWhitelistedTokens whitelistedTokens = service.whitelistedTokens();
     address[] memory tokenWhitelist = whitelistedTokens.tokenWhitelist(); // service.tokenWhitelist();
-    uint256 tvl;
+    uint256 tvl = 0;
+
     for (uint256 i = 0; i < tokenWhitelist.length; i++) {
       if (tokenWhitelist[i] == address(0)) {
         tvl += address(this).balance;
