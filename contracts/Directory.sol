@@ -205,8 +205,4 @@ contract Directory is
     _;
   }
 
-  function test12345() public view returns (uint256) {
-    return 2345;
-  }
-
 }
