@@ -4,6 +4,7 @@ import { ContractTransaction } from "ethers";
 import { deployments, ethers, network } from "hardhat";
 import { ERC20Mock, Pool, ProposalGateway, TGE } from "../typechain-types";
 import { TGEInfoStruct } from "../typechain-types/ITGE";
+import Exceptions from "./shared/Exceptions";
 import { setup } from "./shared/setup";
 import { mineBlock } from "./shared/utils";
 
@@ -23,7 +24,7 @@ describe("Test transfer proposals", function () {
     before(async function () {
         [owner, other, third] = await getSigners();
 
-        await deployments.fixture();
+        // await deployments.fixture();
 
         // Setup
         ({ tgeData, pool, tge, gateway, token1 } = await setup());
@@ -31,7 +32,7 @@ describe("Test transfer proposals", function () {
         // Successfully finish TGE
         await tge
             .connect(other)
-            .purchase(AddressZero, 1000, { value: parseUnits("10") });
+            .purchase(1000, { value: parseUnits("10") });
         await mineBlock(20);
 
         tgeData.duration = 30;
@@ -59,7 +60,6 @@ describe("Test transfer proposals", function () {
                 .connect(other)
                 .createTransferETHProposal(
                     pool.address,
-                    25,
                     third.address,
                     parseUnits("1"),
                     "Let's give this guy some money"
@@ -72,21 +72,24 @@ describe("Test transfer proposals", function () {
                     .connect(third)
                     .createTransferETHProposal(
                         pool.address,
-                        25,
                         third.address,
                         parseUnits("1"),
                         "Let's give this guy some money"
                     )
-            ).to.be.revertedWith("Not shareholder");
+            ).to.be.revertedWith(Exceptions.NOT_SHAREHOLDER);
         });
 
         it("Can't execute transfer proposal if pool doesn't hold enough funds", async function () {
             await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
+            
+            await pool.executeBallot(1);
+            const state = (await pool.getProposal(1)).state;
+            expect(state).to.equal(1); // Rejected
+            // await expect(pool.executeBallot(1)).to.be.revertedWith(
+            //     "Call reverted without message"
+            // );
 
-            await expect(pool.execute(1)).to.be.revertedWith(
-                "Call reverted without message"
-            );
         });
 
         it("Executing succeeded transfer proposals should work", async function () {
@@ -98,7 +101,7 @@ describe("Test transfer proposals", function () {
             });
 
             const thirdBefore = await provider.getBalance(third.address);
-            await pool.execute(1);
+            await pool.executeBallot(1);
             const thirdAfter = await provider.getBalance(third.address);
             expect(await provider.getBalance(pool.address)).to.equal(
                 parseUnits("9")
@@ -113,7 +116,6 @@ describe("Test transfer proposals", function () {
                 .connect(other)
                 .createTransferERC20Proposal(
                     pool.address,
-                    25,
                     token1.address,
                     third.address,
                     parseUnits("10"),
@@ -125,9 +127,12 @@ describe("Test transfer proposals", function () {
             await pool.connect(other).castVote(1, MaxUint256, true);
             await mineBlock(25);
 
-            await expect(pool.execute(1)).to.be.revertedWith(
-                "ERC20: transfer amount exceeds balance"
-            );
+            await pool.executeBallot(1);
+            const state = (await pool.getProposal(1)).state;
+            expect(state).to.equal(1); // Rejected
+            // await expect(pool.executeBallot(1)).to.be.revertedWith(
+            //     "ERC20: transfer amount exceeds balance"
+            // );
         });
 
         it("Executing succeeded transfer proposals should work", async function () {
@@ -135,7 +140,7 @@ describe("Test transfer proposals", function () {
             await mineBlock(25);
             await token1.mint(pool.address, parseUnits("100"));
 
-            await pool.execute(1);
+            await pool.executeBallot(1);
             expect(await token1.balanceOf(pool.address)).to.equal(
                 parseUnits("90")
             );

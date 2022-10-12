@@ -8,6 +8,10 @@ const deployFunction: DeployFunction = async function ({
 
     await run("deploy:proposalGateway", {});
 
+    await run("deploy:whitelistedTokens", {});
+
+    await run("deploy:metadata", {});
+
     await run("deploy:service", {});
 };
 

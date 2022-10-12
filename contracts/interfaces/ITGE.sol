@@ -15,7 +15,7 @@ interface ITGE {
         uint256 lockupTVL;
         uint256 duration;
         address[] userWhitelist;
-        address[] tokenWhitelist;
+        address unitOfAccount;
     }
 
     function initialize(
@@ -24,7 +24,7 @@ interface ITGE {
         TGEInfo memory info
     ) external;
 
-    function claimBack() external;
+    function redeem() external;
 
     function maxPurchaseOf(address account) external view returns (uint256);
 

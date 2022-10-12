@@ -3,14 +3,23 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 import "./interfaces/IService.sol";
+import "./interfaces/IPool.sol";
+import "./libraries/ExceptionsLibrary.sol";
 
-contract TGE is ITGE, OwnableUpgradeable {
+contract TGE is
+    Initializable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    ITGE
+{
     using AddressUpgradeable for address payable;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -38,7 +47,7 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     address[] public userWhitelist;
 
-    address[] public tokenWhitelist;
+    address private _unitOfAccount;
 
     mapping(address => bool) public isUserWhitelisted;
 
@@ -46,28 +55,70 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     uint256 public createdAt;
 
-    uint256 public totalPurchases;
-
     mapping(address => uint256) public purchaseOf;
 
     bool public lockupTVLReached;
 
     mapping(address => uint256) public lockedBalanceOf;
 
+    uint256 private _totalPurchased;
+
+    uint256 private _totalLocked;
+
+    /// @dev unused, compatibility with proxy layout
+    IService public service;
+
+    bool public isProtocolTokenFeeClaimed;
+     bool public isTest313190903;
+    // EVENTS
+
+    event Purchased(address buyer, uint256 amount);
+
+    event ProtocolTokenFeeClaimed(address token, uint256 tokenFee);
+
     // CONSTRUCTOR
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(
         address owner_,
         address token_,
         TGEInfo memory info
-    ) external override initializer {
+    ) public override initializer {
+        __Ownable_init();
+
         uint256 remainingSupply = IGovernanceToken(token_).cap() -
             IGovernanceToken(token_).totalSupply();
         require(
             info.hardcap <= remainingSupply,
-            "Hardcap higher than remaining supply"
+            ExceptionsLibrary.HARDCAP_OVERFLOW_REMAINING_SUPPLY
         );
 
+        require(
+            info.softcap >= IGovernanceToken(token_).service().getMinSoftCap(),
+            ExceptionsLibrary.INVALID_SOFTCAP
+        );
+
+        require(
+            info.hardcap >= IGovernanceToken(token_).service().getMinSoftCap(),
+            ExceptionsLibrary.INVALID_HARDCAP
+        );
+
+        require(
+            info.hardcap +
+                IGovernanceToken(token_).service().getProtocolTokenFee(
+                    info.hardcap
+                ) <=
+                remainingSupply,
+            ExceptionsLibrary.HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
+        );
+        require(
+            info.minPurchase * info.price >= 10**(token.decimals()),
+            ExceptionsLibrary.INVALID_VALUE
+        );
         _transferOwnership(owner_);
 
         token = IGovernanceToken(token_);
@@ -82,18 +133,11 @@ contract TGE is ITGE, OwnableUpgradeable {
         lockupTVLReached = (lockupTVL == 0);
         lockupDuration = info.lockupDuration;
         duration = info.duration;
+        _unitOfAccount = info.unitOfAccount;
 
         for (uint256 i = 0; i < info.userWhitelist.length; i++) {
             userWhitelist.push(info.userWhitelist[i]);
             isUserWhitelisted[info.userWhitelist[i]] = true;
-        }
-        for (uint256 i = 0; i < info.tokenWhitelist.length; i++) {
-            require(
-                token.service().isTokenWhitelisted(info.tokenWhitelist[i]),
-                "Token not globally whitelisted"
-            );
-            tokenWhitelist.push(info.tokenWhitelist[i]);
-            isTokenWhitelisted[info.tokenWhitelist[i]] = true;
         }
 
         createdAt = block.number;
@@ -101,33 +145,29 @@ contract TGE is ITGE, OwnableUpgradeable {
 
     // PUBLIC FUNCTIONS
 
-    function purchase(address currency, uint256 amount)
+    // amount in wei
+    function purchase(uint256 amount)
         external
         payable
         onlyWhitelistedUser
-        onlyWhitelistedCurrency(currency)
         onlyState(State.Active)
+        nonReentrant
     {
-        if (currency == address(0)) {
-            require(msg.value == amount * price, "Invalid ETH value passed");
+        if (_unitOfAccount == address(0)) {
+            require(msg.value == (amount * price) / 10**(token.decimals()), ExceptionsLibrary.INCORRECT_ETH_PASSED); 
         } else {
-            IService service = token.service();
-            uint256 amountIn = service.uniswapQuoter().quoteExactOutput(
-                service.tokenSwapReversePath(currency),
-                amount * price
-            );
-            IERC20Upgradeable(currency).safeTransferFrom(
+            IERC20Upgradeable(_unitOfAccount).safeTransferFrom(
                 msg.sender,
                 address(this),
-                amountIn
+                (amount * price) / 10**(token.decimals())
             );
         }
 
-        require(amount >= minPurchase, "Amount less than min purchase");
-        require(amount <= maxPurchaseOf(msg.sender), "Overflows max purchase");
-        require(totalPurchases + amount <= hardcap, "Overflows hardcap");
+        require(amount >= minPurchase, ExceptionsLibrary.MIN_PURCHASE_UNDERFLOW);
+        require(amount <= maxPurchaseOf(msg.sender), ExceptionsLibrary.MAX_PURCHASE_OVERFLOW);
+        require(_totalPurchased + amount <= hardcap, ExceptionsLibrary.HARDCAP_OVERFLOW);
 
-        totalPurchases += amount;
+        _totalPurchased += amount;
         purchaseOf[msg.sender] += amount;
         uint256 lockedAmount = (amount * lockupPercent + 99) / 100;
         if (amount - lockedAmount > 0) {
@@ -135,58 +175,89 @@ contract TGE is ITGE, OwnableUpgradeable {
         }
         token.mint(address(this), lockedAmount);
         lockedBalanceOf[msg.sender] += lockedAmount;
+        _totalLocked += lockedAmount;
+        token.increaseTotalTGELockedTokens(lockedAmount);
+
+        emit Purchased(msg.sender, amount);
     }
 
-    function claimBack() external override onlyState(State.Failed) {
+    function redeem() external override onlyState(State.Failed) nonReentrant {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
-        uint256 balance = token.balanceOf(msg.sender);
-        uint256 refundTokens = MathUpgradeable.min(
-            balance + lockedBalanceOf[msg.sender],
-            purchaseOf[msg.sender]
-        );
-        purchaseOf[msg.sender] -= refundTokens;
+        uint256 balance = token.minUnlockedBalanceOf(msg.sender);
+        uint256 refundTokens = balance + lockedBalanceOf[msg.sender];
         if (refundTokens > balance) {
             lockedBalanceOf[msg.sender] -= (refundTokens - balance);
+            _totalLocked -= (refundTokens - balance);
+            token.decreaseTotalTGELockedTokens(lockedBalanceOf[msg.sender]);
             token.burn(address(this), refundTokens - balance);
             refundTokens = balance;
         }
         token.burn(msg.sender, refundTokens);
-        uint256 refundValue = refundTokens * price;
-        payable(msg.sender).transfer(refundValue);
+        uint256 refundValue = refundTokens * price / 10**18;
+
+        if (_unitOfAccount == address(0)) {
+            payable(msg.sender).transfer(refundValue);
+        } else {
+            IERC20Upgradeable(_unitOfAccount).transfer(msg.sender, refundValue);
+        }
     }
 
-    function unlock() external {
-        require(unlockAvailable(), "Unlock not yet available");
-        require(lockedBalanceOf[msg.sender] > 0, "No locked balance");
+    function claim() external {
+        require(claimAvailable(), ExceptionsLibrary.CLAIM_NOT_AVAILABLE);
+        require(lockedBalanceOf[msg.sender] > 0, ExceptionsLibrary.NO_LOCKED_BALANCE);
 
         uint256 balance = lockedBalanceOf[msg.sender];
         lockedBalanceOf[msg.sender] = 0;
-        token.transfer(msg.sender, balance);
+        _totalLocked -= balance;
+        token.decreaseTotalTGELockedTokens(balance);
+
+        bool status = token.transfer(msg.sender, balance);
+        require(status, ExceptionsLibrary.TRANSFER_FAILED);
     }
 
     function setLockupTVLReached() external {
-        require(getTVL() >= lockupTVL, "Lockup TVL not yet reached");
         lockupTVLReached = true;
+        require(
+            IPool(token.pool()).getTVL() >= lockupTVL,
+            ExceptionsLibrary.LOCKUP_TVL_NOT_REACHED
+        );
     }
 
     // RESTRICTED FUNCTIONS
+    function transferFunds() external onlyState(State.Successful) {
+        claimProtocolTokenFee();
 
-    function transferFunds(address currency)
-        external
-        onlyState(State.Successful)
-    {
-        if (currency == address(0)) {
+        if (_unitOfAccount == address(0)) {
             payable(token.pool()).sendValue(address(this).balance);
         } else {
-            require(
-                currency != address(token),
-                "Impossible to transfer TGE token"
-            );
-            IERC20Upgradeable(currency).safeTransfer(
+            IERC20Upgradeable(_unitOfAccount).safeTransfer(
                 token.pool(),
-                IERC20Upgradeable(currency).balanceOf(address(this))
+                IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
             );
         }
+    }
+
+    /// @dev sends protocol token fee in form of pool's governance tokens to protocol treasury
+    function claimProtocolTokenFee() private onlyState(State.Successful) {
+        if (isProtocolTokenFeeClaimed) {
+            return;
+        }
+
+        isProtocolTokenFeeClaimed = true;
+
+        token.mint(
+            IGovernanceToken(token).service().protocolTreasury(),
+            IGovernanceToken(token).service().getProtocolTokenFee(
+                _totalPurchased
+            )
+        );
+
+        emit ProtocolTokenFeeClaimed(
+            address(token),
+            IGovernanceToken(token).service().getProtocolTokenFee(
+                _totalPurchased
+            )
+        );
     }
 
     // VIEW FUNCTIONS
@@ -201,67 +272,60 @@ contract TGE is ITGE, OwnableUpgradeable {
     }
 
     function state() public view override returns (State) {
+        if (_totalPurchased == hardcap) {
+            return State.Successful;
+        }
         if (block.number < createdAt + duration) {
             return State.Active;
-        } else if (totalPurchases >= softcap) {
+        } else if ((_totalPurchased >= softcap)) {
             return State.Successful;
         } else {
             return State.Failed;
         }
     }
 
-    function unlockAvailable() public view returns (bool) {
-        return lockupTVLReached && block.number >= createdAt + lockupDuration;
+    function claimAvailable() public view returns (bool) {
+        return
+            lockupTVLReached &&
+            block.number >= createdAt + lockupDuration &&
+            (state()) != State.Failed;
     }
 
-    function getTVL() public returns (uint256) {
-        IService service = token.service();
-        IQuoter quoter = service.uniswapQuoter();
-        address[] memory tokenWhitelist_ = tokenWhitelist.length == 0
-            ? service.tokenWhitelist()
-            : tokenWhitelist;
-        uint256 tvl;
-        for (uint256 i = 0; i < tokenWhitelist_.length; i++) {
-            if (tokenWhitelist_[i] == address(0)) {
-                tvl += address(this).balance;
-            } else {
-                uint256 balance = IERC20Upgradeable(tokenWhitelist_[i])
-                    .balanceOf(address(this));
-                if (balance > 0) {
-                    tvl += quoter.quoteExactInput(
-                        service.tokenSwapPath(tokenWhitelist_[i]),
-                        balance
-                    );
-                }
-            }
-        }
-        return totalPurchases * price;
+    function getUnitOfAccount() public view returns (address) {
+        return _unitOfAccount;
+    }
+
+    function getTotalPurchased() public view returns (uint256) {
+        return _totalPurchased;
+    }
+
+    function getTotalLocked() public view returns (uint256) {
+        return _totalLocked;
+    }
+
+    function getTotalPurchasedValue() public view returns (uint256) {
+        return _totalPurchased * price / 10**18;
+    }
+
+    function getTotalLockedValue() public view returns (uint256) {
+        return _totalLocked * price / 10**18;
     }
 
     // MODIFIER
 
     modifier onlyState(State state_) {
-        require(state() == state_, "TGE in wrong state");
+        require(state() == state_, ExceptionsLibrary.WRONG_STATE);
         _;
     }
 
     modifier onlyWhitelistedUser() {
         require(
             userWhitelist.length == 0 || isUserWhitelisted[msg.sender],
-            "Not whitelisted"
+            ExceptionsLibrary.NOT_WHITELISTED
         );
         _;
     }
 
-    modifier onlyWhitelistedCurrency(address currency) {
-        if (tokenWhitelist.length == 0) {
-            require(
-                token.service().isTokenWhitelisted(currency),
-                "Token not whitelisted"
-            );
-        } else {
-            require(isTokenWhitelisted[currency], "Token not whitelisted");
-        }
-        _;
-    }
+    function test123() public view {}
+
 }

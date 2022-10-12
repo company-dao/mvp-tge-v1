@@ -3,22 +3,28 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "../libraries/ExceptionsLibrary.sol";
 
 abstract contract Governor {
     struct Proposal {
-        uint256 quorum;
-        uint256 threshold;
-        address[] targets;
-        uint256[] values;
-        bytes[] calldatas;
+        uint256 ballotQuorumThreshold;
+        uint256 ballotDecisionThreshold;
+        address target;
+        uint256 value;
+        bytes callData;
         uint256 startBlock;
-        uint256 endBlock;
+        uint256 endBlock; // startBlock + ballotLifespan
         uint256 forVotes;
         uint256 againstVotes;
         bool executed;
+        ProposalExecutionState state;
+        string description;
     }
 
-    mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => Proposal) private _proposals;
+
+    mapping(address => mapping(uint256 => uint256)) private _forVotes;
+    mapping(address => mapping(uint256 => uint256)) private _againstVotes;
 
     uint256 public lastProposalId;
 
@@ -30,14 +36,20 @@ abstract contract Governor {
         Executed
     }
 
+    enum ProposalExecutionState {
+        Initialized,
+        Rejected,
+        Accomplished
+    }
+
     // EVENTS
 
     event ProposalCreated(
         uint256 proposalId,
         uint256 quorum,
-        address[] targets,
-        uint256[] values,
-        bytes[] calldatas,
+        address targets,
+        uint256 values,
+        bytes calldatas,
         string description
     );
 
@@ -52,27 +64,36 @@ abstract contract Governor {
 
     // PUBLIC FUNCTIONS
 
-    function execute(uint256 proposalId) external {
-        Proposal memory proposal = proposals[proposalId];
+    function executeBallot(uint256 proposalId) external {
+        Proposal memory proposal = _proposals[proposalId];
 
         require(
             proposalState(proposalId) == ProposalState.Successful,
-            "Proposal is in wrong state"
+            ExceptionsLibrary.WRONG_STATE
         );
-
-        proposals[proposalId].executed = true;
-
+        require(
+            _proposals[proposalId].state == ProposalExecutionState.Initialized,
+            ExceptionsLibrary.ALREADY_EXECUTED
+        );
+        _proposals[proposalId].executed = true;
         string memory errorMessage = "Call reverted without message";
-        for (uint256 i = 0; i < proposal.targets.length; ++i) {
-            (bool success, bytes memory returndata) = proposal.targets[i].call{
-                value: proposal.values[i]
-            }(proposal.calldatas[i]);
-            AddressUpgradeable.verifyCallResult(
-                success,
-                returndata,
-                errorMessage
-            );
-        }
+        (bool success, bytes memory returndata) = proposal.target.call{
+            value: proposal.value
+        }(proposal.callData);
+
+        // AddressUpgradeable.verifyCallResult(
+        //     success,
+        //     returndata,
+        //     errorMessage
+        // );
+
+        // require(success, "Invalid execution result");
+
+        if (success) {
+            _proposals[proposalId].state = ProposalExecutionState.Accomplished;
+        } else {
+            _proposals[proposalId].state = ProposalExecutionState.Rejected;
+        }        
 
         emit ProposalExecuted(proposalId);
     }
@@ -84,66 +105,107 @@ abstract contract Governor {
         view
         returns (ProposalState)
     {
-        Proposal memory proposal = proposals[proposalId];
+        Proposal memory proposal = _proposals[proposalId];
         if (proposal.executed) {
             return ProposalState.Executed;
         }
         if (proposal.startBlock == 0) {
             return ProposalState.None;
         }
-        if (proposal.endBlock > block.number) {
-            return ProposalState.Active;
-        }
 
-        uint256 quorumVotes = (_getTotalVotes() * proposal.quorum) / 100;
-        uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
+        uint256 totalAvailableVotes = _getTotalSupply() -
+            _getTotalTGELockedTokens();
+        uint256 quorumVotes = (totalAvailableVotes *
+            proposal.ballotQuorumThreshold);
+        uint256 totalCastVotes = proposal.forVotes + proposal.againstVotes;
+
         if (
-            totalVotes >= quorumVotes &&
-            proposal.forVotes * 100 > totalVotes * proposal.threshold
+            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100% 
+            proposal.forVotes * 10000 >
+            totalCastVotes * proposal.ballotDecisionThreshold // * 10000 because 10000 = 100%
         ) {
             return ProposalState.Successful;
-        } else {
+        }
+        if (
+            (totalAvailableVotes - proposal.againstVotes) * 10000 <=
+            totalAvailableVotes * proposal.ballotDecisionThreshold
+        ) {
             return ProposalState.Failed;
         }
+
+        return ProposalState.Active;
+    }
+
+    function getProposalBallotQuorumThreshold(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return _proposals[proposalId].ballotQuorumThreshold;
+    }
+
+    function getProposalBallotDecisionThreshold(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return _proposals[proposalId].ballotDecisionThreshold;
+    }
+
+    function getProposalBallotLifespan(uint256 proposalId)
+        public
+        view
+        returns (uint256)
+    {
+        return _proposals[proposalId].endBlock - _proposals[proposalId].startBlock;
+    }
+
+    function getProposal(uint256 proposalId) public view returns (Proposal memory) {
+        return _proposals[proposalId];
+    }
+
+    function getForVotes(address user, uint256 proposalId) public view returns (uint256) {
+        return _forVotes[user][proposalId];
+    }
+
+    function getAgainstVotes(address user, uint256 proposalId) public view returns (uint256) {
+        return _againstVotes[user][proposalId];
     }
 
     // INTERNAL FUNCTIONS
 
     function _propose(
-        uint256 duration,
-        uint256 quorum,
-        uint256 threshold,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
+        uint256 ballotLifespan,
+        uint256 ballotQuorumThreshold,
+        uint256 ballotDecisionThreshold,
+        address target,
+        uint256 value,
+        bytes memory callData,
         string memory description
     ) internal returns (uint256 proposalId) {
-        require(
-            proposals[lastProposalId].endBlock <= block.number,
-            "Already has active proposal"
-        );
-
         proposalId = ++lastProposalId;
-        proposals[proposalId] = Proposal({
-            quorum: quorum,
-            threshold: threshold,
-            targets: targets,
-            values: values,
-            calldatas: calldatas,
+        _proposals[proposalId] = Proposal({
+            ballotQuorumThreshold: ballotQuorumThreshold,
+            ballotDecisionThreshold: ballotDecisionThreshold,
+            target: target,
+            value: value,
+            callData: callData,
             startBlock: block.number,
-            endBlock: block.number + duration,
+            endBlock: block.number + ballotLifespan,
             forVotes: 0,
             againstVotes: 0,
-            executed: false
+            executed: false,
+            state: ProposalExecutionState.Initialized,
+            description: description
         });
         _afterProposalCreated(proposalId);
 
         emit ProposalCreated(
             proposalId,
-            quorum,
-            targets,
-            values,
-            calldatas,
+            ballotQuorumThreshold,
+            target,
+            value,
+            callData,
             description
         );
     }
@@ -154,14 +216,16 @@ abstract contract Governor {
         bool support
     ) internal {
         require(
-            proposals[proposalId].endBlock > block.number,
-            "Voting finished"
+            _proposals[proposalId].endBlock > block.number,
+            ExceptionsLibrary.VOTING_FINISHED
         );
 
         if (support) {
-            proposals[proposalId].forVotes += votes;
+            _proposals[proposalId].forVotes += votes;
+            _forVotes[msg.sender][proposalId] += votes;
         } else {
-            proposals[proposalId].againstVotes += votes;
+            _proposals[proposalId].againstVotes += votes;
+            _againstVotes[msg.sender][proposalId] += votes;
         }
 
         emit VoteCast(msg.sender, proposalId, votes, support);
@@ -169,5 +233,7 @@ abstract contract Governor {
 
     function _afterProposalCreated(uint256 proposalId) internal virtual;
 
-    function _getTotalVotes() internal view virtual returns (uint256);
+    function _getTotalSupply() internal view virtual returns (uint256);
+
+    function _getTotalTGELockedTokens() internal view virtual returns (uint256);
 }

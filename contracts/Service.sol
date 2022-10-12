@@ -2,9 +2,14 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./interfaces/IService.sol";
@@ -12,38 +17,53 @@ import "./interfaces/IDirectory.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IMetadata.sol";
+import "./interfaces/IWhitelistedTokens.sol";
+import "./libraries/ExceptionsLibrary.sol";
 
-contract Service is IService, Ownable {
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using Clones for address;
+contract Service is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
+    IService
+{
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using AddressUpgradeable for address;
+
+    IMetadata public metadata;
 
     IDirectory public directory;
 
+    IWhitelistedTokens public whitelistedTokens;
+
     address public proposalGateway;
 
-    address public poolMaster;
+    address public poolBeacon;
 
-    address public tokenMaster;
+    address public tokenBeacon;
 
-    address public tgeMaster;
+    address public tgeBeacon;
 
     uint256 public fee;
 
-    uint256 public proposalQuorum;
+    uint256 private _ballotQuorumThreshold;
 
-    uint256 public proposalThreshold;
+    uint256 private _ballotDecisionThreshold;
+
+    uint256 private _ballotLifespan;
 
     ISwapRouter public uniswapRouter;
 
     IQuoter public uniswapQuoter;
 
-    EnumerableSet.AddressSet private _userWhitelist;
+    EnumerableSetUpgradeable.AddressSet private _userWhitelist;
 
-    EnumerableSet.AddressSet private _tokenWhitelist;
+    /// @dev address that collects protocol token fees
+    address public protocolTreasury;
 
-    mapping(address => bytes) public tokenSwapPath;
-
-    mapping(address => bytes) public tokenSwapReversePath;
+    /// @dev protocol token fee percentage value with 4 decimals. Examples: 1% = 10000, 100% = 1000000, 0.1% = 1000
+    uint256 public protocolTokenFee;
 
     // EVENTS
 
@@ -53,56 +73,143 @@ contract Service is IService, Ownable {
 
     event FeeSet(uint256 fee);
 
-    event ProposalQuorumSet(uint256 quorum);
-
-    event ProposalThresholdSet(uint256 threshold);
-
     event PoolCreated(address pool, address token, address tge);
 
     event SecondaryTGECreated(address pool, address tge);
 
+    event GovernanceSettingsSet(
+        uint256 quorumThreshold,
+        uint256 decisionThreshold,
+        uint256 lifespan
+    );
+
+    event ProtocolTreasuryChanged(address protocolTreasury);
+    event ProtocolTokenFeeChanged(uint256 protocolTokenFee);
+
     // CONSTRUCTOR
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         IDirectory directory_,
-        address poolMaster_,
+        address poolBeacon_,
         address proposalGateway_,
-        address tokenMaster_,
-        address tgeMaster_,
+        address tokenBeacon_,
+        address tgeBeacon_,
+        IMetadata metadata_,
         uint256 fee_,
-        uint256 proposalQuorum_,
-        uint256 proposalThreshold_,
+        uint256[3] memory ballotParams,
         ISwapRouter uniswapRouter_,
-        IQuoter uniswapQuoter_
-    ) {
+        IQuoter uniswapQuoter_,
+        IWhitelistedTokens whitelistedTokens_,
+        uint256 _protocolTokenFee
+    ) public initializer {
+        require(address(directory_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(poolBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(
+            proposalGateway_ != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+        require(tokenBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(tgeBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(address(metadata_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(
+            address(uniswapRouter_) != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+        require(
+            address(uniswapQuoter_) != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+        require(
+            address(whitelistedTokens_) != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+
         directory = directory_;
         proposalGateway = proposalGateway_;
-        poolMaster = poolMaster_;
-        tokenMaster = tokenMaster_;
-        tgeMaster = tgeMaster_;
+        poolBeacon = poolBeacon_;
+        tokenBeacon = tokenBeacon_;
+        tgeBeacon = tgeBeacon_;
+        metadata = metadata_;
         fee = fee_;
-        proposalQuorum = proposalQuorum_;
-        proposalThreshold = proposalThreshold_;
+        _ballotQuorumThreshold = ballotParams[0];
+        _ballotDecisionThreshold = ballotParams[1];
+        _ballotLifespan = ballotParams[2];
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
+        whitelistedTokens = whitelistedTokens_;
+
+        setProtocolTreasury(address(this));
+        setProtocolTokenFee(_protocolTokenFee);
 
         emit FeeSet(fee_);
-        emit ProposalQuorumSet(proposalQuorum_);
-        emit ProposalThresholdSet(proposalThreshold_);
+        emit GovernanceSettingsSet(
+            ballotParams[0],
+            ballotParams[1],
+            ballotParams[2]
+        );
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
 
     // PUBLIC FUNCTIONS
 
     function createPool(
         IPool pool,
         IGovernanceToken.TokenInfo memory tokenInfo,
-        ITGE.TGEInfo memory tgeInfo
-    ) external payable onlyWhitelisted {
-        require(msg.value == fee, "Incorrect fee passed");
+        ITGE.TGEInfo memory tgeInfo,
+        uint256 ballotQuorumThreshold_,
+        uint256 ballotDecisionThreshold_,
+        uint256 ballotLifespan_,
+        uint256 jurisdiction,
+        string memory trademark
+    ) external payable onlyWhitelisted nonReentrant {
+        require(
+            tgeInfo.unitOfAccount == address(0) ||
+                tgeInfo.unitOfAccount.isContract(),
+            ExceptionsLibrary.INVALID_TOKEN
+        );
+
+        require(
+            tokenInfo.cap >= 1 * 10**18, // 1 * 10**IGovernanceToken(tokenBeacon).decimals(),
+            ExceptionsLibrary.INVALID_CAP
+        );
+
+        tokenInfo.cap += getProtocolTokenFee(tokenInfo.cap);
 
         if (address(pool) == address(0)) {
-            pool = IPool(poolMaster.clone());
-            pool.initialize(msg.sender);
+            require(msg.value == fee, ExceptionsLibrary.INCORRECT_ETH_PASSED);
+
+            uint256 metadataIndex = metadata.lockRecord(jurisdiction);
+            require(metadataIndex > 0, ExceptionsLibrary.NO_COMPANY);
+            IMetadata.QueueInfo memory queueInfo = metadata.getQueueInfo(metadataIndex);
+
+            pool = IPool(address(new BeaconProxy(poolBeacon, "")));
+            pool.initialize(
+                msg.sender,
+                jurisdiction,
+                queueInfo.EIN,
+                queueInfo.dateOfIncorporation,
+                queueInfo.entityType,
+                ballotQuorumThreshold_,
+                ballotDecisionThreshold_,
+                ballotLifespan_,
+                metadataIndex,
+                trademark
+            );
+            metadata.setOwner(metadataIndex, address(pool));
+
             directory.addContractRecord(
                 address(pool),
                 IDirectory.ContractType.Pool
@@ -110,29 +217,45 @@ contract Service is IService, Ownable {
         } else {
             require(
                 directory.typeOf(address(pool)) == IDirectory.ContractType.Pool,
-                "Not a pool"
+                ExceptionsLibrary.NOT_POOL
             );
-            require(msg.sender == pool.owner(), "Sender is not pool owner");
+            require(msg.sender == pool.owner(), ExceptionsLibrary.NOT_POOL_OWNER);
             require(
-                pool.tge().state() == ITGE.State.Failed,
-                "Previous TGE not failed"
+                pool.isDAO() == false,
+                ExceptionsLibrary.IS_DAO
             );
         }
 
-        address token = tokenMaster.clone();
+        IGovernanceToken token = IGovernanceToken(
+            address(new BeaconProxy(tokenBeacon, ""))
+        );
         directory.addContractRecord(
-            token,
+            address(token),
             IDirectory.ContractType.GovernanceToken
         );
-        address tge = tgeMaster.clone();
-        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
 
-        IGovernanceToken(token).initialize(address(pool), tokenInfo);
-        pool.setToken(token);
-        ITGE(tge).initialize(msg.sender, token, tgeInfo);
-        pool.setTGE(tge);
+        ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
+        directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
 
-        emit PoolCreated(address(pool), token, tge);
+        if (address(pool) == address(0)) {
+            token.initialize(address(pool), tokenInfo);
+        } else {
+            token.initialize(
+                address(pool),
+                IGovernanceToken.TokenInfo({
+                    name: pool.getPoolTrademark(),
+                    symbol: tokenInfo.symbol,
+                    cap: tokenInfo.cap
+                })
+            );
+        }
+        pool.setToken(address(token));
+
+        tge.initialize(msg.sender, address(token), tgeInfo);
+        pool.setTGE(address(tge));
+        pool.setPrimaryTGE(address(tge));
+
+        emit PoolCreated(address(pool), address(token), address(tge));
     }
 
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
@@ -141,22 +264,24 @@ contract Service is IService, Ownable {
         external
         override
         onlyPool
+        nonReentrant
     {
         require(
             IPool(msg.sender).tge().state() != ITGE.State.Active,
-            "Has active TGE"
+            ExceptionsLibrary.ACTIVE_TGE_EXISTS
+        );
+        require(
+            tgeInfo.unitOfAccount == address(0) ||
+                tgeInfo.unitOfAccount.isContract(),
+            ExceptionsLibrary.INVALID_TOKEN
         );
 
-        address tge = tgeMaster.clone();
-        directory.addContractRecord(tge, IDirectory.ContractType.TGE);
-        ITGE(tge).initialize(
-            msg.sender,
-            address(IPool(msg.sender).token()),
-            tgeInfo
-        );
-        IPool(msg.sender).setTGE(tge);
+        ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
+        directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
+        tge.initialize(msg.sender, address(IPool(msg.sender).token()), tgeInfo);
+        IPool(msg.sender).setTGE(address(tge));
 
-        emit SecondaryTGECreated(msg.sender, tge);
+        emit SecondaryTGECreated(msg.sender, address(tge));
     }
 
     function addProposal(uint256 proposalId) external onlyPool {
@@ -166,39 +291,28 @@ contract Service is IService, Ownable {
     // RESTRICTED FUNCTIONS
 
     function addUserToWhitelist(address account) external onlyOwner {
-        require(_userWhitelist.add(account), "Already whitelisted");
+        require(_userWhitelist.add(account), ExceptionsLibrary.ALREADY_WHITELISTED);
         emit UserWhitelistedSet(account, true);
     }
 
     function removeUserFromWhitelist(address account) external onlyOwner {
-        require(_userWhitelist.remove(account), "Already not whitelisted");
+        require(_userWhitelist.remove(account), ExceptionsLibrary.ALREADY_NOT_WHITELISTED);
         emit UserWhitelistedSet(account, false);
     }
 
-    function addTokensToWhitelist(
-        address[] memory tokens,
-        bytes[] memory swapPaths,
-        bytes[] memory swapReversePaths
-    ) external onlyOwner {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            require(_tokenWhitelist.add(tokens[i]), "Already whitelisted");
-            tokenSwapPath[tokens[i]] = swapPaths[i];
-            tokenSwapReversePath[tokens[i]] = swapReversePaths[i];
-            emit TokenWhitelistedSet(tokens[i], true);
-        }
+    function setPoolBeacon(address poolBeacon_) external onlyOwner {
+        require(poolBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        poolBeacon = poolBeacon_;
     }
 
-    function removeTokensFromWhitelist(address[] memory tokens)
-        external
-        onlyOwner
-    {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            require(
-                _tokenWhitelist.remove(tokens[i]),
-                "Already not whitelisted"
-            );
-            emit TokenWhitelistedSet(tokens[i], false);
-        }
+    function setTokenBeacon(address tokenBeacon_) external onlyOwner {
+        require(tokenBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        tokenBeacon = tokenBeacon_;
+    }
+
+    function setTGEBeacon(address tgeBeacon_) external onlyOwner {
+        require(tgeBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        tgeBeacon = tgeBeacon_;
     }
 
     function setFee(uint256 fee_) external onlyOwner {
@@ -206,21 +320,75 @@ contract Service is IService, Ownable {
         emit FeeSet(fee_);
     }
 
-    function setProposalQuorum(uint256 proposalQuorum_) external onlyOwner {
-        proposalQuorum = proposalQuorum_;
-        emit ProposalQuorumSet(proposalQuorum_);
-    }
+    function transferCollectedFees(address to) external onlyOwner {
+        require(to != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
-    function setProposalThreshold(uint256 proposalThreshold_)
-        external
-        onlyOwner
-    {
-        proposalThreshold = proposalThreshold_;
-        emit ProposalThresholdSet(proposalThreshold_);
-    }
-
-    function transferFunds(address to) external onlyOwner {
         payable(to).transfer(payable(address(this)).balance);
+    }
+
+    // function setProposalDirectoryMetadata(
+    //     address proposalGateway_,
+    //     address directory_,
+    //     address metadata_,
+    //     address whitelistedTokens_
+    // ) external onlyOwner {
+    //     require(proposalGateway_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+    //     require(address(directory_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+    //     require(address(metadata_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+
+    //     proposalGateway = proposalGateway_;
+    //     directory = IDirectory(directory_);
+    //     metadata = IMetadata(metadata_);
+    //     whitelistedTokens = IWhitelistedTokens(whitelistedTokens_);
+    // }
+
+    function setGovernanceSettings(
+        uint256 ballotQuorumThreshold_,
+        uint256 ballotDecisionThreshold_,
+        uint256 ballotLifespan_
+    ) external onlyOwner {
+        require(
+            ballotQuorumThreshold_ <= 10000,
+            ExceptionsLibrary.INVALID_VALUE
+        );
+        require(
+            ballotDecisionThreshold_ <= 10000,
+            ExceptionsLibrary.INVALID_VALUE
+        );
+        require(ballotLifespan_ > 0, ExceptionsLibrary.INVALID_VALUE);
+
+        _ballotQuorumThreshold = ballotQuorumThreshold_;
+        _ballotDecisionThreshold = ballotDecisionThreshold_;
+        _ballotLifespan = ballotLifespan_;
+
+        emit GovernanceSettingsSet(
+            ballotQuorumThreshold_,
+            ballotDecisionThreshold_,
+            ballotLifespan_
+        );
+    }
+
+    /**
+     * @dev Sets protocol treasury address
+     * @param _protocolTreasury Protocol treasury address
+     */
+    function setProtocolTreasury(address _protocolTreasury) public onlyOwner {
+        require(_protocolTreasury != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+
+        protocolTreasury = _protocolTreasury;
+        emit ProtocolTreasuryChanged(protocolTreasury);
+    }
+
+    /**
+     * @dev Sets protocol token fee
+     * @param _protocolTokenFee protocol token fee percentage value with 4 decimals.
+     * Examples: 1% = 10000, 100% = 1000000, 0.1% = 1000.
+     */
+    function setProtocolTokenFee(uint256 _protocolTokenFee) public onlyOwner {
+        require(_protocolTokenFee <= 1000000, ExceptionsLibrary.INVALID_VALUE);
+
+        protocolTokenFee = _protocolTokenFee;
+        emit ProtocolTokenFeeChanged(protocolTokenFee);
     }
 
     // VIEW FUNCTIONS
@@ -241,40 +409,92 @@ contract Service is IService, Ownable {
         return _userWhitelist.at(index);
     }
 
-    function isTokenWhitelisted(address token)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return _tokenWhitelist.contains(token);
+    function tokenWhitelist() external view returns (address[] memory) {
+        return whitelistedTokens.tokenWhitelist();
     }
 
-    function tokenWhitelist()
-        external
+    function owner()
+        public
         view
-        override
-        returns (address[] memory)
+        override(IService, OwnableUpgradeable)
+        returns (address)
     {
-        return _tokenWhitelist.values();
-    }
-
-    function owner() public view override(IService, Ownable) returns (address) {
+        // Ownable
         return super.owner();
+    }
+
+    function getBallotQuorumThreshold() public view returns (uint256) {
+        return _ballotQuorumThreshold;
+    }
+
+    function getBallotDecisionThreshold() public view returns (uint256) {
+        return _ballotDecisionThreshold;
+    }
+
+    function getBallotLifespan() public view returns (uint256) {
+        return _ballotLifespan;
+    }
+
+    /**
+     * @dev calculates minimum soft cap for token fee mechanism to work
+     * @return softCap minimum soft cap
+     */
+    function getMinSoftCap() public view returns (uint256) {
+        return 1000000 / protocolTokenFee;
+    }
+
+    /**
+     * @dev calculates protocol token fee for given token amount
+     * @param amount token amount
+     * @return tokenFee
+     */
+    function getProtocolTokenFee(uint256 amount) public view returns (uint256) {
+        require(amount >= getMinSoftCap(), ExceptionsLibrary.INVALID_VALUE);
+
+        uint256 mul = 1;
+        if (amount > 100000000000000000000) {
+            mul = 1000000000000;
+            amount = amount / mul;
+        }
+
+        return
+            ((((protocolTokenFee * 1000000) / 1000000) * amount) / 1000000) *
+            mul;
+    }
+
+    /**
+     * @dev Returns max hard cap accounting for protocol token fee
+     * @param _pool pool to calculate hard cap against
+     */
+    function getMaxHardCap(address _pool) public view returns (uint256) {
+        if (
+            directory.typeOf(_pool) == IDirectory.ContractType.Pool &&
+            IPool(_pool).isDAO()
+        ) {
+            return
+                IPool(_pool).token().cap() -
+                getProtocolTokenFee(IPool(_pool).token().cap());
+        }
+
+        return type(uint256).max - getProtocolTokenFee(type(uint256).max);
     }
 
     // MODIFIERS
 
     modifier onlyWhitelisted() {
-        require(isUserWhitelisted(msg.sender), "Not whitelisted");
+        require(
+            isUserWhitelisted(msg.sender), 
+            ExceptionsLibrary.NOT_WHITELISTED
+        );
         _;
     }
 
     modifier onlyPool() {
         require(
             directory.typeOf(msg.sender) == IDirectory.ContractType.Pool,
-            "Not a pool"
+            ExceptionsLibrary.NOT_POOL
         );
         _;
     }
+
 }

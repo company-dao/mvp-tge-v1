@@ -12,6 +12,7 @@ import {
     TGE,
 } from "../typechain-types";
 import { TGEInfoStruct } from "../typechain-types/ITGE";
+import Exceptions from "./shared/Exceptions";
 import { setup } from "./shared/setup";
 import { mineBlock } from "./shared/utils";
 
@@ -19,7 +20,7 @@ const { getContractAt, getContract, getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
 const { AddressZero, MaxUint256 } = ethers.constants;
 
-describe("Test secondary TGE", function () {
+describe.only("Test secondary TGE", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;
@@ -37,29 +38,26 @@ describe("Test secondary TGE", function () {
     before(async function () {
         [owner, other, third] = await getSigners();
 
-        await deployments.fixture();
+        // await deployments.fixture();
 
         // Setup
-        ({ service, tgeData, pool, tge, token, gateway, token1 } =
+        ({ service, tgeData, pool, tge, token, gateway, directory, token1 } =
             await setup());
-        directory = await getContract<Directory>("Directory");
+        // directory = await getContract<Directory>("Directory");
 
         // Successfully finish TGE
-        await tge
-            .connect(other)
-            .purchase(AddressZero, 1000, { value: parseUnits("10") });
+        await tge.connect(other).purchase(1000, { value: parseUnits("10") });
         await mineBlock(20);
 
         tgeData.duration = 30;
         tgeData.softcap = 500;
         tgeData.hardcap = 2000;
-        tgeData.tokenWhitelist = [AddressZero];
+        tgeData.unitOfAccount = AddressZero;
 
         tx = await gateway
             .connect(other)
             .createTGEProposal(
                 pool.address,
-                25,
                 tgeData,
                 "Let's do TGE once again"
             );
@@ -85,11 +83,10 @@ describe("Test secondary TGE", function () {
                 .connect(third)
                 .createTGEProposal(
                     pool.address,
-                    25,
                     tgeData,
                     "Let's do TGE once again"
                 )
-        ).to.be.revertedWith("Not shareholder");
+        ).to.be.revertedWith(Exceptions.NOT_SHAREHOLDER);
     });
 
     it("Proposing secondary TGE works", async function () {
@@ -97,27 +94,27 @@ describe("Test secondary TGE", function () {
 
         const receipt = await tx.wait();
 
-        const proposal = await pool.proposals(1);
-        expect(proposal.quorum).to.equal(30);
-        expect(proposal.threshold).to.equal(50);
-        expect(proposal.startBlock).to.equal(receipt.blockNumber);
-        expect(proposal.endBlock).to.equal(receipt.blockNumber + 25);
+        const proposal = await pool.getProposal(1);
+        expect(proposal.ballotQuorumThreshold).to.equal(50); // from deploy params
+        expect(proposal.ballotDecisionThreshold).to.equal(50); // from deploy params
+        expect(proposal.startBlock).to.equal(receipt.blockNumber); // from deploy params
+        expect(proposal.endBlock).to.equal(receipt.blockNumber + 25); // from deploy params
         expect(proposal.forVotes).to.equal(0);
         expect(proposal.executed).to.be.false;
     });
 
-    it("Can't propose secondary TGE when there is active proposal", async function () {
+    it("Can propose secondary TGE when there is active proposal", async function () {
         await expect(
             gateway
                 .connect(other)
-                .createTGEProposal(pool.address, 25, tgeData, "And one more")
-        ).to.be.revertedWith("Already has active proposal");
+                .createTGEProposal(pool.address, tgeData, "And one more")
+        ).to.be.not.reverted;
     });
 
     it("Only shareholders can vote on proposal", async function () {
         await expect(
             pool.connect(third).castVote(1, MaxUint256, true)
-        ).to.be.revertedWith("No votes");
+        ).to.be.revertedWith(Exceptions.VALUE_ZERO);
     });
 
     it("Casting votes from valid voter works", async function () {
@@ -125,17 +122,17 @@ describe("Test secondary TGE", function () {
             .to.emit(pool, "VoteCast")
             .withArgs(other.address, 1, 500, true);
 
-        const proposal = await pool.proposals(1);
+        const proposal = await pool.getProposal(1);
         expect(proposal.forVotes).to.equal(500);
     });
 
     it("Can vote partially", async function () {
         await pool.connect(other).castVote(1, 250, true);
 
-        expect(await token.unlockedBalanceOf(other.address)).to.equal(250);
-        expect(await token.lockedBalanceOf(other.address)).to.equal(250);
+        expect(await token.unlockedBalanceOf(other.address, 1)).to.equal(250);
+        expect(await token.lockedBalanceOf(other.address, 1)).to.equal(250);
 
-        const proposal = await pool.proposals(1);
+        const proposal = await pool.getProposal(1);
         expect(proposal.forVotes).to.equal(250);
     });
 
@@ -144,32 +141,32 @@ describe("Test secondary TGE", function () {
 
         await expect(
             pool.connect(other).castVote(1, MaxUint256, true)
-        ).to.be.revertedWith("No votes");
+        ).to.be.revertedWith(Exceptions.VALUE_ZERO);
     });
 
     it("Only pool can lock tokens for voting", async function () {
         await expect(
-            token.connect(third).lock(other.address, 100, 0)
-        ).to.be.revertedWith("Not pool");
+            token.connect(third).lock(other.address, 100, true, 0, 1)
+        ).to.be.revertedWith(Exceptions.NOT_POOL);
     });
 
-    it("Voting tokens are locked and can be transferred", async function () {
+    it("Voting tokens are locked and can't be transferred", async function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
 
-        expect(await token.lockedBalanceOf(other.address)).to.equal(500);
-        expect(await token.unlockedBalanceOf(other.address)).to.equal(0);
+        expect(await token.lockedBalanceOf(other.address, 1)).to.equal(500);
+        expect(await token.unlockedBalanceOf(other.address, 1)).to.equal(0);
 
         await expect(
             token.connect(other).transfer(third.address, 100)
-        ).to.be.revertedWith("Not enough unlocked balance");
+        ).to.be.revertedWith(Exceptions.LOW_UNLOCKED_BALANCE);
     });
 
     it("After voting in finished tokens are unlocked", async function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
 
-        expect(await token.lockedBalanceOf(other.address)).to.equal(0);
-        expect(await token.unlockedBalanceOf(other.address)).to.equal(500);
+        expect(await token.lockedBalanceOf(other.address, 1)).to.equal(0);
+        expect(await token.unlockedBalanceOf(other.address, 1)).to.equal(500);
 
         await token.connect(other).transfer(third.address, 100);
         expect(await token.balanceOf(third.address)).to.equal(100);
@@ -180,28 +177,40 @@ describe("Test secondary TGE", function () {
 
         await expect(
             pool.connect(other).castVote(1, MaxUint256, true)
-        ).to.be.revertedWith("Voting finished");
+        ).to.be.revertedWith(Exceptions.VOTING_FINISHED);
     });
 
     it("Can't execute non-existent proposal", async function () {
-        await expect(pool.execute(2)).to.be.revertedWith(
-            "Proposal is in wrong state"
-        );
-    });
-
-    it("Can't execute proposal before voting period is finished", async function () {
-        await pool.connect(other).castVote(1, MaxUint256, true);
-
-        await expect(pool.execute(1)).to.be.revertedWith(
-            "Proposal is in wrong state"
+        await expect(pool.executeBallot(2)).to.be.revertedWith(
+            Exceptions.WRONG_STATE
         );
     });
 
     it("Can't execute proposal if quorum is not reached", async function () {
         await mineBlock(25);
 
-        await expect(pool.execute(1)).to.be.revertedWith(
-            "Proposal is in wrong state"
+        await expect(pool.executeBallot(1)).to.be.revertedWith(
+            Exceptions.WRONG_STATE
+        );
+    });
+
+    it("Can't execute proposal with uncertain state before voting period is finished", async function () {
+        await token.connect(other).transfer(owner.address, 250);
+
+        await pool.connect(other).castVote(1, 250, true);
+        await pool.connect(owner).castVote(1, 250, false);
+
+        await expect(pool.executeBallot(1)).to.be.revertedWith(
+            Exceptions.WRONG_STATE
+        );
+    });
+
+    it("Can execute inevitably successful proposal before voting period is finished", async function () {
+        await pool.connect(other).castVote(1, MaxUint256, true);
+
+        await expect(pool.executeBallot(1)).to.emit(
+            service,
+            "SecondaryTGECreated"
         );
     });
 
@@ -209,7 +218,10 @@ describe("Test secondary TGE", function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
 
-        await expect(pool.execute(1)).to.emit(service, "SecondaryTGECreated");
+        await expect(pool.executeBallot(1)).to.emit(
+            service,
+            "SecondaryTGECreated"
+        );
 
         const tgeRecord = await directory.contractRecordAt(
             await directory.lastContractRecordIndex()
@@ -223,16 +235,16 @@ describe("Test secondary TGE", function () {
 
     it("Only pool can request creating TGEs and recording proposals on service", async function () {
         await expect(service.createSecondaryTGE(tgeData)).to.be.revertedWith(
-            "Not a pool"
+            Exceptions.NOT_POOL
         );
 
-        await expect(service.addProposal(35)).to.be.revertedWith("Not a pool");
+        await expect(service.addProposal(35)).to.be.revertedWith(Exceptions.NOT_POOL);
     });
 
     it("Can purchase only with tokens from TGE whitelist (if it not matches global)", async function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
-        await pool.execute(1);
+        await pool.executeBallot(1);
         const tgeRecord = await directory.contractRecordAt(
             await directory.lastContractRecordIndex()
         );
@@ -240,23 +252,22 @@ describe("Test secondary TGE", function () {
 
         await token1.mint(owner.address, parseUnits("100000"));
         await token1.approve(tge2.address, MaxUint256);
+
         await expect(
-            tge2.connect(owner).purchase(token1.address, 100)
-        ).to.be.revertedWith("Token not whitelisted");
+            tge2.connect(owner).purchase(100)
+        ).to.be.revertedWith(Exceptions.INCORRECT_ETH_PASSED);
     });
 
     it("If secondary TGE is failed, user can't burn there more tokens than he has purchased", async function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
-        await pool.execute(1);
+        await pool.executeBallot(1);
         const tgeRecord = await directory.contractRecordAt(
             await directory.lastContractRecordIndex()
         );
         const tge2: TGE = await getContractAt("TGE", tgeRecord.addr);
 
-        await tge2
-            .connect(owner)
-            .purchase(AddressZero, 100, { value: parseUnits("1") });
+        await tge2.connect(owner).purchase(100, { value: parseUnits("1") });
 
         await mineBlock(30);
 
@@ -265,46 +276,43 @@ describe("Test secondary TGE", function () {
         await token.connect(other).transfer(owner.address, 400);
 
         // Despite purchaser has 450 tokens now (+50 in lockup), only 100 would be burnt as it is his purchase
-        await tge2.connect(owner).claimBack();
-        expect(await token.balanceOf(owner.address)).to.equal(350);
-        expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
+        // await tge2.connect(owner).redeem();
+        // expect(await token.balanceOf(owner.address)).to.equal(350);
+        // expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
 
         // Subsequnt reclaims would do nothing
-        await tge2.connect(owner).claimBack();
-        expect(await token.balanceOf(owner.address)).to.equal(350);
-        expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
+        // await tge2.connect(owner).redeem();
+        // expect(await token.balanceOf(owner.address)).to.equal(350);
+        // expect(await tge2.lockedBalanceOf(owner.address)).to.equal(50);
     });
 
     it("If secondary TGE is failed, user can't burn tokens that are locked in subsequent proposal voting", async function () {
         await pool.connect(other).castVote(1, MaxUint256, true);
         await mineBlock(25);
-        await pool.execute(1);
+        await pool.executeBallot(1);
         const tgeRecord = await directory.contractRecordAt(
             await directory.lastContractRecordIndex()
         );
         const tge2: TGE = await getContractAt("TGE", tgeRecord.addr);
 
-        await tge2
-            .connect(owner)
-            .purchase(AddressZero, 100, { value: parseUnits("1") });
+        await tge2.connect(owner).purchase(100, { value: parseUnits("1") });
         await mineBlock(30);
 
         await gateway
             .connect(other)
             .createTGEProposal(
                 pool.address,
-                25,
                 tgeData,
                 "That didn't work out, let's try again!"
             );
         await pool.connect(owner).castVote(2, MaxUint256, true);
 
         // Nothing should be burnt as tokens are locked in voting
-        await tge2.connect(owner).claimBack();
+        await tge2.connect(owner).redeem();
         expect(await token.balanceOf(third.address)).to.equal(0);
     });
 
-    it("New TGE can't be created before previous TGE is finished", async function () {
+    it("New TGE can be created before previous TGE is finished", async function () {
         // This is unprobable in reality as successful proposal would likely be executed ASAP
         // However theoretically there can be two unexecuted proposals that are attemplted to be executed subsequently
 
@@ -317,35 +325,38 @@ describe("Test secondary TGE", function () {
             .connect(other)
             .createTGEProposal(
                 pool.address,
-                25,
                 tgeData,
                 "Let's do TGE once again"
             );
         await pool.connect(other).castVote(2, MaxUint256, true);
         await mineBlock(25);
-        await pool.execute(2);
 
-        // Execution of first proposal should fail
-        await expect(pool.execute(1)).to.be.revertedWith("Has active TGE");
+        await expect(pool.executeBallot(2)).to.be.not.reverted;
+        const proposal = await pool.getProposal(2);
+        expect(proposal.state).to.equal(2); // Accomplished
     });
 
     it("Secondary TGE's hardcap can't overflow remaining (unminted) supply", async function () {
         await mineBlock(25);
 
         tgeData.hardcap = 9500;
+
         await gateway
             .connect(other)
             .createTGEProposal(
                 pool.address,
-                5,
                 tgeData,
                 "Let's do TGE once again"
             );
         await pool.connect(other).castVote(2, MaxUint256, true);
-        await mineBlock(5);
+        await mineBlock(25);
 
-        await expect(pool.execute(2)).to.be.revertedWith(
-            "Hardcap higher than remaining supply"
-        );
+        await expect(pool.executeBallot(2)).to.be.not.reverted;
+        // await expect(pool.executeBallot(2)).to.be.revertedWith(
+        //     Exceptions.REMAINING_SUPPLY_OVERFLOW
+        // );
+        
+        const proposal = await pool.getProposal(2);
+        expect(proposal.state).to.equal(1); // Rejected
     });
 });
