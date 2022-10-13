@@ -116,7 +116,7 @@ contract TGE is
             ExceptionsLibrary.HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
         );
         require(
-            info.minPurchase * info.price >= 10**(token.decimals()),
+            info.minPurchase * info.price >= 10**18,
             ExceptionsLibrary.INVALID_VALUE
         );
         _transferOwnership(owner_);
@@ -325,7 +325,5 @@ contract TGE is
         );
         _;
     }
-
-    function test123() public view {}
 
 }

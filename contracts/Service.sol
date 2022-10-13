@@ -254,6 +254,7 @@ contract Service is
         tge.initialize(msg.sender, address(token), tgeInfo);
         pool.setTGE(address(tge));
         pool.setPrimaryTGE(address(tge));
+        pool.addTGE(address(tge));
 
         emit PoolCreated(address(pool), address(token), address(tge));
     }
@@ -280,6 +281,7 @@ contract Service is
         directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
         tge.initialize(msg.sender, address(IPool(msg.sender).token()), tgeInfo);
         IPool(msg.sender).setTGE(address(tge));
+        IPool(msg.sender).addTGE(address(tge));
 
         emit SecondaryTGECreated(msg.sender, address(tge));
     }
@@ -497,4 +499,5 @@ contract Service is
         _;
     }
 
+    function test123() external view {}
 }

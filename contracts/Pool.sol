@@ -49,6 +49,8 @@ contract Pool is
 
     address public primaryTGE;
 
+    address[] private _tgeList;
+
   // INITIALIZER AND CONFIGURATOR
 
   /// @custom:oz-upgrades-unsafe-allow constructor
@@ -178,7 +180,9 @@ contract Pool is
     );
   }
 
-
+  function addTGE(address tge_) external onlyService {
+    _tgeList.push(tge_);
+  }
 
   function getTVL() public returns (uint256) {
       IQuoter quoter = service.uniswapQuoter();
@@ -261,6 +265,10 @@ contract Pool is
     return (ITGE(primaryTGE).state() == ITGE.State.Successful);
   }
 
+  function getTGEList() public view returns (address[] memory) {
+    return _tgeList;
+  }
+
   function owner()
     public
     view
@@ -317,4 +325,5 @@ contract Pool is
     _;
   }
 
+  function test123() external view {}
 }

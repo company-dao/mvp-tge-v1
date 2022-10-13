@@ -54,4 +54,6 @@ interface IPool {
     function isDAO() external view returns (bool);
 
     function getPoolTrademark() external view returns (string memory);
+
+    function addTGE(address tge_) external;
 }
