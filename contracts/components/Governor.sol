@@ -93,7 +93,7 @@ abstract contract Governor {
             _proposals[proposalId].state = ProposalExecutionState.Accomplished;
         } else {
             _proposals[proposalId].state = ProposalExecutionState.Rejected;
-        }        
+        }
 
         emit ProposalExecuted(proposalId);
     }
@@ -132,7 +132,16 @@ abstract contract Governor {
         ) {
             return ProposalState.Failed;
         }
-
+        uint256 totalVotes = proposal.forVotes + proposal.againstVotes;
+        if (block.number > proposal.endBlock) {
+            if (
+                totalVotes >= quorumVotes &&
+                proposal.forVotes * 10000 > totalVotes * proposal.ballotDecisionThreshold
+            ) {
+                return ProposalState.Successful;
+            } else
+                return ProposalState.Failed;
+        }
         return ProposalState.Active;
     }
 
