@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 import "./IService.sol";
 import "./ITGE.sol";
@@ -16,7 +16,7 @@ interface IPool {
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
         uint256 ballotLifespan_,
-        uint256 metadataIndex, 
+        uint256 metadataIndex,
         string memory trademark
     ) external;
 
@@ -56,4 +56,12 @@ interface IPool {
     function getPoolTrademark() external view returns (string memory);
 
     function addTGE(address tge_) external;
+
+    function gnosisSafe() external view returns (address);
+
+    function setGnosisSafe(address _gnosisSafe) external;
+
+    function setGnosisGovernance(address _gnosisGovernance) external;
+
+    function gnosisGovernance() external view returns (address);
 }

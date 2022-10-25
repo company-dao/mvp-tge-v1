@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
@@ -61,4 +61,8 @@ interface IService {
         external
         view
         returns (uint256);
+
+    function gnosisProxyFactory() external view returns (address);
+
+    function gnosisSingleton() external view returns (address);
 }

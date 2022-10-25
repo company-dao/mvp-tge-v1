@@ -19,7 +19,7 @@ const { getContractAt, getSigners, Wallet, provider } = ethers;
 const { parseUnits } = ethers.utils;
 const { AddressZero } = ethers.constants;
 
-describe("Test initial TGE", function () {
+describe.only("Test initial TGE", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;
@@ -55,7 +55,7 @@ describe("Test initial TGE", function () {
             params: [],
         });
 
-        await metadata.createRecord(1, "SerialNumber2", "22-09-2022", "Street", "Status", "RegisteredName");
+        await metadata.createRecord(1, "SerialNumber2", "22-09-2022", 1);
     });
 
     afterEach(async function () {
@@ -603,6 +603,52 @@ describe("Test initial TGE", function () {
                 .connect(other)
                 .purchase(3024, { value: parseUnits("30.24") })
             ).to.be.revertedWith(Exceptions.MAX_PURCHASE_OVERFLOW);
+
+        });
+    });
+
+    describe.only("purchase tests", async function () {
+        it("check states and purchase amount rounding", async function () {
+            const tokenData2: TokenInfoStruct = {
+                name: "Strange DAO Token",
+                symbol: "SDTKN",
+                cap: parseUnits("1"),
+            };
+            const tgeData2: TGEInfoStruct = {
+                metadataURI: "uri",
+                price: 100, // price per 1000 tokenweis
+                hardcap: 5431,
+                softcap: 1117,
+                minPurchase: 11,
+                maxPurchase: 3023,
+                lockupPercent: 1,
+                lockupDuration: 51,
+                lockupTVL: parseUnits("11"),
+                duration: 23,
+                userWhitelist: [owner.address, other.address, third.address],
+                unitOfAccount: AddressZero
+            };
+
+            const tx = await service.createPool(AddressZero, tokenData2, tgeData2, 13, 37, 11, 1, "Name", {
+                value: parseUnits("0.01"),
+            });
+
+            const receipt = await tx.wait();
+            const event = receipt.events!.filter(
+                (e) => e.event == "PoolCreated"
+            )[0];
+
+            const pool2 = await getContractAt("Pool", event.args![0]);
+            const token2 = await getContractAt(
+                "GovernanceToken",
+                event.args![1]
+            );
+            const tge2 = await getContractAt("TGE", event.args![2]);
+
+            await expect(tge2
+                .connect(other)
+                .purchase(2000, { value: 200 })
+            ).to.be.not.reverted;
 
         });
     });

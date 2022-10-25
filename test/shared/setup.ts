@@ -16,12 +16,28 @@ import {
 import { TGEInfoStruct } from "../../typechain-types/IService";
 
 
-import { getProxyAddress } from "../../helpers/proxymap";
+// import { getProxyAddress } from "../../helpers/proxymap";
 import { hrtime } from "process";
 
 const { getContract, getContractAt, getSigners } = ethers;
 const { parseUnits } = ethers.utils;
 const { AddressZero } = ethers.constants;
+
+import { readFileSync, writeFileSync } from "fs";
+const filename = "./contract_proxy_address_map.json";
+
+function getProxyAddress(contractName: any) {
+  const addresses = JSON.parse((readFileSync(filename)).toString());
+  return addresses[contractName] ? addresses[contractName] : "";
+}
+
+function setProxyAddress(contractName: any, proxyAddress: any) {
+    let addresses = JSON.parse((readFileSync(filename)).toString());
+  
+    addresses[contractName] = proxyAddress;
+  
+    writeFileSync(filename, JSON.stringify(addresses));
+}
 
 export async function setup() {
     const [owner, other] = await getSigners();
@@ -122,6 +138,26 @@ export async function setup() {
     });
 
     await run("deployContract", {
+        contractName: "GnosisGovernance",
+        proxyType: "beacon",
+        constructorArguments: [],
+        forceCreate: isForceCreateNewContracts,
+        verify: isVerify,
+    });
+    
+    if (getProxyAddress("GnosisSetup") == "") {
+        const GnosisSetup = await ethers.getContractFactory("GnosisSetup");
+        const gnosisSetup = await GnosisSetup.deploy();
+        await gnosisSetup.deployed();
+
+        setProxyAddress("GnosisSetup", gnosisSetup.address);
+
+        console.log(`GnosisSetup deployed @ ${gnosisSetup.address}`);  
+    }
+
+    const protocolTokenFee = 1000;
+
+    await run("deployContract", {
         contractName: "Service",
         proxyType: "uups",
         constructorArguments: [
@@ -136,6 +172,7 @@ export async function setup() {
         UNISWAP_ROUTER_ADDRESS,
         UNISWAP_QUOTER_ADDRESS,
         getProxyAddress("WhitelistedTokens"),
+        protocolTokenFee
         ],
         forceCreate: isForceCreateNewContracts,
         verify: isVerify,
@@ -166,6 +203,14 @@ export async function setup() {
     await t.wait(1);
     console.log("Service is set in Metadata");
 
+    t = await service.setGnosisGovernanceBeacon(getProxyAddress("GnosisGovernance"));
+    await t.wait(1);
+    console.log("GnosisGovernance beacon is set in Service");
+
+    t = await service.setGnosisSetup(getProxyAddress("GnosisSetup"));
+    await t.wait(1);
+    console.log("GnosisSetup is set in Service");
+        
     console.log("\n==== Project Deploy Complete ====");
 
     // Protocol
@@ -179,7 +224,7 @@ export async function setup() {
     const tokenData: TokenInfoStruct = {
         name: "DAO Token",
         symbol: "DTKN",
-        cap: 10000,
+        cap: ethers.utils.parseUnits("1"),
     };
     const tgeData: TGEInfoStruct = {
         metadataURI: "uri",
@@ -192,11 +237,11 @@ export async function setup() {
         lockupDuration: 50,
         lockupTVL: parseUnits("20"),
         duration: 20,
-        userWhitelist: [owner.address, other.address],
+        userWhitelist: [], // [owner.address, other.address],
         unitOfAccount: AddressZero
     };
 
-    await metadata.createRecord(1, "SerialNumber", "22-09-2022", "Street", "Status", "RegisteredName");
+    await metadata.createRecord(1, "SerialNumber1002", "22-09-2022", 1);
 
     const tx = await service.createPool(AddressZero, tokenData, tgeData, 50, 50, 25, 1, "Name", {
         value: parseUnits("0.01"),

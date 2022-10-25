@@ -33,61 +33,47 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
   const nextMetadataId = metadataCurrentId.toNumber() + 1;
   console.log("nextMetadataId: " + nextMetadataId);
 
-//  let t = await service.addUserToWhitelist("0x19D3d9B224770c7c55CC471aAC68A566a701DE34");
-//  await t.wait(1);
+  // let t = await service.addUserToWhitelist("0x613e46D06A3667D2b46bf6C0d9689aA17DbFCAbc");
+  // await t.wait(1);
 
   t = await metadata.createRecord(
     nextMetadataId,
     "serial",
     "date",
-    "address",
-    "taxation",
-    "name",
+    123123,
   );
   await t.wait(1);
 
-t = await service.createPool(
+  t = await service.createPool(
     "0x0000000000000000000000000000000000000000",
     [
         "NAME"+nextMetadataId,
         "SYMBOL"+nextMetadataId,
-        "11113311",
+        "" + 10*10**18,
     ],
     [
-      "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
-      "10000000000000000000000000",
-      "90000000000000000000000000000",
-      "2000000000000000000000000000",
-      "1000000000000000000000000",
-      "20000000000000000000000000",
-      "50",
-      "40",
-      "1000000000000000000",
-      "1041",
-      [],
-      "0x0000000000000000000000000000000000000000",
-  ],
-    "2000",
-    "5000",
-    "205",
+        "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
+        "" + 3*10**16,
+        "" + 5*10**18,
+        "" + 1*10**18,
+        "" + 1*10**10,
+        "" + 20*10**18,
+        "34",
+        "0",
+        "1000000000000000000",
+        "1041",
+        [],
+        "0x0000000000000000000000000000000000000000",
+    ],
+    "1",
+    "1",
+    "505",
     nextMetadataId,
-    "hhhj"+nextMetadataId
+    "hhhj"+nextMetadataId,
+    {value: 10000000000000}
     );
   await t.wait(1);
- // [
-    //     "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
-    //     "40000000",
-    //     "1111",
-    //     "1000",
-    //     "111",
-    //     "1111",
-    //     "34",
-    //     "0",
-    //     "1000000000000000000",
-    //     "1041",
-    //     [],
-    //     "0x0000000000000000000000000000000000000000",
-    // ],
+
   console.log("\n==== Task Complete ====");
 });
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -19,6 +19,8 @@ import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 import "./interfaces/IMetadata.sol";
 import "./interfaces/IWhitelistedTokens.sol";
+import "./interfaces/gnosis/IGnosisSafeProxyFactory.sol";
+import "./interfaces/gnosis/IGnosisGovernance.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
 contract Service is
@@ -65,6 +67,11 @@ contract Service is
     /// @dev protocol token fee percentage value with 4 decimals. Examples: 1% = 10000, 100% = 1000000, 0.1% = 1000
     uint256 public protocolTokenFee;
 
+    address public gnosisProxyFactory;
+    address public gnosisSingleton;
+    address public gnosisGovernanceBeacon;
+    address public gnosisSetup;
+
     // EVENTS
 
     event UserWhitelistedSet(address account, bool whitelisted);
@@ -85,6 +92,10 @@ contract Service is
 
     event ProtocolTreasuryChanged(address protocolTreasury);
     event ProtocolTokenFeeChanged(uint256 protocolTokenFee);
+
+    event GnosisProxyFactoryChanged(address gnosisProxyFactory);
+    event GnosisSingletonChanged(address gnosisSingleton);
+    event GnosisGovernanceBeaconChanged(address gnosisGovernanceBeacon);
 
     // CONSTRUCTOR
 
@@ -107,15 +118,18 @@ contract Service is
         IWhitelistedTokens whitelistedTokens_,
         uint256 _protocolTokenFee
     ) public initializer {
-        require(address(directory_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-        require(poolBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
         require(
-            proposalGateway_ != address(0),
+            address(directory_) != address(0),
             ExceptionsLibrary.ADDRESS_ZERO
         );
+        require(poolBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(proposalGateway_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
         require(tokenBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
         require(tgeBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-        require(address(metadata_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(
+            address(metadata_) != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
         require(
             address(uniswapRouter_) != address(0),
             ExceptionsLibrary.ADDRESS_ZERO
@@ -193,7 +207,9 @@ contract Service is
 
             uint256 metadataIndex = metadata.lockRecord(jurisdiction);
             require(metadataIndex > 0, ExceptionsLibrary.NO_COMPANY);
-            IMetadata.QueueInfo memory queueInfo = metadata.getQueueInfo(metadataIndex);
+            IMetadata.QueueInfo memory queueInfo = metadata.getQueueInfo(
+                metadataIndex
+            );
 
             pool = IPool(address(new BeaconProxy(poolBeacon, "")));
             pool.initialize(
@@ -208,6 +224,20 @@ contract Service is
                 metadataIndex,
                 trademark
             );
+
+            IGnosisGovernance gnosisGovernance = IGnosisGovernance(
+                address(new BeaconProxy(gnosisGovernanceBeacon, ""))
+            );
+            pool.setGnosisGovernance(address(gnosisGovernance));
+
+            gnosisGovernance.initialize(address(pool));
+
+            address[] memory owners = new address[](1);
+            owners[0] = msg.sender;
+            pool.setGnosisSafe(
+                address(_createPoolGnosisSafe(owners, pool.gnosisGovernance()))
+            );
+
             metadata.setOwner(metadataIndex, address(pool));
 
             directory.addContractRecord(
@@ -219,11 +249,11 @@ contract Service is
                 directory.typeOf(address(pool)) == IDirectory.ContractType.Pool,
                 ExceptionsLibrary.NOT_POOL
             );
-            require(msg.sender == pool.owner(), ExceptionsLibrary.NOT_POOL_OWNER);
             require(
-                pool.isDAO() == false,
-                ExceptionsLibrary.IS_DAO
+                msg.sender == pool.owner(),
+                ExceptionsLibrary.NOT_POOL_OWNER
             );
+            require(pool.isDAO() == false, ExceptionsLibrary.IS_DAO);
         }
 
         IGovernanceToken token = IGovernanceToken(
@@ -257,6 +287,41 @@ contract Service is
         pool.addTGE(address(tge));
 
         emit PoolCreated(address(pool), address(token), address(tge));
+    }
+
+    /**
+     * @dev Creates Gnosis Safe
+     * @param _owners owners
+     * @param _module goernance module
+     * @return proxy Gnosis safe proxy
+     */
+    function _createPoolGnosisSafe(address[] memory _owners, address _module)
+        private
+        returns (address proxy)
+    {
+        bytes memory moduleInitializer = abi.encodeWithSignature(
+            "enableModule(address)",
+            _module
+        );
+
+        bytes memory initializer = abi.encodeWithSignature(
+            "setup(address[],uint256,address,bytes,address,address,uint256,address)",
+            _owners,
+            _owners.length,
+            gnosisSetup,
+            moduleInitializer,
+            address(0),
+            address(0),
+            0,
+            address(0)
+        );
+
+        return
+            IGnosisSafeProxyFactory(gnosisProxyFactory).createProxyWithNonce(
+                gnosisSingleton,
+                initializer,
+                block.timestamp
+            );
     }
 
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
@@ -293,12 +358,18 @@ contract Service is
     // RESTRICTED FUNCTIONS
 
     function addUserToWhitelist(address account) external onlyOwner {
-        require(_userWhitelist.add(account), ExceptionsLibrary.ALREADY_WHITELISTED);
+        require(
+            _userWhitelist.add(account),
+            ExceptionsLibrary.ALREADY_WHITELISTED
+        );
         emit UserWhitelistedSet(account, true);
     }
 
     function removeUserFromWhitelist(address account) external onlyOwner {
-        require(_userWhitelist.remove(account), ExceptionsLibrary.ALREADY_NOT_WHITELISTED);
+        require(
+            _userWhitelist.remove(account),
+            ExceptionsLibrary.ALREADY_NOT_WHITELISTED
+        );
         emit UserWhitelistedSet(account, false);
     }
 
@@ -375,7 +446,10 @@ contract Service is
      * @param _protocolTreasury Protocol treasury address
      */
     function setProtocolTreasury(address _protocolTreasury) public onlyOwner {
-        require(_protocolTreasury != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        require(
+            _protocolTreasury != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
 
         protocolTreasury = _protocolTreasury;
         emit ProtocolTreasuryChanged(protocolTreasury);
@@ -391,6 +465,61 @@ contract Service is
 
         protocolTokenFee = _protocolTokenFee;
         emit ProtocolTokenFeeChanged(protocolTokenFee);
+    }
+
+    /**
+     * @dev Sets Gnosis proxy factory
+     * @param _gnosisProxyFactory Gnosis proxy factory address
+     */
+    function setGnosisProxyFactory(address _gnosisProxyFactory)
+        public
+        onlyOwner
+    {
+        require(
+            _gnosisProxyFactory != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+
+        gnosisProxyFactory = _gnosisProxyFactory;
+        emit GnosisProxyFactoryChanged(gnosisProxyFactory);
+    }
+
+    /**
+     * @dev Sets Gnosis singleton
+     * @param _gnosisSingleton Gnosis singleton address
+     */
+    function setGnosisSingleton(address _gnosisSingleton) public onlyOwner {
+        require(_gnosisSingleton != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+
+        gnosisSingleton = _gnosisSingleton;
+        emit GnosisSingletonChanged(gnosisSingleton);
+    }
+
+    /**
+     * @dev Sets Gnosis governance module beacon
+     * @param _gnosisGovernanceBeacon Gnosis governance module beacon address
+     */
+    function setGnosisGovernanceBeacon(address _gnosisGovernanceBeacon)
+        public
+        onlyOwner
+    {
+        require(
+            _gnosisGovernanceBeacon != address(0),
+            ExceptionsLibrary.ADDRESS_ZERO
+        );
+
+        gnosisGovernanceBeacon = _gnosisGovernanceBeacon;
+        emit GnosisGovernanceBeaconChanged(gnosisGovernanceBeacon);
+    }
+
+    /**
+     * @dev Sets Gnosis setup address
+     * @param _gnosisSetup Gnosis setup address
+     */
+    function setGnosisSetup(address _gnosisSetup) public onlyOwner {
+        require(_gnosisSetup != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+
+        gnosisSetup = _gnosisSetup;
     }
 
     // VIEW FUNCTIONS
@@ -485,7 +614,7 @@ contract Service is
 
     modifier onlyWhitelisted() {
         require(
-            isUserWhitelisted(msg.sender), 
+            isUserWhitelisted(msg.sender),
             ExceptionsLibrary.NOT_WHITELISTED
         );
         _;
@@ -499,5 +628,7 @@ contract Service is
         _;
     }
 
-    function test123() external view {}
+    function testI3813() public pure returns (uint256) {
+        return uint256(123);
+    }
 }

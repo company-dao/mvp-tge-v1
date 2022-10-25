@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 library ExceptionsLibrary {
     string public constant ADDRESS_ZERO = "ADDRESS_ZERO";
-    string public constant INCORRECT_ETH_PASSED = "INCORRECT_ETH_PASSED"; 
+    string public constant INCORRECT_ETH_PASSED = "INCORRECT_ETH_PASSED";
     string public constant NO_COMPANY = "NO_COMPANY";
     string public constant INVALID_TOKEN = "INVALID_TOKEN";
     string public constant NOT_POOL = "NOT_POOL";
@@ -26,8 +26,10 @@ library ExceptionsLibrary {
     string public constant LOCKUP_TVL_NOT_REACHED = "LOCKUP_TVL_NOT_REACHED";
     string public constant HARDCAP_OVERFLOW = "HARDCAP_OVERFLOW";
     string public constant MAX_PURCHASE_OVERFLOW = "MAX_PURCHASE_OVERFLOW";
-    string public constant HARDCAP_OVERFLOW_REMAINING_SUPPLY = "HARDCAP_OVERFLOW_REMAINING_SUPPLY";
-    string public constant HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY = "HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY";
+    string public constant HARDCAP_OVERFLOW_REMAINING_SUPPLY =
+        "HARDCAP_OVERFLOW_REMAINING_SUPPLY";
+    string public constant HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY =
+        "HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY";
     string public constant MIN_PURCHASE_UNDERFLOW = "MIN_PURCHASE_UNDERFLOW";
     string public constant LOW_UNLOCKED_BALANCE = "LOW_UNLOCKED_BALANCE";
     string public constant RECORD_IN_USE = "RECORD_IN_USE";
@@ -41,4 +43,7 @@ library ExceptionsLibrary {
     string public constant INVALID_CAP = "INVALID_CAP";
     string public constant INVALID_SOFTCAP = "INVALID_SOFTCAP";
     string public constant INVALID_HARDCAP = "INVALID_HARDCAP";
+    string public constant ONLY_POOL = "ONLY_POOL";
+    string public constant ETH_TRANSFER_FAIL = "ETH_TRANSFER_FAIL";
+    string public constant TOKEN_TRANSFER_FAIL = "TOKEN_TRANSFER_FAIL";
 }

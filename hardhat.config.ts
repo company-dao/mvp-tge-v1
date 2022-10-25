@@ -16,6 +16,7 @@ require("./tasks/deploy");
 require("./tasks/deployContract");
 require("./tasks/safeVerify");
 require("./tasks/createPool");
+require("./tasks/completeTGE");
 require("./tasks/forceImport");
 
 dotenv.config();
@@ -41,6 +42,15 @@ const defaultNetworkConfig = networkConfig(process.env.RPC_URL);
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
+      {
+        version: "0.8.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
       {
         version: "0.8.13",
         settings: {
@@ -69,7 +79,7 @@ const config: HardhatUserConfig = {
     // ropsten: defaultNetworkConfig,1322222229
     // rinkeby: defaultNetworkConfig,
     // kovan: defaultNetworkConfig,
-    goerli: defaultNetworkConfig,
+    goerli: {...defaultNetworkConfig, ...{chainId: 5}},
     // gas: 2100000,
     // gasPrice: 8500000000, // 8000000000,
     // url: defaultNetworkConfig.url,

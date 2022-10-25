@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./IService.sol";
@@ -30,7 +30,10 @@ interface IGovernanceToken is IERC20Upgradeable {
 
     function minUnlockedBalanceOf(address from) external view returns (uint256);
 
-    function unlockedBalanceOf(address account, uint256 proposalId) external view returns (uint256);
+    function unlockedBalanceOf(address account, uint256 proposalId)
+        external
+        view
+        returns (uint256);
 
     function pool() external view returns (address);
 

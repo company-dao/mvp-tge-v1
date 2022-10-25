@@ -20,7 +20,7 @@ const { getContractAt, getContract, getSigners, provider } = ethers;
 const { parseUnits } = ethers.utils;
 const { AddressZero, MaxUint256 } = ethers.constants;
 
-describe.only("Test secondary TGE", function () {
+describe("Test secondary TGE", function () {
     let owner: SignerWithAddress,
         other: SignerWithAddress,
         third: SignerWithAddress;

@@ -2,7 +2,7 @@
   "manifestVersion": "3.2",
   "proxies": [
     {
-      "address": "0xb57E3299d8C044D787d9C9c72662fE6E55911F24",
+      "address": "0xEff00A06E8c5542429C731c988A9D89Fe2Af4688",
       "kind": "uups"
     },
     {
@@ -14,7 +14,7 @@
       "kind": "uups"
     },
     {
-      "address": "0xBCE0a8Cb287a384007E30AC4f1CE4ac80a31Cfa9",
+      "address": "0xD79b50BCFf49971C39Aff0968D779D908aBe9930",
       "kind": "uups"
     },
     {
@@ -23,8 +23,8 @@
     }
   ],
   "impls": {
-    "0dca68382353ea41ec4f922417412205e200b5fdc82ce09b098a348f22d4cf5a": {
-      "address": "0xEdFF37eDDb2C870979dbfF5D33c19dE649835653",
+    "e667a0d784da137a0183a722aeb18d9a8e3478e2a0c3f65aa2a9c6a0d4bf0044": {
+      "address": "0x14Df20aA04D485B95bDe774c16E2d59F6E7AFd15",
       "layout": {
         "storage": [
           {
@@ -96,7 +96,7 @@
             "label": "contractRecordAt",
             "offset": 0,
             "slot": "202",
-            "type": "t_mapping(t_uint256,t_struct(ContractInfo)8602_storage)",
+            "type": "t_mapping(t_uint256,t_struct(ContractInfo)6118_storage)",
             "contract": "Directory",
             "src": "contracts/Directory.sol:25"
           },
@@ -120,7 +120,7 @@
             "label": "proposalRecordAt",
             "offset": 0,
             "slot": "205",
-            "type": "t_mapping(t_uint256,t_struct(ProposalInfo)8620_storage)",
+            "type": "t_mapping(t_uint256,t_struct(ProposalInfo)6136_storage)",
             "contract": "Directory",
             "src": "contracts/Directory.sol:37"
           },
@@ -150,7 +150,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_enum(ContractType)13870": {
+          "t_enum(ContractType)12011": {
             "label": "enum IDirectory.ContractType",
             "members": [
               "None",
@@ -164,11 +164,11 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(ContractInfo)8602_storage)": {
+          "t_mapping(t_uint256,t_struct(ContractInfo)6118_storage)": {
             "label": "mapping(uint256 => struct Directory.ContractInfo)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(ProposalInfo)8620_storage)": {
+          "t_mapping(t_uint256,t_struct(ProposalInfo)6136_storage)": {
             "label": "mapping(uint256 => struct Directory.ProposalInfo)",
             "numberOfBytes": "32"
           },
@@ -176,7 +176,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(ContractInfo)8602_storage": {
+          "t_struct(ContractInfo)6118_storage": {
             "label": "struct Directory.ContractInfo",
             "members": [
               {
@@ -187,7 +187,7 @@
               },
               {
                 "label": "contractType",
-                "type": "t_enum(ContractType)13870",
+                "type": "t_enum(ContractType)12011",
                 "offset": 20,
                 "slot": "0"
               },
@@ -200,7 +200,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(ProposalInfo)8620_storage": {
+          "t_struct(ProposalInfo)6136_storage": {
             "label": "struct Directory.ProposalInfo",
             "members": [
               {
@@ -235,8 +235,8 @@
         }
       }
     },
-    "ec9628ce53b5b1d8fe9ba4a88e44bf5de1826b7be6c4e0cc71d3dd314c6d57d7": {
-      "address": "0xA74EAB74376D73FfEbBd57E55f526EC11F336103",
+    "c880d8871000af01d1541b225ee6d2b3f759a7fa9f622365f296f5672080b68c": {
+      "address": "0xa7D1d27738AFFD9beA951a42C7431A62FE521CC2",
       "layout": {
         "storage": [
           {
@@ -325,8 +325,8 @@
         }
       }
     },
-    "e4e6a3463db9c8cdba3e029d022bf67630ac80d144dc5ef7fa80700ab1992d86": {
-      "address": "0x0B523a1CF0BEE4C11C7dC5F27a5656CF8C0e9065",
+    "4f621289037a92c736b038bd0c44f07d26fd5f1ff68eb4911a237ec1c42529b5": {
+      "address": "0x0a05dB57cc91fF9E39C14fa9c608f3942ab63E56",
       "layout": {
         "storage": [
           {
@@ -489,8 +489,8 @@
         }
       }
     },
-    "24ced93d486e0f06fc3fc9e3ad15a3b22548bdab1d54a9801fd19cff20d908e2": {
-      "address": "0xa60150C70FCdf6209c59939Bc2954672c0ddd288",
+    "847f002b32ba0ff69723019e263c068f2a395110083d29c7c84d669d28aede78": {
+      "address": "0x99208498ea2d3e18A093eE823e2FC0F7DfcC8274",
       "layout": {
         "storage": [
           {
@@ -554,7 +554,7 @@
             "label": "service",
             "offset": 0,
             "slot": "201",
-            "type": "t_contract(IService)14275",
+            "type": "t_contract(IService)12451",
             "contract": "Metadata",
             "src": "contracts/Metadata.sol:19"
           },
@@ -570,7 +570,7 @@
             "label": "queueInfo",
             "offset": 0,
             "slot": "203",
-            "type": "t_mapping(t_uint256,t_struct(QueueInfo)14018_storage)",
+            "type": "t_mapping(t_uint256,t_struct(QueueInfo)12159_storage)",
             "contract": "Metadata",
             "src": "contracts/Metadata.sol:23"
           }
@@ -592,11 +592,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IService)14275": {
+          "t_contract(IService)12451": {
             "label": "contract IService",
             "numberOfBytes": "20"
           },
-          "t_enum(Status)14004": {
+          "t_enum(Status)12145": {
             "label": "enum IMetadata.Status",
             "members": [
               "NotUsed",
@@ -604,7 +604,7 @@
             ],
             "numberOfBytes": "1"
           },
-          "t_mapping(t_uint256,t_struct(QueueInfo)14018_storage)": {
+          "t_mapping(t_uint256,t_struct(QueueInfo)12159_storage)": {
             "label": "mapping(uint256 => struct IMetadata.QueueInfo)",
             "numberOfBytes": "32"
           },
@@ -612,7 +612,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(QueueInfo)14018_storage": {
+          "t_struct(QueueInfo)12159_storage": {
             "label": "struct IMetadata.QueueInfo",
             "members": [
               {
@@ -641,7 +641,7 @@
               },
               {
                 "label": "status",
-                "type": "t_enum(Status)14004",
+                "type": "t_enum(Status)12145",
                 "offset": 0,
                 "slot": "4"
               },
@@ -665,8 +665,8 @@
         }
       }
     },
-    "f606064b7a28dc16e746be1b05048b69da7ca5da5206f187061ed232a007b904": {
-      "address": "0x3D235D58a43653fB8EF1b4A34D712FD4AE81c56f",
+    "03e7f9bcdede3750b622dce594698713e65cf5c1cdd3a736a8da892ac7c20c87": {
+      "address": "0x0163178322e417f02EE9642DB79383C0ee8C33F6",
       "layout": {
         "storage": [
           {
@@ -730,9 +730,9 @@
             "label": "_proposals",
             "offset": 0,
             "slot": "151",
-            "type": "t_mapping(t_uint256,t_struct(Proposal)13392_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Proposal)11492_storage)",
             "contract": "Governor",
-            "src": "contracts/components/Governor.sol:24"
+            "src": "contracts/components/Governor.sol:26"
           },
           {
             "label": "_forVotes",
@@ -740,7 +740,7 @@
             "slot": "152",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
             "contract": "Governor",
-            "src": "contracts/components/Governor.sol:26"
+            "src": "contracts/components/Governor.sol:28"
           },
           {
             "label": "_againstVotes",
@@ -748,7 +748,7 @@
             "slot": "153",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
             "contract": "Governor",
-            "src": "contracts/components/Governor.sol:27"
+            "src": "contracts/components/Governor.sol:29"
           },
           {
             "label": "lastProposalId",
@@ -756,13 +756,13 @@
             "slot": "154",
             "type": "t_uint256",
             "contract": "Governor",
-            "src": "contracts/components/Governor.sol:29"
+            "src": "contracts/components/Governor.sol:31"
           },
           {
             "label": "service",
             "offset": 0,
             "slot": "155",
-            "type": "t_contract(IService)14275",
+            "type": "t_contract(IService)12451",
             "contract": "Pool",
             "src": "contracts/Pool.sol:24"
           },
@@ -770,7 +770,7 @@
             "label": "token",
             "offset": 0,
             "slot": "156",
-            "type": "t_contract(IGovernanceToken)13999",
+            "type": "t_contract(IGovernanceToken)12140",
             "contract": "Pool",
             "src": "contracts/Pool.sol:26"
           },
@@ -778,7 +778,7 @@
             "label": "tge",
             "offset": 0,
             "slot": "157",
-            "type": "t_contract(ITGE)14334",
+            "type": "t_contract(ITGE)12510",
             "contract": "Pool",
             "src": "contracts/Pool.sol:28"
           },
@@ -869,12 +869,40 @@
             "type": "t_address",
             "contract": "Pool",
             "src": "contracts/Pool.sol:50"
+          },
+          {
+            "label": "_tgeList",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:52"
+          },
+          {
+            "label": "gnosisSafe",
+            "offset": 0,
+            "slot": "170",
+            "type": "t_address",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:54"
+          },
+          {
+            "label": "gnosisGovernance",
+            "offset": 0,
+            "slot": "171",
+            "type": "t_address",
+            "contract": "Pool",
+            "src": "contracts/Pool.sol:55"
           }
         ],
         "types": {
           "t_address": {
             "label": "address",
             "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
           },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]",
@@ -892,19 +920,19 @@
             "label": "bytes",
             "numberOfBytes": "32"
           },
-          "t_contract(IGovernanceToken)13999": {
+          "t_contract(IGovernanceToken)12140": {
             "label": "contract IGovernanceToken",
             "numberOfBytes": "20"
           },
-          "t_contract(IService)14275": {
+          "t_contract(IService)12451": {
             "label": "contract IService",
             "numberOfBytes": "20"
           },
-          "t_contract(ITGE)14334": {
+          "t_contract(ITGE)12510": {
             "label": "contract ITGE",
             "numberOfBytes": "20"
           },
-          "t_enum(ProposalExecutionState)13421": {
+          "t_enum(ProposalExecutionState)11521": {
             "label": "enum Governor.ProposalExecutionState",
             "members": [
               "Initialized",
@@ -917,7 +945,7 @@
             "label": "mapping(address => mapping(uint256 => uint256))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Proposal)13392_storage)": {
+          "t_mapping(t_uint256,t_struct(Proposal)11492_storage)": {
             "label": "mapping(uint256 => struct Governor.Proposal)",
             "numberOfBytes": "32"
           },
@@ -929,7 +957,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(Proposal)13392_storage": {
+          "t_struct(Proposal)11492_storage": {
             "label": "struct Governor.Proposal",
             "members": [
               {
@@ -994,7 +1022,7 @@
               },
               {
                 "label": "state",
-                "type": "t_enum(ProposalExecutionState)13421",
+                "type": "t_enum(ProposalExecutionState)11521",
                 "offset": 1,
                 "slot": "9"
               },
@@ -1003,9 +1031,15 @@
                 "type": "t_string_storage",
                 "offset": 0,
                 "slot": "10"
+              },
+              {
+                "label": "totalSupply",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "11"
               }
             ],
-            "numberOfBytes": "352"
+            "numberOfBytes": "384"
           },
           "t_uint256": {
             "label": "uint256",
@@ -1018,8 +1052,8 @@
         }
       }
     },
-    "10799b940cae542bcf274ee117ade312c6e0b60a825aa141239de7196ef06059": {
-      "address": "0xa4D517cE7979382bAEd561e3fEd035F287dEb62a",
+    "ad3af287ecab40b5757224b04ca4b37c8850e03cb39bc7b3b1bda60057c681c7": {
+      "address": "0xa6da9C8c5C23c514367e7Fb1Bb272b68913aBB56",
       "layout": {
         "storage": [
           {
@@ -1212,7 +1246,7 @@
             "label": "service",
             "offset": 0,
             "slot": "355",
-            "type": "t_contract(IService)14275",
+            "type": "t_contract(IService)12451",
             "contract": "GovernanceToken",
             "src": "contracts/GovernanceToken.sol:22"
           },
@@ -1228,7 +1262,7 @@
             "label": "_lockedInProposal",
             "offset": 0,
             "slot": "357",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(LockedBalance)8955_storage))",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(LockedBalance)6636_storage))",
             "contract": "GovernanceToken",
             "src": "contracts/GovernanceToken.sol:33"
           },
@@ -1274,7 +1308,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IService)14275": {
+          "t_contract(IService)12451": {
             "label": "contract IService",
             "numberOfBytes": "20"
           },
@@ -1290,7 +1324,7 @@
             "label": "mapping(address => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_struct(LockedBalance)8955_storage))": {
+          "t_mapping(t_address,t_mapping(t_uint256,t_struct(LockedBalance)6636_storage))": {
             "label": "mapping(address => mapping(uint256 => struct GovernanceToken.LockedBalance))",
             "numberOfBytes": "32"
           },
@@ -1302,7 +1336,7 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(LockedBalance)8955_storage)": {
+          "t_mapping(t_uint256,t_struct(LockedBalance)6636_storage)": {
             "label": "mapping(uint256 => struct GovernanceToken.LockedBalance)",
             "numberOfBytes": "32"
           },
@@ -1340,7 +1374,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(LockedBalance)8955_storage": {
+          "t_struct(LockedBalance)6636_storage": {
             "label": "struct GovernanceToken.LockedBalance",
             "members": [
               {
@@ -1389,8 +1423,8 @@
         }
       }
     },
-    "d825705ce93132051fcb2bab469c3c16fae7bd8fe35969397da9a863289e9b69": {
-      "address": "0x43731008B52FE9aA387e8cfb2d3E565ddDdd4698",
+    "e2f40f5a129ec769258be8244c4d0a7af824ba5d8552e4d97970704b43a6123e": {
+      "address": "0xA40C6b346FF33d54b1fDf4dDb86F19ba61Fe3405",
       "layout": {
         "storage": [
           {
@@ -1454,9 +1488,9 @@
             "label": "token",
             "offset": 0,
             "slot": "151",
-            "type": "t_contract(IGovernanceToken)13999",
+            "type": "t_contract(IGovernanceToken)12140",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:26"
+            "src": "contracts/TGE.sol:27"
           },
           {
             "label": "metadataURI",
@@ -1464,7 +1498,7 @@
             "slot": "152",
             "type": "t_string_storage",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:28"
+            "src": "contracts/TGE.sol:29"
           },
           {
             "label": "price",
@@ -1472,7 +1506,7 @@
             "slot": "153",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:30"
+            "src": "contracts/TGE.sol:31"
           },
           {
             "label": "hardcap",
@@ -1480,7 +1514,7 @@
             "slot": "154",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:32"
+            "src": "contracts/TGE.sol:33"
           },
           {
             "label": "softcap",
@@ -1488,7 +1522,7 @@
             "slot": "155",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:34"
+            "src": "contracts/TGE.sol:35"
           },
           {
             "label": "minPurchase",
@@ -1496,7 +1530,7 @@
             "slot": "156",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:36"
+            "src": "contracts/TGE.sol:37"
           },
           {
             "label": "maxPurchase",
@@ -1504,7 +1538,7 @@
             "slot": "157",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:38"
+            "src": "contracts/TGE.sol:39"
           },
           {
             "label": "lockupPercent",
@@ -1512,7 +1546,7 @@
             "slot": "158",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:40"
+            "src": "contracts/TGE.sol:41"
           },
           {
             "label": "lockupTVL",
@@ -1520,7 +1554,7 @@
             "slot": "159",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:42"
+            "src": "contracts/TGE.sol:43"
           },
           {
             "label": "lockupDuration",
@@ -1528,7 +1562,7 @@
             "slot": "160",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:44"
+            "src": "contracts/TGE.sol:45"
           },
           {
             "label": "duration",
@@ -1536,7 +1570,7 @@
             "slot": "161",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:46"
+            "src": "contracts/TGE.sol:47"
           },
           {
             "label": "userWhitelist",
@@ -1544,7 +1578,7 @@
             "slot": "162",
             "type": "t_array(t_address)dyn_storage",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:48"
+            "src": "contracts/TGE.sol:49"
           },
           {
             "label": "_unitOfAccount",
@@ -1552,7 +1586,7 @@
             "slot": "163",
             "type": "t_address",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:50"
+            "src": "contracts/TGE.sol:51"
           },
           {
             "label": "isUserWhitelisted",
@@ -1560,7 +1594,7 @@
             "slot": "164",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:52"
+            "src": "contracts/TGE.sol:53"
           },
           {
             "label": "isTokenWhitelisted",
@@ -1568,7 +1602,7 @@
             "slot": "165",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:54"
+            "src": "contracts/TGE.sol:55"
           },
           {
             "label": "createdAt",
@@ -1576,7 +1610,7 @@
             "slot": "166",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:56"
+            "src": "contracts/TGE.sol:57"
           },
           {
             "label": "purchaseOf",
@@ -1584,7 +1618,7 @@
             "slot": "167",
             "type": "t_mapping(t_address,t_uint256)",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:58"
+            "src": "contracts/TGE.sol:59"
           },
           {
             "label": "lockupTVLReached",
@@ -1592,7 +1626,7 @@
             "slot": "168",
             "type": "t_bool",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:60"
+            "src": "contracts/TGE.sol:61"
           },
           {
             "label": "lockedBalanceOf",
@@ -1600,7 +1634,7 @@
             "slot": "169",
             "type": "t_mapping(t_address,t_uint256)",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:62"
+            "src": "contracts/TGE.sol:63"
           },
           {
             "label": "_totalPurchased",
@@ -1608,7 +1642,7 @@
             "slot": "170",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:64"
+            "src": "contracts/TGE.sol:65"
           },
           {
             "label": "_totalLocked",
@@ -1616,15 +1650,15 @@
             "slot": "171",
             "type": "t_uint256",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:66"
+            "src": "contracts/TGE.sol:67"
           },
           {
             "label": "service",
             "offset": 0,
             "slot": "172",
-            "type": "t_contract(IService)14275",
+            "type": "t_contract(IService)12451",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:69"
+            "src": "contracts/TGE.sol:70"
           },
           {
             "label": "isProtocolTokenFeeClaimed",
@@ -1632,7 +1666,7 @@
             "slot": "172",
             "type": "t_bool",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:71"
+            "src": "contracts/TGE.sol:72"
           },
           {
             "label": "isTest313190903",
@@ -1640,7 +1674,7 @@
             "slot": "172",
             "type": "t_bool",
             "contract": "TGE",
-            "src": "contracts/TGE.sol:72"
+            "src": "contracts/TGE.sol:73"
           }
         ],
         "types": {
@@ -1664,11 +1698,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IGovernanceToken)13999": {
+          "t_contract(IGovernanceToken)12140": {
             "label": "contract IGovernanceToken",
             "numberOfBytes": "20"
           },
-          "t_contract(IService)14275": {
+          "t_contract(IService)12451": {
             "label": "contract IService",
             "numberOfBytes": "20"
           },
@@ -1695,8 +1729,54 @@
         }
       }
     },
-    "d8c337667ff8943df8b6c281c3b68f9129df6ae57786184639271bd33abae3a5": {
-      "address": "0x0411E5373A5010f7A42a6946C0A9B78CD5d6Ce60",
+    "9b8a351966c9ae55661eb45307782c8218d829ca2548f36851e52f53e62c0e9b": {
+      "address": "0x437FB99e922119A4567e7f5390af9F86B7C1e031",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "pool",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "GnosisGovernance",
+            "src": "contracts/GnosisGovernance.sol:14"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "6a812d1c53261c6ad1ff3af031f77107e399bd69ba7977bc3fb0d84ae6bf785b": {
+      "address": "0xD357eee98Ca51511871784c4DD1A240281d895F3",
       "layout": {
         "storage": [
           {
@@ -1776,25 +1856,25 @@
             "label": "metadata",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(IMetadata)14044",
+            "type": "t_contract(IMetadata)12185",
             "contract": "Service",
-            "src": "contracts/Service.sol:34"
+            "src": "contracts/Service.sol:36"
           },
           {
             "label": "directory",
             "offset": 0,
             "slot": "252",
-            "type": "t_contract(IDirectory)13898",
+            "type": "t_contract(IDirectory)12039",
             "contract": "Service",
-            "src": "contracts/Service.sol:36"
+            "src": "contracts/Service.sol:38"
           },
           {
             "label": "whitelistedTokens",
             "offset": 0,
             "slot": "253",
-            "type": "t_contract(IWhitelistedTokens)14364",
+            "type": "t_contract(IWhitelistedTokens)12540",
             "contract": "Service",
-            "src": "contracts/Service.sol:38"
+            "src": "contracts/Service.sol:40"
           },
           {
             "label": "proposalGateway",
@@ -1802,7 +1882,7 @@
             "slot": "254",
             "type": "t_address",
             "contract": "Service",
-            "src": "contracts/Service.sol:40"
+            "src": "contracts/Service.sol:42"
           },
           {
             "label": "poolBeacon",
@@ -1810,7 +1890,7 @@
             "slot": "255",
             "type": "t_address",
             "contract": "Service",
-            "src": "contracts/Service.sol:42"
+            "src": "contracts/Service.sol:44"
           },
           {
             "label": "tokenBeacon",
@@ -1818,7 +1898,7 @@
             "slot": "256",
             "type": "t_address",
             "contract": "Service",
-            "src": "contracts/Service.sol:44"
+            "src": "contracts/Service.sol:46"
           },
           {
             "label": "tgeBeacon",
@@ -1826,7 +1906,7 @@
             "slot": "257",
             "type": "t_address",
             "contract": "Service",
-            "src": "contracts/Service.sol:46"
+            "src": "contracts/Service.sol:48"
           },
           {
             "label": "fee",
@@ -1834,7 +1914,7 @@
             "slot": "258",
             "type": "t_uint256",
             "contract": "Service",
-            "src": "contracts/Service.sol:48"
+            "src": "contracts/Service.sol:50"
           },
           {
             "label": "_ballotQuorumThreshold",
@@ -1842,7 +1922,7 @@
             "slot": "259",
             "type": "t_uint256",
             "contract": "Service",
-            "src": "contracts/Service.sol:50"
+            "src": "contracts/Service.sol:52"
           },
           {
             "label": "_ballotDecisionThreshold",
@@ -1850,7 +1930,7 @@
             "slot": "260",
             "type": "t_uint256",
             "contract": "Service",
-            "src": "contracts/Service.sol:52"
+            "src": "contracts/Service.sol:54"
           },
           {
             "label": "_ballotLifespan",
@@ -1858,23 +1938,23 @@
             "slot": "261",
             "type": "t_uint256",
             "contract": "Service",
-            "src": "contracts/Service.sol:54"
+            "src": "contracts/Service.sol:56"
           },
           {
             "label": "uniswapRouter",
             "offset": 0,
             "slot": "262",
-            "type": "t_contract(ISwapRouter)8577",
+            "type": "t_contract(ISwapRouter)6093",
             "contract": "Service",
-            "src": "contracts/Service.sol:56"
+            "src": "contracts/Service.sol:58"
           },
           {
             "label": "uniswapQuoter",
             "offset": 0,
             "slot": "263",
-            "type": "t_contract(IQuoter)8477",
+            "type": "t_contract(IQuoter)5993",
             "contract": "Service",
-            "src": "contracts/Service.sol:58"
+            "src": "contracts/Service.sol:60"
           },
           {
             "label": "_userWhitelist",
@@ -1882,7 +1962,7 @@
             "slot": "264",
             "type": "t_struct(AddressSet)4808_storage",
             "contract": "Service",
-            "src": "contracts/Service.sol:60"
+            "src": "contracts/Service.sol:62"
           },
           {
             "label": "protocolTreasury",
@@ -1890,7 +1970,7 @@
             "slot": "266",
             "type": "t_address",
             "contract": "Service",
-            "src": "contracts/Service.sol:63"
+            "src": "contracts/Service.sol:65"
           },
           {
             "label": "protocolTokenFee",
@@ -1898,7 +1978,39 @@
             "slot": "267",
             "type": "t_uint256",
             "contract": "Service",
-            "src": "contracts/Service.sol:66"
+            "src": "contracts/Service.sol:68"
+          },
+          {
+            "label": "gnosisProxyFactory",
+            "offset": 0,
+            "slot": "268",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:70"
+          },
+          {
+            "label": "gnosisSingleton",
+            "offset": 0,
+            "slot": "269",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:71"
+          },
+          {
+            "label": "gnosisGovernanceBeacon",
+            "offset": 0,
+            "slot": "270",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:72"
+          },
+          {
+            "label": "gnosisSetup",
+            "offset": 0,
+            "slot": "271",
+            "type": "t_address",
+            "contract": "Service",
+            "src": "contracts/Service.sol:73"
           }
         ],
         "types": {
@@ -1926,23 +2038,23 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IDirectory)13898": {
+          "t_contract(IDirectory)12039": {
             "label": "contract IDirectory",
             "numberOfBytes": "20"
           },
-          "t_contract(IMetadata)14044": {
+          "t_contract(IMetadata)12185": {
             "label": "contract IMetadata",
             "numberOfBytes": "20"
           },
-          "t_contract(IQuoter)8477": {
+          "t_contract(IQuoter)5993": {
             "label": "contract IQuoter",
             "numberOfBytes": "20"
           },
-          "t_contract(ISwapRouter)8577": {
+          "t_contract(ISwapRouter)6093": {
             "label": "contract ISwapRouter",
             "numberOfBytes": "20"
           },
-          "t_contract(IWhitelistedTokens)14364": {
+          "t_contract(IWhitelistedTokens)12540": {
             "label": "contract IWhitelistedTokens",
             "numberOfBytes": "20"
           },
@@ -1979,6 +2091,305 @@
               }
             ],
             "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "760b0041517856b65160fe81eb96cf19e6f377af242e35670ecac65b956c82d2": {
+      "address": "0x32e2b35a9Af511706CD8EC2Ee6dad9Ce03Bae904",
+      "txHash": "0x3a180989ce1ec8368ca22bf2898d610c06e267207d2215c9046238d4344dcf18",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_contract(IGovernanceToken)12138",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:27"
+          },
+          {
+            "label": "metadataURI",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_string_storage",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:29"
+          },
+          {
+            "label": "price",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:31"
+          },
+          {
+            "label": "hardcap",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:33"
+          },
+          {
+            "label": "softcap",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:35"
+          },
+          {
+            "label": "minPurchase",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:37"
+          },
+          {
+            "label": "maxPurchase",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:39"
+          },
+          {
+            "label": "lockupPercent",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:41"
+          },
+          {
+            "label": "lockupTVL",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:43"
+          },
+          {
+            "label": "lockupDuration",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:45"
+          },
+          {
+            "label": "duration",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:47"
+          },
+          {
+            "label": "userWhitelist",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:49"
+          },
+          {
+            "label": "_unitOfAccount",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_address",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:51"
+          },
+          {
+            "label": "isUserWhitelisted",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:53"
+          },
+          {
+            "label": "isTokenWhitelisted",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:55"
+          },
+          {
+            "label": "createdAt",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:57"
+          },
+          {
+            "label": "purchaseOf",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:59"
+          },
+          {
+            "label": "lockupTVLReached",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_bool",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:61"
+          },
+          {
+            "label": "lockedBalanceOf",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:63"
+          },
+          {
+            "label": "_totalPurchased",
+            "offset": 0,
+            "slot": "170",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:65"
+          },
+          {
+            "label": "_totalLocked",
+            "offset": 0,
+            "slot": "171",
+            "type": "t_uint256",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:67"
+          },
+          {
+            "label": "service",
+            "offset": 0,
+            "slot": "172",
+            "type": "t_contract(IService)12449",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:70"
+          },
+          {
+            "label": "isProtocolTokenFeeClaimed",
+            "offset": 20,
+            "slot": "172",
+            "type": "t_bool",
+            "contract": "TGE",
+            "src": "contracts/TGE.sol:72"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IGovernanceToken)12138": {
+            "label": "contract IGovernanceToken",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IService)12449": {
+            "label": "contract IService",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
           },
           "t_uint256": {
             "label": "uint256",

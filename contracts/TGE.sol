@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.13;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -13,6 +13,7 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./libraries/ExceptionsLibrary.sol";
+// import "./libraries/Multiplication.sol";
 
 contract TGE is
     Initializable,
@@ -69,7 +70,7 @@ contract TGE is
     IService public service;
 
     bool public isProtocolTokenFeeClaimed;
-     bool public isTest313190903;
+
     // EVENTS
 
     event Purchased(address buyer, uint256 amount);
@@ -97,10 +98,10 @@ contract TGE is
             ExceptionsLibrary.HARDCAP_OVERFLOW_REMAINING_SUPPLY
         );
 
-        require(
-            info.softcap >= IGovernanceToken(token_).service().getMinSoftCap(),
-            ExceptionsLibrary.INVALID_SOFTCAP
-        );
+        // require(
+        //     info.softcap >= IGovernanceToken(token_).service().getMinSoftCap(),
+        //     ExceptionsLibrary.INVALID_SOFTCAP
+        // );
 
         require(
             info.hardcap >= IGovernanceToken(token_).service().getMinSoftCap(),
@@ -116,7 +117,11 @@ contract TGE is
             ExceptionsLibrary.HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
         );
         require(
-            info.minPurchase * info.price >= 10**18,
+            info.minPurchase >= 1000 &&
+            (
+                info.price * info.minPurchase >= 10**18 ||
+                info.price == 0
+            ),
             ExceptionsLibrary.INVALID_VALUE
         );
         _transferOwnership(owner_);
@@ -145,7 +150,8 @@ contract TGE is
 
     // PUBLIC FUNCTIONS
 
-    // amount in wei
+    // amount of tokens in wei (10**18 = 1 token)
+    // price per governance token (unit of account with decimals)
     function purchase(uint256 amount)
         external
         payable
@@ -154,18 +160,27 @@ contract TGE is
         nonReentrant
     {
         if (_unitOfAccount == address(0)) {
-            require(msg.value == (amount * price) / 10**(token.decimals()), ExceptionsLibrary.INCORRECT_ETH_PASSED); 
+            require(msg.value == (amount * price) / 10**18, ExceptionsLibrary.INCORRECT_ETH_PASSED);
         } else {
             IERC20Upgradeable(_unitOfAccount).safeTransferFrom(
                 msg.sender,
                 address(this),
-                (amount * price) / 10**(token.decimals())
+                (amount * price) / 10**18
             );
         }
 
-        require(amount >= minPurchase, ExceptionsLibrary.MIN_PURCHASE_UNDERFLOW);
-        require(amount <= maxPurchaseOf(msg.sender), ExceptionsLibrary.MAX_PURCHASE_OVERFLOW);
-        require(_totalPurchased + amount <= hardcap, ExceptionsLibrary.HARDCAP_OVERFLOW);
+        require(
+            amount >= minPurchase,
+            ExceptionsLibrary.MIN_PURCHASE_UNDERFLOW
+        );
+        require(
+            amount <= maxPurchaseOf(msg.sender),
+            ExceptionsLibrary.MAX_PURCHASE_OVERFLOW
+        );
+        require(
+            _totalPurchased + amount <= hardcap,
+            ExceptionsLibrary.HARDCAP_OVERFLOW
+        );
 
         _totalPurchased += amount;
         purchaseOf[msg.sender] += amount;
@@ -193,7 +208,7 @@ contract TGE is
             refundTokens = balance;
         }
         token.burn(msg.sender, refundTokens);
-        uint256 refundValue = refundTokens * price / 10**18;
+        uint256 refundValue = (refundTokens * price) / 10**18;
 
         if (_unitOfAccount == address(0)) {
             payable(msg.sender).transfer(refundValue);
@@ -204,7 +219,10 @@ contract TGE is
 
     function claim() external {
         require(claimAvailable(), ExceptionsLibrary.CLAIM_NOT_AVAILABLE);
-        require(lockedBalanceOf[msg.sender] > 0, ExceptionsLibrary.NO_LOCKED_BALANCE);
+        require(
+            lockedBalanceOf[msg.sender] > 0,
+            ExceptionsLibrary.NO_LOCKED_BALANCE
+        );
 
         uint256 balance = lockedBalanceOf[msg.sender];
         lockedBalanceOf[msg.sender] = 0;
@@ -226,15 +244,23 @@ contract TGE is
     // RESTRICTED FUNCTIONS
     function transferFunds() external onlyState(State.Successful) {
         claimProtocolTokenFee();
+        transferFundsToGnosis();
+    }
 
+    /// @dev transfers TGE funds to Pool's Gnosis safe
+    function transferFundsToGnosis() private {
         if (_unitOfAccount == address(0)) {
-            payable(token.pool()).sendValue(address(this).balance);
-        } else {
-            IERC20Upgradeable(_unitOfAccount).safeTransfer(
-                token.pool(),
-                IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
+            payable(IPool(token.pool()).gnosisSafe()).sendValue(
+                address(this).balance
             );
+
+            return;
         }
+
+        IERC20Upgradeable(_unitOfAccount).safeTransfer(
+            IPool(token.pool()).gnosisSafe(),
+            IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
+        );
     }
 
     /// @dev sends protocol token fee in form of pool's governance tokens to protocol treasury
@@ -304,11 +330,11 @@ contract TGE is
     }
 
     function getTotalPurchasedValue() public view returns (uint256) {
-        return _totalPurchased * price / 10**18;
+        return (_totalPurchased * price) / 10**18;
     }
 
     function getTotalLockedValue() public view returns (uint256) {
-        return _totalLocked * price / 10**18;
+        return (_totalLocked * price) / 10**18;
     }
 
     // MODIFIER
@@ -326,4 +352,7 @@ contract TGE is
         _;
     }
 
+    function testI3813() public pure returns (uint256) {
+        return uint256(123);
+    }
 }
