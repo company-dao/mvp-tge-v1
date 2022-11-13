@@ -12,6 +12,7 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IPool.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
+/// @dev Company (Pool) Governance Token
 contract GovernanceToken is
     Initializable,
     OwnableUpgradeable,
@@ -19,10 +20,19 @@ contract GovernanceToken is
     ERC20VotesUpgradeable,
     ERC20CappedUpgradeable
 {
+    /// @dev Service address
     IService public service;
 
+    /// @dev Pool address
     address public pool;
 
+    /**
+     * @dev Votes lockup structure
+     * @param amount Amount
+     * @param dealine Dealine
+     * @param forVotes For votes
+     * @param againstVotes Against votes
+     */
     struct LockedBalance {
         uint256 amount;
         uint256 deadline;
@@ -30,6 +40,9 @@ contract GovernanceToken is
         uint256 againstVotes;
     }
 
+    /**
+     * @dev Votes lockup for address
+     */
     mapping(address => mapping(uint256 => LockedBalance))
         private _lockedInProposal;
 
@@ -45,7 +58,12 @@ contract GovernanceToken is
 
     // CONSTRUCTOR
 
-    function initialize(address pool_, TokenInfo memory info)
+    /**
+     * @dev Constructor function, can only be called once
+     * @param pool_ Pool
+     * @param info Token info
+     */
+    function initialize(address pool_, TokenInfo calldata info)
         public
         override
         initializer
@@ -61,14 +79,32 @@ contract GovernanceToken is
 
     // RESTRICTED FUNCTIONS
 
+    /**
+     * @dev Mint token
+     * @param to Recipient
+     * @param amount Amount of tokens
+     */
     function mint(address to, uint256 amount) external override onlyTGE {
         _mint(to, amount);
     }
 
+    /**
+     * @dev Burn token
+     * @param from Target
+     * @param amount Amount of tokens
+     */
     function burn(address from, uint256 amount) external override onlyTGE {
         _burn(from, amount);
     }
 
+    /**
+     * @dev Lock votes (tokens) as a result of voting for a proposal
+     * @param account Token holder
+     * @param amount Amount of tokens
+     * @param support Vote against or for proposal
+     * @param deadline Lockup deadline
+     * @param proposalId Proposal ID
+     */
     function lock(
         address account,
         uint256 amount,
@@ -124,6 +160,11 @@ contract GovernanceToken is
 
     // VIEW FUNCTIONS
 
+    /**
+     * @dev Return amount of tokens that account owns, excluding tokens locked up as a result of voting for a proposalId
+     * @param account Token holder
+     * @param proposalId Proposal ID
+     */
     function unlockedBalanceOf(address account, uint256 proposalId)
         public
         view
@@ -132,6 +173,11 @@ contract GovernanceToken is
         return balanceOf(account) - lockedBalanceOf(account, proposalId);
     }
 
+    /**
+     * @dev Return amount of locked up tokens for a given account and proposal ID
+     * @param account Token holder
+     * @param proposalId Proposal ID
+     */
     function lockedBalanceOf(address account, uint256 proposalId)
         public
         view
@@ -144,6 +190,12 @@ contract GovernanceToken is
         }
     }
 
+    /**
+     * @dev Return LockedBalance structure for a given proposal ID and account
+     * @param account Token holder
+     * @param proposalId Proposal ID
+     * @return LockedBalance
+     */
     function getLockedInPrposal(address account, uint256 proposalId)
         public
         view
@@ -152,6 +204,10 @@ contract GovernanceToken is
         return _lockedInProposal[account][proposalId];
     }
 
+    /**
+     * @dev Return decimals
+     * @return Decimals
+     */
     function decimals()
         public
         pure
@@ -161,6 +217,10 @@ contract GovernanceToken is
         return 18;
     }
 
+    /**
+     * @dev Return cap
+     * @return Cap
+     */
     function cap()
         public
         view
@@ -170,6 +230,11 @@ contract GovernanceToken is
         return super.cap();
     }
 
+    /**
+     * @dev Return least amount of unlocked tokens for any proposal that user might have voted for
+     * @param user User address
+     * @return Minimum unlocked balance
+     */
     function minUnlockedBalanceOf(address user) public view returns (uint256) {
         uint256 min = balanceOf(user);
         for (uint256 i = 0; i <= IPool(pool).maxProposalId(); i++) {
@@ -183,17 +248,30 @@ contract GovernanceToken is
 
     // INTERNAL FUNCTIONS
 
+    /**
+     * @dev Transfer tokens from a given user.
+     * Check to make sure that transfer amount is less or equal
+     * to least amount of unlocked tokens for any proposal that user might have voted for.
+     * @param from User address
+     * @param to Recipient address
+     * @param amount Amount of tokens
+     */
     function _transfer(
         address from,
         address to,
         uint256 amount
-    ) internal override {
+    ) internal override whenServiceNotPaused {
         uint256 min = minUnlockedBalanceOf(from);
         require(amount <= min, ExceptionsLibrary.LOW_UNLOCKED_BALANCE);
 
         super._transfer(from, to, amount);
     }
 
+    /**
+     * @dev Burn tokens
+     * @param account Token holder address
+     * @param amount Amount of tokens
+     */
     function _burn(address account, uint256 amount)
         internal
         override(ERC20Upgradeable, ERC20VotesUpgradeable)
@@ -201,6 +279,11 @@ contract GovernanceToken is
         super._burn(account, amount);
     }
 
+    /**
+     * @dev Mint tokens
+     * @param account Token holder address
+     * @param amount Amount of tokens
+     */
     function _mint(address account, uint256 amount)
         internal
         override(ERC20VotesUpgradeable, ERC20CappedUpgradeable)
@@ -232,7 +315,12 @@ contract GovernanceToken is
         _;
     }
 
-    function testI3813() public pure returns (uint256) {
-        return uint256(123);
+    modifier whenServiceNotPaused() {
+        require(!service.paused(), ExceptionsLibrary.SERVICE_PAUSED);
+        _;
+    }
+
+    function test83122() external pure returns (uint256) {
+        return 3;
     }
 }

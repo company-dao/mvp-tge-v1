@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -19,46 +20,63 @@ import "./interfaces/IGovernanceToken.sol";
 import "./interfaces/ITGE.sol";
 import "./interfaces/IMetadata.sol";
 import "./interfaces/IWhitelistedTokens.sol";
-import "./interfaces/gnosis/IGnosisSafeProxyFactory.sol";
-import "./interfaces/gnosis/IGnosisGovernance.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
+/// @dev Protocol entry point
 contract Service is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
     IService
 {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using AddressUpgradeable for address;
 
+    /// @dev Metadata address
     IMetadata public metadata;
 
+    /// @dev Directory address
     IDirectory public directory;
 
+    /// @dev WhitelistedTokens address
     IWhitelistedTokens public whitelistedTokens;
 
+    /// @dev ProposalGateway address
     address public proposalGateway;
 
+    /// @dev Pool beacon
     address public poolBeacon;
 
+    /// @dev Token beacon
     address public tokenBeacon;
 
+    /// @dev TGE beacon
     address public tgeBeacon;
 
+    /// @dev Protocol createPool fee
     uint256 public fee;
 
+    /// @dev Minimum amount of votes that ballot must receive
     uint256 private _ballotQuorumThreshold;
 
+    /// @dev Minimum amount of votes that ballot's choice must receive in order to pass
     uint256 private _ballotDecisionThreshold;
 
+    /// @dev Ballot voting duration, blocks
     uint256 private _ballotLifespan;
 
+    /// @dev UniswapRouter contract address
     ISwapRouter public uniswapRouter;
 
+    /// @dev UniswapQuoter contract address
     IQuoter public uniswapQuoter;
 
+    /**
+     * @dev Addresses that are allowed to participate in TGE.
+     * If list is empty, anyone can participate.
+     */
     EnumerableSetUpgradeable.AddressSet private _userWhitelist;
 
     /// @dev address that collects protocol token fees
@@ -67,35 +85,88 @@ contract Service is
     /// @dev protocol token fee percentage value with 4 decimals. Examples: 1% = 10000, 100% = 1000000, 0.1% = 1000
     uint256 public protocolTokenFee;
 
-    address public gnosisProxyFactory;
-    address public gnosisSingleton;
-    address public gnosisGovernanceBeacon;
-    address public gnosisSetup;
+    /**
+     * @dev block delay for executeBallot
+     * [0] - ballot value in USDT after which delay kicks in
+     * [1] - base delay applied to all ballots to mitigate FlashLoan attacks.
+     * [2] - delay for TransferETH proposals
+     * [3] - delay for TransferERC20 proposals
+     * [4] - delay for TGE proposals
+     * [5] - delay for GovernanceSettings proposals
+     */
+    uint256[10] public ballotExecDelay;
+
+    /// @dev USDT contract address. Used to estimate proposal value.
+    address public usdt;
+
+    /// @dev WETH contract address. Used to estimate proposal value.
+    address public weth;
+
+    /// @dev List of managers
+    EnumerableSetUpgradeable.AddressSet private _managerWhitelist;
 
     // EVENTS
 
+    /**
+     * @dev Event emitted on change in user's whitelist status.
+     * @param account User's account
+     * @param whitelisted Is whitelisted
+     */
     event UserWhitelistedSet(address account, bool whitelisted);
 
+    /**
+     * @dev Event emitted on change in tokens's whitelist status.
+     * @param token Token address
+     * @param whitelisted Is whitelisted
+     */
     event TokenWhitelistedSet(address token, bool whitelisted);
 
+    /**
+     * @dev Event emitted on fee change.
+     * @param fee Fee
+     */
     event FeeSet(uint256 fee);
 
+    /**
+     * @dev Event emitted on pool creation.
+     * @param pool Pool address
+     * @param token Pool token address
+     * @param tge Pool primary TGE address
+     */
     event PoolCreated(address pool, address token, address tge);
 
+    /**
+     * @dev Event emitted on creation of secondary TGE.
+     * @param pool Pool address
+     * @param tge Secondary TGE address
+     */
     event SecondaryTGECreated(address pool, address tge);
 
+    /**
+     * @dev Event emitted on change in Service governance settings.
+     * @param quorumThreshold quorumThreshold
+     * @param decisionThreshold decisionThreshold
+     * @param lifespan lifespan
+     * @param ballotExecDelay ballotExecDelay
+     */
     event GovernanceSettingsSet(
         uint256 quorumThreshold,
         uint256 decisionThreshold,
-        uint256 lifespan
+        uint256 lifespan,
+        uint256[10] ballotExecDelay
     );
 
+    /**
+     * @dev Event emitted on protocol treasury change.
+     * @param protocolTreasury Proocol treasury address
+     */
     event ProtocolTreasuryChanged(address protocolTreasury);
-    event ProtocolTokenFeeChanged(uint256 protocolTokenFee);
 
-    event GnosisProxyFactoryChanged(address gnosisProxyFactory);
-    event GnosisSingletonChanged(address gnosisSingleton);
-    event GnosisGovernanceBeaconChanged(address gnosisGovernanceBeacon);
+    /**
+     * @dev Event emitted on protocol token fee change.
+     * @param protocolTokenFee Protocol token fee
+     */
+    event ProtocolTokenFeeChanged(uint256 protocolTokenFee);
 
     // CONSTRUCTOR
 
@@ -104,6 +175,21 @@ contract Service is
         _disableInitializers();
     }
 
+    /**
+     * @dev Constructor function, can only be called once
+     * @param directory_ Directory address
+     * @param poolBeacon_ Pool beacon
+     * @param proposalGateway_ ProposalGateway address
+     * @param tokenBeacon_ Governance token beacon
+     * @param tgeBeacon_ TGE beacon
+     * @param metadata_ Metadata address
+     * @param fee_ createPool protocol fee
+     * @param ballotParams [ballotQuorumThreshold, ballotLifespan, ballotDecisionThreshold, ...ballotExecDelay]
+     * @param uniswapRouter_ UniswapRouter address
+     * @param uniswapQuoter_ UniswapQuoter address
+     * @param whitelistedTokens_ WhitelistedTokens address
+     * @param _protocolTokenFee Protocol token fee
+     */
     function initialize(
         IDirectory directory_,
         address poolBeacon_,
@@ -112,7 +198,7 @@ contract Service is
         address tgeBeacon_,
         IMetadata metadata_,
         uint256 fee_,
-        uint256[3] memory ballotParams,
+        uint256[13] calldata ballotParams,
         ISwapRouter uniswapRouter_,
         IQuoter uniswapQuoter_,
         IWhitelistedTokens whitelistedTokens_,
@@ -156,6 +242,20 @@ contract Service is
         _ballotQuorumThreshold = ballotParams[0];
         _ballotDecisionThreshold = ballotParams[1];
         _ballotLifespan = ballotParams[2];
+
+        ballotExecDelay = [
+            ballotParams[3],
+            ballotParams[4],
+            ballotParams[5],
+            ballotParams[6],
+            ballotParams[7],
+            ballotParams[8],
+            ballotParams[9],
+            ballotParams[10],
+            ballotParams[11],
+            ballotParams[12]
+        ];
+
         uniswapRouter = uniswapRouter_;
         uniswapQuoter = uniswapQuoter_;
         whitelistedTokens = whitelistedTokens_;
@@ -167,7 +267,8 @@ contract Service is
         emit GovernanceSettingsSet(
             ballotParams[0],
             ballotParams[1],
-            ballotParams[2]
+            ballotParams[2],
+            ballotExecDelay
         );
     }
 
@@ -179,6 +280,18 @@ contract Service is
 
     // PUBLIC FUNCTIONS
 
+    /**
+     * @dev Create pool
+     * @param pool Pool address. If not address(0) - creates new token and new primary TGE for an existing pool.
+     * @param tokenInfo Pool token parameters
+     * @param tgeInfo Pool TGE parameters
+     * @param ballotQuorumThreshold_ Ballot quorum threshold
+     * @param ballotDecisionThreshold_ Ballot decision threshold
+     * @param ballotLifespan_ Ballot lifespan, blocks.
+     * @param jurisdiction Pool jurisdiction
+     * @param ballotExecDelay_ Ballot execution delay parameters
+     * @param trademark Pool trademark
+     */
     function createPool(
         IPool pool,
         IGovernanceToken.TokenInfo memory tokenInfo,
@@ -187,8 +300,9 @@ contract Service is
         uint256 ballotDecisionThreshold_,
         uint256 ballotLifespan_,
         uint256 jurisdiction,
+        uint256[10] memory ballotExecDelay_,
         string memory trademark
-    ) external payable onlyWhitelisted nonReentrant {
+    ) external payable onlyWhitelisted nonReentrant whenNotPaused {
         require(
             tgeInfo.unitOfAccount == address(0) ||
                 tgeInfo.unitOfAccount.isContract(),
@@ -199,13 +313,13 @@ contract Service is
             tokenInfo.cap >= 1 * 10**18, // 1 * 10**IGovernanceToken(tokenBeacon).decimals(),
             ExceptionsLibrary.INVALID_CAP
         );
-
         tokenInfo.cap += getProtocolTokenFee(tokenInfo.cap);
 
         if (address(pool) == address(0)) {
             require(msg.value == fee, ExceptionsLibrary.INCORRECT_ETH_PASSED);
 
             uint256 metadataIndex = metadata.lockRecord(jurisdiction);
+
             require(metadataIndex > 0, ExceptionsLibrary.NO_COMPANY);
             IMetadata.QueueInfo memory queueInfo = metadata.getQueueInfo(
                 metadataIndex
@@ -221,21 +335,9 @@ contract Service is
                 ballotQuorumThreshold_,
                 ballotDecisionThreshold_,
                 ballotLifespan_,
+                ballotExecDelay_,
                 metadataIndex,
                 trademark
-            );
-
-            IGnosisGovernance gnosisGovernance = IGnosisGovernance(
-                address(new BeaconProxy(gnosisGovernanceBeacon, ""))
-            );
-            pool.setGnosisGovernance(address(gnosisGovernance));
-
-            gnosisGovernance.initialize(address(pool));
-
-            address[] memory owners = new address[](1);
-            owners[0] = msg.sender;
-            pool.setGnosisSafe(
-                address(_createPoolGnosisSafe(owners, pool.gnosisGovernance()))
             );
 
             metadata.setOwner(metadataIndex, address(pool));
@@ -266,6 +368,12 @@ contract Service is
 
         ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
         directory.addContractRecord(address(tge), IDirectory.ContractType.TGE);
+        directory.addEventRecord(
+            address(pool),
+            IDirectory.EventType.TGE,
+            0,
+            ""
+        );
 
         if (address(pool) == address(0)) {
             token.initialize(address(pool), tokenInfo);
@@ -289,48 +397,18 @@ contract Service is
         emit PoolCreated(address(pool), address(token), address(tge));
     }
 
-    /**
-     * @dev Creates Gnosis Safe
-     * @param _owners owners
-     * @param _module goernance module
-     * @return proxy Gnosis safe proxy
-     */
-    function _createPoolGnosisSafe(address[] memory _owners, address _module)
-        private
-        returns (address proxy)
-    {
-        bytes memory moduleInitializer = abi.encodeWithSignature(
-            "enableModule(address)",
-            _module
-        );
-
-        bytes memory initializer = abi.encodeWithSignature(
-            "setup(address[],uint256,address,bytes,address,address,uint256,address)",
-            _owners,
-            _owners.length,
-            gnosisSetup,
-            moduleInitializer,
-            address(0),
-            address(0),
-            0,
-            address(0)
-        );
-
-        return
-            IGnosisSafeProxyFactory(gnosisProxyFactory).createProxyWithNonce(
-                gnosisSingleton,
-                initializer,
-                block.timestamp
-            );
-    }
-
     // PUBLIC INDIRECT FUNCTIONS (CALLED THROUGH POOL)
 
-    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo)
+    /**
+     * @dev Create secondary TGE
+     * @param tgeInfo TGE parameters
+     */
+    function createSecondaryTGE(ITGE.TGEInfo calldata tgeInfo)
         external
         override
         onlyPool
         nonReentrant
+        whenNotPaused
     {
         require(
             IPool(msg.sender).tge().state() != ITGE.State.Active,
@@ -351,13 +429,40 @@ contract Service is
         emit SecondaryTGECreated(msg.sender, address(tge));
     }
 
-    function addProposal(uint256 proposalId) external onlyPool {
+    /**
+     * @dev Add proposal to directory
+     * @param proposalId Proposal ID
+     */
+    function addProposal(uint256 proposalId) external onlyPool whenNotPaused {
         directory.addProposalRecord(msg.sender, proposalId);
+    }
+
+    /**
+     * @dev Add event to directory
+     * @param eventType Event type
+     * @param proposalId Proposal ID
+     * @param description Description
+     */
+    function addEvent(
+        IDirectory.EventType eventType,
+        uint256 proposalId,
+        string calldata description
+    ) external onlyPool whenNotPaused {
+        directory.addEventRecord(
+            msg.sender,
+            eventType,
+            proposalId,
+            description
+        );
     }
 
     // RESTRICTED FUNCTIONS
 
-    function addUserToWhitelist(address account) external onlyOwner {
+    /**
+     * @dev Add user to whitelist
+     * @param account User address
+     */
+    function addUserToWhitelist(address account) external onlyManager {
         require(
             _userWhitelist.add(account),
             ExceptionsLibrary.ALREADY_WHITELISTED
@@ -365,7 +470,11 @@ contract Service is
         emit UserWhitelistedSet(account, true);
     }
 
-    function removeUserFromWhitelist(address account) external onlyOwner {
+    /**
+     * @dev Remove user from whitelist
+     * @param account User address
+     */
+    function removeUserFromWhitelist(address account) external onlyManager {
         require(
             _userWhitelist.remove(account),
             ExceptionsLibrary.ALREADY_NOT_WHITELISTED
@@ -373,52 +482,59 @@ contract Service is
         emit UserWhitelistedSet(account, false);
     }
 
-    function setPoolBeacon(address poolBeacon_) external onlyOwner {
-        require(poolBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-        poolBeacon = poolBeacon_;
+    /**
+     * @dev Add manager to whitelist
+     * @param account Manager address
+     */
+    function addManagerToWhitelist(address account) external onlyOwner {
+        require(
+            _managerWhitelist.add(account),
+            ExceptionsLibrary.ALREADY_WHITELISTED
+        );
     }
 
-    function setTokenBeacon(address tokenBeacon_) external onlyOwner {
-        require(tokenBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-        tokenBeacon = tokenBeacon_;
+    /**
+     * @dev Remove manager from whitelist
+     * @param account Manager address
+     */
+    function removeManagerFromWhitelist(address account) external onlyOwner {
+        require(
+            _managerWhitelist.remove(account),
+            ExceptionsLibrary.ALREADY_NOT_WHITELISTED
+        );
     }
 
-    function setTGEBeacon(address tgeBeacon_) external onlyOwner {
-        require(tgeBeacon_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-        tgeBeacon = tgeBeacon_;
-    }
-
-    function setFee(uint256 fee_) external onlyOwner {
+    /**
+     * @dev Set createPool protocol fee
+     * @param fee_ Fee
+     */
+    function setFee(uint256 fee_) external onlyManager {
         fee = fee_;
         emit FeeSet(fee_);
     }
 
+    /**
+     * @dev Transfer collected createPool protocol fees
+     * @param to Transfer recipient
+     */
     function transferCollectedFees(address to) external onlyOwner {
         require(to != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
         payable(to).transfer(payable(address(this)).balance);
     }
 
-    // function setProposalDirectoryMetadata(
-    //     address proposalGateway_,
-    //     address directory_,
-    //     address metadata_,
-    //     address whitelistedTokens_
-    // ) external onlyOwner {
-    //     require(proposalGateway_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-    //     require(address(directory_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-    //     require(address(metadata_) != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-
-    //     proposalGateway = proposalGateway_;
-    //     directory = IDirectory(directory_);
-    //     metadata = IMetadata(metadata_);
-    //     whitelistedTokens = IWhitelistedTokens(whitelistedTokens_);
-    // }
-
+    /**
+     * @dev Set Service governance settings
+     * @param ballotQuorumThreshold_ Ballot quorum theshold
+     * @param ballotDecisionThreshold_ Ballot decision threshold
+     * @param ballotLifespan_ Ballot lifespan
+     * @param ballotExecDelay_ Ballot execution delay parameters
+     */
     function setGovernanceSettings(
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
-        uint256 ballotLifespan_
+        uint256 ballotLifespan_,
+        uint256[10] calldata ballotExecDelay_
     ) external onlyOwner {
         require(
             ballotQuorumThreshold_ <= 10000,
@@ -430,19 +546,27 @@ contract Service is
         );
         require(ballotLifespan_ > 0, ExceptionsLibrary.INVALID_VALUE);
 
+        // zero value allows FlashLoan attacks against executeBallot
+        require(
+            ballotExecDelay_[1] > 0 && ballotExecDelay_[1] < 20,
+            ExceptionsLibrary.INVALID_VALUE
+        );
+
         _ballotQuorumThreshold = ballotQuorumThreshold_;
         _ballotDecisionThreshold = ballotDecisionThreshold_;
         _ballotLifespan = ballotLifespan_;
+        ballotExecDelay = ballotExecDelay_;
 
         emit GovernanceSettingsSet(
             ballotQuorumThreshold_,
             ballotDecisionThreshold_,
-            ballotLifespan_
+            ballotLifespan_,
+            ballotExecDelay
         );
     }
 
     /**
-     * @dev Sets protocol treasury address
+     * @dev Set protocol treasury address
      * @param _protocolTreasury Protocol treasury address
      */
     function setProtocolTreasury(address _protocolTreasury) public onlyOwner {
@@ -456,7 +580,7 @@ contract Service is
     }
 
     /**
-     * @dev Sets protocol token fee
+     * @dev Set protocol token fee
      * @param _protocolTokenFee protocol token fee percentage value with 4 decimals.
      * Examples: 1% = 10000, 100% = 1000000, 0.1% = 1000.
      */
@@ -468,82 +592,106 @@ contract Service is
     }
 
     /**
-     * @dev Sets Gnosis proxy factory
-     * @param _gnosisProxyFactory Gnosis proxy factory address
+     * @dev Cancel pool's ballot
+     * @param _pool pool
+     * @param proposalId proposalId
      */
-    function setGnosisProxyFactory(address _gnosisProxyFactory)
-        public
-        onlyOwner
-    {
-        require(
-            _gnosisProxyFactory != address(0),
-            ExceptionsLibrary.ADDRESS_ZERO
-        );
-
-        gnosisProxyFactory = _gnosisProxyFactory;
-        emit GnosisProxyFactoryChanged(gnosisProxyFactory);
+    function cancelBallot(address _pool, uint256 proposalId) public onlyOwner {
+        IPool(_pool).serviceCancelBallot(proposalId);
     }
 
     /**
-     * @dev Sets Gnosis singleton
-     * @param _gnosisSingleton Gnosis singleton address
+     * @dev Pause entire protocol
      */
-    function setGnosisSingleton(address _gnosisSingleton) public onlyOwner {
-        require(_gnosisSingleton != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-
-        gnosisSingleton = _gnosisSingleton;
-        emit GnosisSingletonChanged(gnosisSingleton);
+    function pause() public onlyOwner {
+        _pause();
     }
 
     /**
-     * @dev Sets Gnosis governance module beacon
-     * @param _gnosisGovernanceBeacon Gnosis governance module beacon address
+     * @dev Unpause entire protocol
      */
-    function setGnosisGovernanceBeacon(address _gnosisGovernanceBeacon)
-        public
-        onlyOwner
-    {
-        require(
-            _gnosisGovernanceBeacon != address(0),
-            ExceptionsLibrary.ADDRESS_ZERO
-        );
-
-        gnosisGovernanceBeacon = _gnosisGovernanceBeacon;
-        emit GnosisGovernanceBeaconChanged(gnosisGovernanceBeacon);
+    function unpause() public onlyOwner {
+        _unpause();
     }
 
     /**
-     * @dev Sets Gnosis setup address
-     * @param _gnosisSetup Gnosis setup address
+     * @dev Set USDT token address
+     * @param usdt_ Token address
      */
-    function setGnosisSetup(address _gnosisSetup) public onlyOwner {
-        require(_gnosisSetup != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+    function setUsdt(address usdt_) external onlyOwner {
+        usdt = usdt_;
+    }
 
-        gnosisSetup = _gnosisSetup;
+    /**
+     * @dev Set WETH token address
+     * @param weth_ Token address
+     */
+    function setWeth(address weth_) external onlyOwner {
+        weth = weth_;
     }
 
     // VIEW FUNCTIONS
 
+    /**
+     * @dev Return manager's whitelist status
+     * @param account Manager's address
+     * @return Whitelist status
+     */
+    function isManagerWhitelisted(address account)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return _managerWhitelist.contains(account);
+    }
+
+    /**
+     * @dev Return user's whitelist status
+     * @param account User's address
+     * @return Whitelist status
+     */
     function isUserWhitelisted(address account) public view returns (bool) {
         return _userWhitelist.contains(account);
     }
 
+    /**
+     * @dev Return all whitelisted users
+     * @return Whitelisted addresses
+     */
     function userWhitelist() external view returns (address[] memory) {
         return _userWhitelist.values();
     }
 
+    /**
+     * @dev Return number of whitelisted users
+     * @return Number of whitelisted users
+     */
     function userWhitelistLength() external view returns (uint256) {
         return _userWhitelist.length();
     }
 
+    /**
+     * @dev Return whitelisted user at particular index
+     * @param index Whitelist index
+     * @return Whitelisted user's address
+     */
     function userWhitelistAt(uint256 index) external view returns (address) {
         return _userWhitelist.at(index);
     }
 
+    /**
+     * @dev Return all whitelisted tokens
+     * @return Whitelisted tokens
+     */
     function tokenWhitelist() external view returns (address[] memory) {
         return whitelistedTokens.tokenWhitelist();
     }
 
+    /**
+     * @dev Return Service owner
+     * @return Service owner's address
+     */
     function owner()
         public
         view
@@ -554,20 +702,46 @@ contract Service is
         return super.owner();
     }
 
+    /**
+     * @dev Return protocol paused status
+     * @return Is protocol paused
+     */
+    function paused()
+        public
+        view
+        override(IService, PausableUpgradeable)
+        returns (bool)
+    {
+        // Pausable
+        return super.paused();
+    }
+
+    /**
+     * @dev Return Service ballot quorum threshold
+     * @return Ballot quorum threshold
+     */
     function getBallotQuorumThreshold() public view returns (uint256) {
         return _ballotQuorumThreshold;
     }
 
+    /**
+     * @dev Return Service ballot decision threshold
+     * @return Ballot decision threshold
+     */
     function getBallotDecisionThreshold() public view returns (uint256) {
         return _ballotDecisionThreshold;
     }
 
+    /**
+     * @dev Return Service ballot lifespan
+     * @return Ballot lifespan
+     */
     function getBallotLifespan() public view returns (uint256) {
         return _ballotLifespan;
     }
 
     /**
-     * @dev calculates minimum soft cap for token fee mechanism to work
+     * @dev Calculate minimum soft cap for token fee mechanism to work
      * @return softCap minimum soft cap
      */
     function getMinSoftCap() public view returns (uint256) {
@@ -576,7 +750,7 @@ contract Service is
 
     /**
      * @dev calculates protocol token fee for given token amount
-     * @param amount token amount
+     * @param amount Token amount
      * @return tokenFee
      */
     function getProtocolTokenFee(uint256 amount) public view returns (uint256) {
@@ -594,8 +768,9 @@ contract Service is
     }
 
     /**
-     * @dev Returns max hard cap accounting for protocol token fee
+     * @dev Return max hard cap accounting for protocol token fee
      * @param _pool pool to calculate hard cap against
+     * @return Maximum hard cap
      */
     function getMaxHardCap(address _pool) public view returns (uint256) {
         if (
@@ -620,6 +795,14 @@ contract Service is
         _;
     }
 
+    modifier onlyManager() {
+        require(
+            msg.sender == owner() || isManagerWhitelisted(msg.sender),
+            ExceptionsLibrary.NOT_WHITELISTED
+        );
+        _;
+    }
+
     modifier onlyPool() {
         require(
             directory.typeOf(msg.sender) == IDirectory.ContractType.Pool,
@@ -628,7 +811,7 @@ contract Service is
         _;
     }
 
-    function testI3813() public pure returns (uint256) {
-        return uint256(123);
+    function test83122() external pure returns (uint256) {
+        return 3;
     }
 }

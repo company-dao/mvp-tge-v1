@@ -9,8 +9,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/ITGE.sol";
+import "./interfaces/IProposalGateway.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
+/// @dev Protocol entry point to create any proposal
 contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // INITIALIZER
 
@@ -32,21 +34,45 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     // PROPOSAL FUNCTIONS
 
+    /**
+     * @dev Create TransferETH proposal
+     * @param pool Pool address
+     * @param to Transfer recipient
+     * @param value Token amount
+     * @param description Proposal description
+     * @return proposalId Created proposal's ID
+     */
     function createTransferETHProposal(
         IPool pool,
         address to,
         uint256 value,
-        string memory description
+        string calldata description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        proposalId = pool.proposeSingleAction(to, value, "", description);
+        proposalId = pool.proposeSingleAction(
+            to,
+            value,
+            "",
+            description,
+            IProposalGateway.ProposalType.TransferETH,
+            0
+        );
     }
 
+    /**
+     * @dev Create TransferERC20 proposal
+     * @param pool Pool address
+     * @param token Token to be transfered
+     * @param to Transfer recipient
+     * @param value Token amount
+     * @param description Proposal description
+     * @return proposalId Created proposal's ID
+     */
     function createTransferERC20Proposal(
         IPool pool,
         address token,
         address to,
         uint256 value,
-        string memory description
+        string calldata description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             token,
@@ -56,29 +82,51 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 to,
                 value
             ),
-            description
+            description,
+            IProposalGateway.ProposalType.TransferERC20,
+            value
         );
     }
 
+    /**
+     * @dev Create TGE proposal
+     * @param pool Pool address
+     * @param info TGE parameters
+     * @param description Proposal description
+     * @return proposalId Created proposal's ID
+     */
     function createTGEProposal(
         IPool pool,
-        ITGE.TGEInfo memory info,
-        string memory description
+        ITGE.TGEInfo calldata info,
+        string calldata description
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             address(pool.service()),
             0,
             abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
-            description
+            description,
+            IProposalGateway.ProposalType.TGE,
+            0
         );
     }
 
+    /**
+     * @dev Create GovernanceSettings proposal
+     * @param pool Pool address
+     * @param ballotQuorumThreshold Ballot quorum threshold
+     * @param ballotDecisionThreshold Ballot decision threshold
+     * @param ballotLifespan Ballot lifespan
+     * @param description Proposal description
+     * @param ballotExecDelay_ Ballot execution delay parameters
+     * @return proposalId Created proposal's ID
+     */
     function createGovernanceSettingsProposal(
         IPool pool,
         uint256 ballotQuorumThreshold,
         uint256 ballotDecisionThreshold,
         uint256 ballotLifespan,
-        string memory description
+        string calldata description,
+        uint256[10] calldata ballotExecDelay_
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             address(pool),
@@ -87,9 +135,12 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 IPool.setGovernanceSettings.selector,
                 ballotQuorumThreshold,
                 ballotDecisionThreshold,
-                ballotLifespan
+                ballotLifespan,
+                ballotExecDelay_
             ),
-            description
+            description,
+            IProposalGateway.ProposalType.GovernanceSettings,
+            0
         );
     }
 
@@ -104,7 +155,7 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _;
     }
 
-    function testI3813() public pure returns (uint256) {
-        return uint256(123);
+    function test82312() external pure returns (uint256) {
+        return 3;
     }
 }

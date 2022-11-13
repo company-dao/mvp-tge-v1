@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "./IService.sol";
 import "./ITGE.sol";
 import "./IGovernanceToken.sol";
+import "./IProposalGateway.sol";
 
 interface IPool {
     function initialize(
@@ -16,6 +17,7 @@ interface IPool {
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
         uint256 ballotLifespan_,
+        uint256[10] memory ballotExecDelay_,
         uint256 metadataIndex,
         string memory trademark
     ) external;
@@ -29,15 +31,20 @@ interface IPool {
     function setGovernanceSettings(
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
-        uint256 ballotLifespan_
+        uint256 ballotLifespan_,
+        uint256[10] calldata ballotExecDelay
     ) external;
 
     function proposeSingleAction(
         address target,
         uint256 value,
-        bytes memory cd,
-        string memory description
+        bytes calldata cd,
+        string calldata description,
+        IProposalGateway.ProposalType proposalType,
+        uint256 amountERC20
     ) external returns (uint256 proposalId);
+
+    function serviceCancelBallot(uint256 proposalId) external;
 
     function getTVL() external returns (uint256);
 
@@ -57,11 +64,10 @@ interface IPool {
 
     function addTGE(address tge_) external;
 
-    function gnosisSafe() external view returns (address);
+    function getProposalType(uint256 proposalId)
+        external
+        view
+        returns (IProposalGateway.ProposalType);
 
-    function setGnosisSafe(address _gnosisSafe) external;
-
-    function setGnosisGovernance(address _gnosisGovernance) external;
-
-    function gnosisGovernance() external view returns (address);
+    function ballotExecDelay(uint256 _index) external view returns (uint256);
 }

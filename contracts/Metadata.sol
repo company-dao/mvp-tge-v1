@@ -10,22 +10,38 @@ import "./interfaces/IPool.sol";
 import "./interfaces/IMetadata.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
+/// @dev Protocol Metadata
 contract Metadata is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     IMetadata
 {
+    /// @dev Service address
     IService public service;
 
+    /// @dev Last metadata ID
     uint256 public currentId;
 
+    /// @dev Metadata queue
     mapping(uint256 => QueueInfo) public queueInfo;
 
     // EVENTS
 
+    /**
+     * @dev Event emitted on service change.
+     * @param service Service address
+     */
     event ServiceSet(address service);
 
+    /**
+     * @dev Event emitted on record creation.
+     * @param id Record ID
+     * @param jurisdiction Jurisdiction
+     * @param EIN EIN
+     * @param date Date
+     * @param entityType Entity type
+     */
     event RecordCreated(
         uint256 id,
         uint256 jurisdiction,
@@ -34,6 +50,10 @@ contract Metadata is
         uint256 entityType
     );
 
+    /**
+     * @dev Event emitted on record removal.
+     * @param id Record ID
+     */
     event RecordDeleted(uint256 id);
 
     function initialize() public initializer {
@@ -54,6 +74,10 @@ contract Metadata is
         onlyOwner
     {}
 
+    /**
+     * @dev Set Service in Metadata
+     * @param service_ Service address
+     */
     function setService(address service_) external onlyOwner {
         require(service_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
@@ -62,12 +86,19 @@ contract Metadata is
         emit ServiceSet(service_);
     }
 
+    /**
+     * @dev Create metadata record
+     * @param jurisdiction Jurisdiction
+     * @param EIN EIN
+     * @param dateOfIncorporation Date of incorporation
+     * @param entityType Entity type
+     */
     function createRecord(
         uint256 jurisdiction,
-        string memory EIN,
-        string memory dateOfIncorporation,
+        string calldata EIN,
+        string calldata dateOfIncorporation,
         uint256 entityType
-    ) external onlyOwner {
+    ) external onlyManager {
         require(
             (jurisdiction > 0) && (bytes(EIN).length != 0),
             ExceptionsLibrary.VALUE_ZERO
@@ -102,6 +133,11 @@ contract Metadata is
         );
     }
 
+    /**
+     * @dev Lock metadata record
+     * @param jurisdiction Jurisdiction
+     * @return Record ID
+     */
     function lockRecord(uint256 jurisdiction)
         external
         onlyService
@@ -119,11 +155,20 @@ contract Metadata is
         return 0;
     }
 
+    /**
+     * @dev Set queue item owner
+     * @param id Queue index
+     * @param owner Owner address
+     */
     function setOwner(uint256 id, address owner) external onlyService {
         queueInfo[id].owner = owner;
     }
 
-    function deleteRecord(uint256 id) external onlyOwner {
+    /**
+     * @dev Delete queue record
+     * @param id Queue index
+     */
+    function deleteRecord(uint256 id) external onlyManager {
         require(
             queueInfo[id].status == Status.NotUsed,
             ExceptionsLibrary.RECORD_IN_USE
@@ -133,15 +178,22 @@ contract Metadata is
         emit RecordDeleted(id);
     }
 
+    /**
+     * @dev Get queue item
+     * @param id Queue index
+     * @return Queue item
+     */
     function getQueueInfo(uint256 id) external view returns (QueueInfo memory) {
         return queueInfo[id];
     }
 
-    /*
-        returns 0 if there are no available companies
-        returns 1 if there are no available companies in current jurisdiction, but exists in other jurisdiction
-        returns 2 if there are available companies in current jurisdiction 
-    */
+    /**
+     * @dev Check if jurisdiction available
+     * @param jurisdiction Jurisdiction
+     * @return 0 if there are no available companies
+     * 1 if there are no available companies in current jurisdiction, but exists in other jurisdiction
+     * 2 if there are available companies in current jurisdiction
+     */
     function jurisdictionAvailable(uint256 jurisdiction)
         external
         view
@@ -172,4 +224,16 @@ contract Metadata is
         _;
     }
 
+    modifier onlyManager() {
+        require(
+            msg.sender == service.owner() ||
+                service.isManagerWhitelisted(msg.sender),
+            ExceptionsLibrary.NOT_WHITELISTED
+        );
+        _;
+    }
+
+    function test82312() external pure returns (uint256) {
+        return 3;
+    }
 }

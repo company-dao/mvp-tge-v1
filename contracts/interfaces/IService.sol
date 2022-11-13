@@ -18,20 +18,23 @@ interface IService {
         address tgeBeacon_,
         IMetadata metadata_,
         uint256 fee_,
-        uint256[3] memory ballotParams,
+        uint256[13] calldata ballotParams,
         ISwapRouter uniswapRouter_,
         IQuoter uniswapQuoter_,
         IWhitelistedTokens whitelistedTokens_,
         uint256 _protocolTokenFee
     ) external;
 
-    function createSecondaryTGE(ITGE.TGEInfo memory tgeInfo) external;
+    function createSecondaryTGE(ITGE.TGEInfo calldata tgeInfo) external;
 
     function addProposal(uint256 proposalId) external;
 
+    function addEvent(IDirectory.EventType eventType, uint256 proposalId, string memory description)
+        external;
+
     function directory() external view returns (IDirectory);
 
-    // function isTokenWhitelisted(address token) external view returns (bool);
+    function isManagerWhitelisted(address account) external view returns (bool);
 
     function tokenWhitelist() external view returns (address[] memory);
 
@@ -47,10 +50,6 @@ interface IService {
 
     function metadata() external view returns (IMetadata);
 
-    // function tokenSwapPath(address) external view returns (bytes memory);
-
-    // function tokenSwapReversePath(address) external view returns (bytes memory);
-
     function protocolTreasury() external view returns (address);
 
     function protocolTokenFee() external view returns (uint256);
@@ -62,7 +61,11 @@ interface IService {
         view
         returns (uint256);
 
-    function gnosisProxyFactory() external view returns (address);
+    function ballotExecDelay(uint256 _index) external view returns (uint256);
 
-    function gnosisSingleton() external view returns (address);
+    function paused() external view returns (bool);
+
+    function usdt() external view returns (address);
+
+    function weth() external view returns (address);
 }

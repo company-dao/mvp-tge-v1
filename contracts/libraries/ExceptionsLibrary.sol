@@ -23,7 +23,7 @@ library ExceptionsLibrary {
     string public constant TRANSFER_FAILED = "TRANSFER_FAILED";
     string public constant CLAIM_NOT_AVAILABLE = "CLAIM_NOT_AVAILABLE";
     string public constant NO_LOCKED_BALANCE = "NO_LOCKED_BALANCE";
-    string public constant LOCKUP_TVL_NOT_REACHED = "LOCKUP_TVL_NOT_REACHED";
+    string public constant LOCKUP_TVL_REACHED = "LOCKUP_TVL_REACHED";
     string public constant HARDCAP_OVERFLOW = "HARDCAP_OVERFLOW";
     string public constant MAX_PURCHASE_OVERFLOW = "MAX_PURCHASE_OVERFLOW";
     string public constant HARDCAP_OVERFLOW_REMAINING_SUPPLY =
@@ -32,6 +32,8 @@ library ExceptionsLibrary {
         "HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY";
     string public constant MIN_PURCHASE_UNDERFLOW = "MIN_PURCHASE_UNDERFLOW";
     string public constant LOW_UNLOCKED_BALANCE = "LOW_UNLOCKED_BALANCE";
+    string public constant ZERO_PURCHASE_AMOUNT = "ZERO_PURCHASE_AMOUNTs";
+    string public constant NOTHING_TO_REDEEM = "NOTHING_TO_REDEEM";
     string public constant RECORD_IN_USE = "RECORD_IN_USE";
     string public constant INVALID_EIN = "INVALID_EIN";
     string public constant VALUE_ZERO = "VALUE_ZERO";
@@ -41,9 +43,11 @@ library ExceptionsLibrary {
     string public constant ACTIVE_TGE_EXISTS = "ACTIVE_TGE_EXISTS";
     string public constant INVALID_VALUE = "INVALID_VALUE";
     string public constant INVALID_CAP = "INVALID_CAP";
-    string public constant INVALID_SOFTCAP = "INVALID_SOFTCAP";
     string public constant INVALID_HARDCAP = "INVALID_HARDCAP";
     string public constant ONLY_POOL = "ONLY_POOL";
     string public constant ETH_TRANSFER_FAIL = "ETH_TRANSFER_FAIL";
     string public constant TOKEN_TRANSFER_FAIL = "TOKEN_TRANSFER_FAIL";
+    string public constant BLOCK_DELAY = "BLOCK_DELAY";
+    string public constant SERVICE_PAUSED = "SERVICE_PAUSED";
+    string public constant INVALID_PROPOSAL_TYPE = "INVALID_PROPOSAL_TYPE";
 }

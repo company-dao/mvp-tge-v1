@@ -10,11 +10,23 @@ interface IDirectory {
         TGE
     }
 
+    enum EventType {
+        None,
+        TransferETH,
+        TransferERC20,
+        TGE,
+        GovernanceSettings
+    }
+
     function addContractRecord(address addr, ContractType contractType)
         external
         returns (uint256 index);
 
     function addProposalRecord(address pool, uint256 proposalId)
+        external
+        returns (uint256 index);
+
+    function addEventRecord(address pool, EventType eventType, uint256 proposalId, string calldata description)
         external
         returns (uint256 index);
 

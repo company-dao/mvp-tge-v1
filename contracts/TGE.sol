@@ -13,8 +13,8 @@ import "./interfaces/ITGE.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./libraries/ExceptionsLibrary.sol";
-// import "./libraries/Multiplication.sol";
 
+/// @title Token Generation Event
 contract TGE is
     Initializable,
     OwnableUpgradeable,
@@ -24,57 +24,114 @@ contract TGE is
     using AddressUpgradeable for address payable;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /**
+     * @dev Pool's ERC20 token
+     */
     IGovernanceToken public token;
 
+    /**
+     * @dev TGE metadata
+     */
     string public metadataURI;
 
+    /**
+     * @dev TGE token price
+     */
     uint256 public price;
 
+    /**
+     * @dev TGE hardcap
+     */
     uint256 public hardcap;
 
+    /**
+     * @dev TGE softcap
+     */
     uint256 public softcap;
 
+    /**
+     * @dev Minimal amount of tokens an address can purchase
+     */
     uint256 public minPurchase;
 
+    /**
+     * @dev Maximum amount of tokens an address can purchase
+     */
     uint256 public maxPurchase;
 
+    /**
+     * @dev Percentage of tokens from each purchase that goes to vesting
+     */
     uint256 public lockupPercent;
 
+    /// @dev lockup TVL value, if this value reached (via getTVL) users can claim their tokens
     uint256 public lockupTVL;
 
+    /**
+     * @dev Vesting duration, blocks.
+     */
     uint256 public lockupDuration;
 
+    /**
+     * @dev TGE duration, blocks.
+     */
     uint256 public duration;
 
+    /**
+     * @dev Addresses that are allowed to participate in TGE.
+     * If list is empty, anyone can participate.
+     */
     address[] public userWhitelist;
 
+    /**
+     * @dev Token used as currency to purchase pool's tokens during TGE
+     */
     address private _unitOfAccount;
 
+    /**
+     * @dev Mapping of user's address to whitelist status
+     */
     mapping(address => bool) public isUserWhitelisted;
 
-    mapping(address => bool) public isTokenWhitelisted;
-
+    /**
+     * @dev Block of TGE's creation
+     */
     uint256 public createdAt;
 
+    /**
+     * @dev Mapping of an address to total amount of tokens purchased during TGE
+     */
     mapping(address => uint256) public purchaseOf;
 
+    /// @dev Is lockup TVL reached. Users can claim their tokens only if lockup TVL was reached.
     bool public lockupTVLReached;
 
+    /// @dev Mapping of an address to total amount of tokens vesting
     mapping(address => uint256) public lockedBalanceOf;
 
+    /// @dev Total amount of tokens purchased during TGE
     uint256 private _totalPurchased;
 
+    /// @dev Total amount of tokens vesting
     uint256 private _totalLocked;
 
-    /// @dev unused, compatibility with proxy layout
-    IService public service;
-
+    /// @dev Protocol token fee is a percentage of tokens sold during TGE. Returns true if fee was claimed by the governing DAO.
     bool public isProtocolTokenFeeClaimed;
 
     // EVENTS
 
+    /**
+     * @dev Event emitted on token puchase.
+     * @param buyer buyer
+     * @param amount amount of tokens
+     */
     event Purchased(address buyer, uint256 amount);
 
+    /**
+     * @dev Event emitted on claim of protocol token fee.
+     * @param token token
+     * @param tokenFee amount of tokens
+     */
     event ProtocolTokenFeeClaimed(address token, uint256 tokenFee);
 
     // CONSTRUCTOR
@@ -84,10 +141,16 @@ contract TGE is
         _disableInitializers();
     }
 
+    /**
+     * @dev Constructor function, can only be called once
+     * @param owner_ TGE's ower
+     * @param token_ pool's token
+     * @param info TGE parameters
+     */
     function initialize(
         address owner_,
         address token_,
-        TGEInfo memory info
+        TGEInfo calldata info
     ) public override initializer {
         __Ownable_init();
 
@@ -97,17 +160,10 @@ contract TGE is
             info.hardcap <= remainingSupply,
             ExceptionsLibrary.HARDCAP_OVERFLOW_REMAINING_SUPPLY
         );
-
-        // require(
-        //     info.softcap >= IGovernanceToken(token_).service().getMinSoftCap(),
-        //     ExceptionsLibrary.INVALID_SOFTCAP
-        // );
-
         require(
             info.hardcap >= IGovernanceToken(token_).service().getMinSoftCap(),
             ExceptionsLibrary.INVALID_HARDCAP
         );
-
         require(
             info.hardcap +
                 IGovernanceToken(token_).service().getProtocolTokenFee(
@@ -118,10 +174,7 @@ contract TGE is
         );
         require(
             info.minPurchase >= 1000 &&
-            (
-                info.price * info.minPurchase >= 10**18 ||
-                info.price == 0
-            ),
+                (info.price * info.minPurchase >= 10**18 || info.price == 0),
             ExceptionsLibrary.INVALID_VALUE
         );
         _transferOwnership(owner_);
@@ -150,17 +203,23 @@ contract TGE is
 
     // PUBLIC FUNCTIONS
 
-    // amount of tokens in wei (10**18 = 1 token)
-    // price per governance token (unit of account with decimals)
+    /**
+     * @dev Purchase pool's tokens during TGE
+     * @param amount amount of tokens in wei (10**18 = 1 token)
+     */
     function purchase(uint256 amount)
         external
         payable
         onlyWhitelistedUser
         onlyState(State.Active)
         nonReentrant
+        whenServiceNotPaused
     {
         if (_unitOfAccount == address(0)) {
-            require(msg.value == (amount * price) / 10**18, ExceptionsLibrary.INCORRECT_ETH_PASSED);
+            require(
+                msg.value == (amount * price) / 10**18,
+                ExceptionsLibrary.INCORRECT_ETH_PASSED
+            );
         } else {
             IERC20Upgradeable(_unitOfAccount).safeTransferFrom(
                 msg.sender,
@@ -196,19 +255,47 @@ contract TGE is
         emit Purchased(msg.sender, amount);
     }
 
-    function redeem() external override onlyState(State.Failed) nonReentrant {
+    /**
+     * @dev Return purchased tokens and get back tokens paid
+     */
+    function redeem()
+        external
+        override
+        onlyState(State.Failed)
+        nonReentrant
+        whenServiceNotPaused
+    {
         // User can't claim more than he bought in this event (in case somebody else has transferred him tokens)
-        uint256 balance = token.minUnlockedBalanceOf(msg.sender);
-        uint256 refundTokens = balance + lockedBalanceOf[msg.sender];
-        if (refundTokens > balance) {
-            lockedBalanceOf[msg.sender] -= (refundTokens - balance);
-            _totalLocked -= (refundTokens - balance);
-            token.decreaseTotalTGELockedTokens(lockedBalanceOf[msg.sender]);
-            token.burn(address(this), refundTokens - balance);
-            refundTokens = balance;
+        require(
+            purchaseOf[msg.sender] > 0,
+            ExceptionsLibrary.ZERO_PURCHASE_AMOUNT
+        );
+
+        uint256 lockup = lockedBalanceOf[msg.sender];
+
+        uint256 refundAmount = 0;
+
+        if (lockup > 0) {
+            lockedBalanceOf[msg.sender] = 0;
+            purchaseOf[msg.sender] -= lockup;
+            _totalLocked -= lockup;
+            refundAmount += lockup;
+            token.decreaseTotalTGELockedTokens(lockup);
+            token.burn(address(this), lockup);
         }
-        token.burn(msg.sender, refundTokens);
-        uint256 refundValue = (refundTokens * price) / 10**18;
+
+        uint256 balanceToRedeem = MathUpgradeable.min(
+            token.minUnlockedBalanceOf(msg.sender),
+            purchaseOf[msg.sender]
+        );
+        if (balanceToRedeem > 0) {
+            purchaseOf[msg.sender] -= balanceToRedeem;
+            refundAmount += balanceToRedeem;
+            token.burn(msg.sender, balanceToRedeem);
+        }
+
+        require(refundAmount > 0, ExceptionsLibrary.NOTHING_TO_REDEEM);
+        uint256 refundValue = (refundAmount * price) / 10**18;
 
         if (_unitOfAccount == address(0)) {
             payable(msg.sender).transfer(refundValue);
@@ -217,7 +304,10 @@ contract TGE is
         }
     }
 
-    function claim() external {
+    /**
+     * @dev Claim vested tokens
+     */
+    function claim() external whenServiceNotPaused {
         require(claimAvailable(), ExceptionsLibrary.CLAIM_NOT_AVAILABLE);
         require(
             lockedBalanceOf[msg.sender] > 0,
@@ -233,37 +323,35 @@ contract TGE is
         require(status, ExceptionsLibrary.TRANSFER_FAILED);
     }
 
-    function setLockupTVLReached() external {
+    function setLockupTVLReached() external whenServiceNotPaused onlyManager {
+        require(!lockupTVLReached, ExceptionsLibrary.LOCKUP_TVL_REACHED);
         lockupTVLReached = true;
-        require(
-            IPool(token.pool()).getTVL() >= lockupTVL,
-            ExceptionsLibrary.LOCKUP_TVL_NOT_REACHED
-        );
     }
 
     // RESTRICTED FUNCTIONS
-    function transferFunds() external onlyState(State.Successful) {
+
+    /**
+     * @dev Transfer proceeds from TGE to pool's treasury. Claim protocol fee.
+     */
+    function transferFunds()
+        external
+        onlyState(State.Successful)
+        whenServiceNotPaused
+    {
         claimProtocolTokenFee();
-        transferFundsToGnosis();
-    }
+        // transferFundsToGnosis();
 
-    /// @dev transfers TGE funds to Pool's Gnosis safe
-    function transferFundsToGnosis() private {
         if (_unitOfAccount == address(0)) {
-            payable(IPool(token.pool()).gnosisSafe()).sendValue(
-                address(this).balance
+            payable(token.pool()).sendValue(address(this).balance);
+        } else {
+            IERC20Upgradeable(_unitOfAccount).safeTransfer(
+                token.pool(),
+                IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
             );
-
-            return;
         }
-
-        IERC20Upgradeable(_unitOfAccount).safeTransfer(
-            IPool(token.pool()).gnosisSafe(),
-            IERC20Upgradeable(_unitOfAccount).balanceOf(address(this))
-        );
     }
 
-    /// @dev sends protocol token fee in form of pool's governance tokens to protocol treasury
+    /// @dev Transfers protocol token fee in form of pool's governance tokens to protocol treasury
     function claimProtocolTokenFee() private onlyState(State.Successful) {
         if (isProtocolTokenFeeClaimed) {
             return;
@@ -272,15 +360,15 @@ contract TGE is
         isProtocolTokenFeeClaimed = true;
 
         token.mint(
-            IGovernanceToken(token).service().protocolTreasury(),
-            IGovernanceToken(token).service().getProtocolTokenFee(
+            token.service().protocolTreasury(),
+            token.service().getProtocolTokenFee(
                 _totalPurchased
             )
         );
 
         emit ProtocolTokenFeeClaimed(
             address(token),
-            IGovernanceToken(token).service().getProtocolTokenFee(
+            token.service().getProtocolTokenFee(
                 _totalPurchased
             )
         );
@@ -288,6 +376,10 @@ contract TGE is
 
     // VIEW FUNCTIONS
 
+    /**
+     * @dev How many tokens an address can purchase.
+     * @return Amount of tokens
+     */
     function maxPurchaseOf(address account)
         public
         view
@@ -297,6 +389,10 @@ contract TGE is
         return maxPurchase - purchaseOf[account];
     }
 
+    /**
+     * @dev Returns TGE's state.
+     * @return State
+     */
     function state() public view override returns (State) {
         if (_totalPurchased == hardcap) {
             return State.Successful;
@@ -310,6 +406,10 @@ contract TGE is
         }
     }
 
+    /**
+     * @dev Is claim avilable for vested tokens.
+     * @return Is claim available
+     */
     function claimAvailable() public view returns (bool) {
         return
             lockupTVLReached &&
@@ -317,22 +417,42 @@ contract TGE is
             (state()) != State.Failed;
     }
 
+    /**
+     * @dev Get token used to purchase pool's tokens in TGE
+     * @return Token address
+     */
     function getUnitOfAccount() public view returns (address) {
         return _unitOfAccount;
     }
 
+    /**
+     * @dev Get total amount of tokens purchased during TGE.
+     * @return Total amount of tokens.
+     */
     function getTotalPurchased() public view returns (uint256) {
         return _totalPurchased;
     }
 
+    /**
+     * @dev Get total amount of tokens that are vesting.
+     * @return Total vesting tokens.
+     */
     function getTotalLocked() public view returns (uint256) {
         return _totalLocked;
     }
 
+    /**
+     * @dev Get total value of all purchased tokens
+     * @return Total value
+     */
     function getTotalPurchasedValue() public view returns (uint256) {
         return (_totalPurchased * price) / 10**18;
     }
 
+    /**
+     * @dev Get total value of all vesting tokens
+     * @return Total value
+     */
     function getTotalLockedValue() public view returns (uint256) {
         return (_totalLocked * price) / 10**18;
     }
@@ -352,7 +472,21 @@ contract TGE is
         _;
     }
 
-    function testI3813() public pure returns (uint256) {
-        return uint256(123);
+    modifier onlyManager() {
+        require(
+            msg.sender == token.service().owner() ||
+                token.service().isManagerWhitelisted(msg.sender),
+            ExceptionsLibrary.NOT_WHITELISTED
+        );
+        _;
+    }
+
+    modifier whenServiceNotPaused() {
+        require(!token.service().paused(), ExceptionsLibrary.SERVICE_PAUSED);
+        _;
+    }
+
+    function test83212() external pure returns (uint256) {
+        return 3;
     }
 }

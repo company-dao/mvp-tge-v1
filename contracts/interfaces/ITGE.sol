@@ -21,7 +21,7 @@ interface ITGE {
     function initialize(
         address owner_,
         address token_,
-        TGEInfo memory info
+        TGEInfo calldata info
     ) external;
 
     function redeem() external;
