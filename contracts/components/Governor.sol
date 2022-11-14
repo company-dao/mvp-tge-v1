@@ -160,7 +160,7 @@ abstract contract Governor {
             totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
             proposal.forVotes * 10000 >
             totalCastVotes * proposal.ballotDecisionThreshold && // * 10000 because 10000 = 100%
-            proposal.forVotes >=
+            proposal.forVotes * 10000 >=
             totalAvailableVotes * proposal.ballotDecisionThreshold
         ) {
             return ProposalState.Successful;
