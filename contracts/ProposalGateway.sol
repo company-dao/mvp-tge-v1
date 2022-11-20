@@ -40,13 +40,15 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param to Transfer recipient
      * @param value Token amount
      * @param description Proposal description
+     * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
     function createTransferETHProposal(
         IPool pool,
         address to,
         uint256 value,
-        string calldata description
+        string calldata description,
+        string calldata metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             to,
@@ -54,7 +56,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             "",
             description,
             IProposalGateway.ProposalType.TransferETH,
-            0
+            0,
+            metaHash
         );
     }
 
@@ -65,6 +68,7 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param to Transfer recipient
      * @param value Token amount
      * @param description Proposal description
+     * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
     function createTransferERC20Proposal(
@@ -72,7 +76,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address token,
         address to,
         uint256 value,
-        string calldata description
+        string calldata description,
+        string calldata metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             token,
@@ -84,7 +89,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             ),
             description,
             IProposalGateway.ProposalType.TransferERC20,
-            value
+            value,
+            metaHash
         );
     }
 
@@ -93,12 +99,14 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param pool Pool address
      * @param info TGE parameters
      * @param description Proposal description
+     * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
     function createTGEProposal(
         IPool pool,
         ITGE.TGEInfo calldata info,
-        string calldata description
+        string calldata description,
+        string calldata metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             address(pool.service()),
@@ -106,7 +114,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
             description,
             IProposalGateway.ProposalType.TGE,
-            0
+            0,
+            metaHash
         );
     }
 
@@ -118,6 +127,7 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param ballotLifespan Ballot lifespan
      * @param description Proposal description
      * @param ballotExecDelay_ Ballot execution delay parameters
+     * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
     function createGovernanceSettingsProposal(
@@ -126,7 +136,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 ballotDecisionThreshold,
         uint256 ballotLifespan,
         string calldata description,
-        uint256[10] calldata ballotExecDelay_
+        uint256[10] calldata ballotExecDelay_,
+        string calldata metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
         proposalId = pool.proposeSingleAction(
             address(pool),
@@ -140,7 +151,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             ),
             description,
             IProposalGateway.ProposalType.GovernanceSettings,
-            0
+            0,
+            metaHash
         );
     }
 

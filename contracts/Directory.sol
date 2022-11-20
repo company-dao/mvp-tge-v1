@@ -66,6 +66,7 @@ contract Directory is
         address pool;
         uint256 proposalId;
         string description;
+        string metaHash;
     }
 
     mapping(uint256 => Event) public events;
@@ -215,20 +216,23 @@ contract Directory is
      * @param eventType Event type
      * @param proposalId Proposal ID
      * @param description Description
+     * @param metaHash Hash value of event metadata
      * @return index Record index
      */
     function addEventRecord(
         address pool,
         EventType eventType,
         uint256 proposalId,
-        string calldata description
+        string calldata description,
+        string calldata metaHash
     ) external override onlyService returns (uint256 index) {
         index = ++lastEventIndex;
         events[index] = Event({
             eventType: eventType,
             pool: pool,
             proposalId: proposalId,
-            description: description
+            description: description,
+            metaHash: metaHash
         });
 
         emit EventSet(eventType, pool, proposalId);

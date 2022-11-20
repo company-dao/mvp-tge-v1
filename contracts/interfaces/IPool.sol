@@ -41,7 +41,8 @@ interface IPool {
         bytes calldata cd,
         string calldata description,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20
+        uint256 amountERC20,
+        string memory metaHash
     ) external returns (uint256 proposalId);
 
     function serviceCancelBallot(uint256 proposalId) external;

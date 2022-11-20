@@ -29,6 +29,7 @@ abstract contract Governor {
      * @param proposalType Proposal type
      * @param execDelay Execution delay for the proposal, blocks
      * @param amountERC20 Amount of ERC20 tokens
+     * @param metaHash Hash value of proposal metadata
      */
     struct Proposal {
         uint256 ballotQuorumThreshold;
@@ -48,6 +49,7 @@ abstract contract Governor {
         IProposalGateway.ProposalType proposalType;
         uint256 execDelay;
         uint256 amountERC20;
+        string metaHash;
     }
 
     /// @dev Proposals
@@ -304,12 +306,13 @@ abstract contract Governor {
         uint256 ballotDecisionThreshold,
         address target,
         uint256 value,
-        bytes calldata callData,
-        string calldata description,
+        bytes memory callData,
+        string memory description,
         uint256 totalSupply,
         uint256 execDelay,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20
+        uint256 amountERC20,
+        string memory metaHash
     ) internal returns (uint256 proposalId) {
         proposalId = ++lastProposalId;
         _proposals[proposalId] = Proposal({
@@ -329,7 +332,8 @@ abstract contract Governor {
             lastVoteBlock: 0,
             proposalType: proposalType,
             execDelay: execDelay,
-            amountERC20: amountERC20
+            amountERC20: amountERC20,
+            metaHash: metaHash
         });
         _afterProposalCreated(proposalId);
 
@@ -418,7 +422,8 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.TransferETH,
                 proposalId,
-                proposal.description
+                proposal.description,
+                proposal.metaHash
             );
         }
 
@@ -428,12 +433,13 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.TransferERC20,
                 proposalId,
-                proposal.description
+                proposal.description,
+                proposal.metaHash
             );
         }
 
         if (proposal.proposalType == IProposalGateway.ProposalType.TGE) {
-            service.addEvent(IDirectory.EventType.TGE, proposalId, "");
+            service.addEvent(IDirectory.EventType.TGE, proposalId, "", proposal.metaHash);
         }
 
         if (
@@ -443,7 +449,8 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.GovernanceSettings,
                 proposalId,
-                ""
+                "",
+                proposal.metaHash
             );
         }
         /*

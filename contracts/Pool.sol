@@ -270,6 +270,7 @@ contract Pool is
      * @param description Proposal description
      * @param proposalType Type
      * @param amountERC20 Amount of ERC20 token
+     * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal ID
      */
     function proposeSingleAction(
@@ -278,7 +279,8 @@ contract Pool is
         bytes calldata cd,
         string calldata description,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20
+        uint256 amountERC20,
+        string memory metaHash
     )
         external
         onlyProposalGateway
@@ -298,7 +300,8 @@ contract Pool is
                 token.balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1),
             proposalType,
-            amountERC20
+            amountERC20,
+            metaHash
         );
     }
 

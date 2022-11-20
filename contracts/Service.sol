@@ -372,6 +372,7 @@ contract Service is
             address(pool),
             IDirectory.EventType.TGE,
             0,
+            "",
             ""
         );
 
@@ -442,17 +443,20 @@ contract Service is
      * @param eventType Event type
      * @param proposalId Proposal ID
      * @param description Description
+     * @param metaHash Hash value of event metadata
      */
     function addEvent(
         IDirectory.EventType eventType,
         uint256 proposalId,
-        string calldata description
+        string calldata description,
+        string calldata metaHash
     ) external onlyPool whenNotPaused {
         directory.addEventRecord(
             msg.sender,
             eventType,
             proposalId,
-            description
+            description,
+            metaHash
         );
     }
 

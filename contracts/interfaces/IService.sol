@@ -29,7 +29,7 @@ interface IService {
 
     function addProposal(uint256 proposalId) external;
 
-    function addEvent(IDirectory.EventType eventType, uint256 proposalId, string memory description)
+    function addEvent(IDirectory.EventType eventType, uint256 proposalId, string calldata description, string calldata metaHash)
         external;
 
     function directory() external view returns (IDirectory);

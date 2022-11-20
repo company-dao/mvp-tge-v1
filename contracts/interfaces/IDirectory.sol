@@ -26,7 +26,7 @@ interface IDirectory {
         external
         returns (uint256 index);
 
-    function addEventRecord(address pool, EventType eventType, uint256 proposalId, string calldata description)
+    function addEventRecord(address pool, EventType eventType, uint256 proposalId, string calldata description, string calldata metaHash)
         external
         returns (uint256 index);
 
