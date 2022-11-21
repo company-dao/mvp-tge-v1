@@ -11,6 +11,7 @@ import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "hardhat-dependency-compiler";
+import 'solidity-docgen';
 
 require("./tasks/deploy");
 require("./tasks/deployContract");
@@ -18,6 +19,8 @@ require("./tasks/safeVerify");
 require("./tasks/createPool");
 require("./tasks/completeTGE");
 require("./tasks/forceImport");
+require("./tasks/doc");
+require("./tasks/autoTests");
 
 dotenv.config();
 
@@ -97,6 +100,7 @@ const config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+  docgen: {},
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },

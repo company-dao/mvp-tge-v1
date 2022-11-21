@@ -8,6 +8,7 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
   }
 
   const blockNumBefore = await ethers.provider.getBlockNumber();
+  const ballotExecDelay = [1, 3, 40, 40, 40, 0, 0, 0, 0, 0]; // number of blocks
 
   const service = await ethers.getContractAt(
     "Service",
@@ -33,7 +34,7 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
   const nextMetadataId = metadataCurrentId.toNumber() + 1;
   console.log("nextMetadataId: " + nextMetadataId);
 
-  // let t = await service.addUserToWhitelist("0x613e46D06A3667D2b46bf6C0d9689aA17DbFCAbc");
+  // let t = await service.addUserToWhitelist("0x01d50e3899A79791c2448B9f489ae0Be30Dbd345");
   // await t.wait(1);
 
   t = await metadata.createRecord(
@@ -43,6 +44,8 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
     123123,
   );
   await t.wait(1);
+
+  console.log("Creating pool...");
 
   t = await service.createPool(
     "0x0000000000000000000000000000000000000000",
@@ -69,8 +72,9 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
     "1",
     "505",
     nextMetadataId,
+    ballotExecDelay,
     "hhhj"+nextMetadataId,
-    {value: 10000000000000}
+    {value: 1000000000000000}
     );
   await t.wait(1);
 

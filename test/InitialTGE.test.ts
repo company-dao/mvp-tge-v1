@@ -607,7 +607,7 @@ describe.only("Test initial TGE", function () {
         });
     });
 
-    describe.only("purchase tests", async function () {
+    describe("purchase tests", async function () {
         it("check states and purchase amount rounding", async function () {
             const tokenData2: TokenInfoStruct = {
                 name: "Strange DAO Token",
@@ -648,6 +648,53 @@ describe.only("Test initial TGE", function () {
             await expect(tge2
                 .connect(other)
                 .purchase(2000, { value: 200 })
+            ).to.be.not.reverted;
+
+        });
+    });
+
+    describe.only("redeem tests", async function () {
+        it("check states and purchase amount and redeem", async function () {
+            const tokenData2: TokenInfoStruct = {
+                name: "Strange DAO Token",
+                symbol: "SDTKN",
+                cap: parseUnits("1"),
+            };
+            const tgeData2: TGEInfoStruct = {
+                metadataURI: "uri",
+                price: 100000000000, // price per 1000 tokenweis
+                hardcap: 50000000000,
+                softcap: 10000000000,
+                minPurchase: 1000,
+                maxPurchase: 10000000000,
+                lockupPercent: 30,
+                lockupDuration: 51,
+                lockupTVL: parseUnits("11"),
+                duration: 23,
+                userWhitelist: [owner.address, other.address, third.address],
+                unitOfAccount: AddressZero
+            };
+
+            const tx = await service.createPool(AddressZero, tokenData2, tgeData2, 13, 37, 11, 1, "Name", {
+                value: parseUnits("0.01"),
+            });
+
+            const receipt = await tx.wait();
+            const event = receipt.events!.filter(
+                (e) => e.event == "PoolCreated"
+            )[0];
+
+            const pool2 = await getContractAt("Pool", event.args![0]);
+            const token2 = await getContractAt(
+                "GovernanceToken",
+                event.args![1]
+            );
+            const tge2 = await getContractAt("TGE", event.args![2]);
+
+            const amount = 10**20;
+            await expect(tge2
+                .connect(other)
+                .purchase(amount, { value: parseUnits("0.000001") })
             ).to.be.not.reverted;
 
         });

@@ -7,7 +7,7 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
     return;
   }
 
-  const poolAddress = "0x5dC0f9b0a4Fa42013074999cDf105B2A546fd399";
+  const poolAddress = "0xa04cdb764b2edbaed63fcbd6d7e0b97b4d5f559b";
   const transferTarget = "0x613e46D06A3667D2b46bf6C0d9689aA17DbFCAbc";
 
   const pool = await ethers.getContractAt(
@@ -21,7 +21,6 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
   );
 
   const tgeAddress = await pool.tge();
-  const gnosisAddress = await pool.gnosisSafe();
 
   const tge = await ethers.getContractAt(
     "TGE",
@@ -55,12 +54,15 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
   const lastProposalId = await pool.lastProposalId();
   console.log("lastProposalId: " + lastProposalId);
 
-  t = await pool.castVote(lastProposalId, BigInt(tgeHardCap) / BigInt(10), true);
+  // Vote
+  t = await pool.castVote(lastProposalId, BigInt(tgeHardCap) / BigInt(2) + BigInt(1), true);
   await t.wait(1);
 
   let proposalState = await pool.proposalState(lastProposalId);
   console.log("proposalState: " + proposalState);
 
+  // Execute cancel proposal after base delay
+  sleep(15000 * 5);
   t = await pool.executeBallot(lastProposalId);
   await t.wait(1);
 
@@ -77,3 +79,13 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
 module.exports = {
   solidity: "0.8.9",
 };
+
+function sleep(milliseconds) {
+  console.log("Sleeping...");
+
+  const date = Date.now();
+  let currentDate = null;
+  do {
+    currentDate = Date.now();
+  } while (currentDate - date < milliseconds);
+}

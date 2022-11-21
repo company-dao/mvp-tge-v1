@@ -23,6 +23,7 @@ task("safeVerify", "Verifies contract on Etherscan safely")
     // await contract.deployTransaction.wait(5);
 
     try {
+      sleep(3000 * 1);
       console.log("Verifying ...");
 
       await hre.run("verify:verify", {
@@ -42,3 +43,13 @@ task("safeVerify", "Verifies contract on Etherscan safely")
 module.exports = {
   solidity: "0.8.9",
 };
+
+function sleep(milliseconds) {
+  console.log("Sleeping...");
+
+  const date = Date.now();
+  let currentDate = null;
+  do {
+    currentDate = Date.now();
+  } while (currentDate - date < milliseconds);
+}

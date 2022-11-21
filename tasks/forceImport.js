@@ -52,12 +52,6 @@ task("forceImport", "").setAction(async (taskArgs, hre) => {
   );
 
   await hre.upgrades.forceImport(
-    getProxyAddress("GnosisGovernance"),
-    await hre.ethers.getContractFactory("GnosisGovernance"),
-    { kind: "beacon" }
-  );
-
-  await hre.upgrades.forceImport(
     getProxyAddress("Service"),
     await hre.ethers.getContractFactory("Service"),
     { kind: "uups" }
