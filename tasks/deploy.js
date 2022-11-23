@@ -142,6 +142,19 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   await t.wait(1);
   console.log("weth is set in Service: " + WETH_ADDRESS);
 
+  const whitelistedTokens = await ethers.getContractAt(
+    "WhitelistedTokens",
+    getProxyAddress("WhitelistedTokens")
+  );
+
+  t = await whitelistedTokens.addTokensToWhitelist(
+    ["0x0000000000000000000000000000000000000000"],
+    ["0x"],
+    ["0x"]
+  );
+  await t.wait(1);
+  console.log("ETH is added to WhitelistedTokens");
+
   console.log("\n==== Project Deploy Complete ====");
 });
 

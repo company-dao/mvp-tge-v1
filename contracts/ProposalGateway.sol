@@ -37,27 +37,28 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev Create TransferETH proposal
      * @param pool Pool address
-     * @param to Transfer recipient
-     * @param value Token amount
+     * @param recipients Transfer recipients
+     * @param values Token amounts
      * @param description Proposal description
      * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
     function createTransferETHProposal(
         IPool pool,
-        address to,
-        uint256 value,
-        string calldata description,
-        string calldata metaHash
+        address[] memory recipients,
+        uint256[] memory values,
+        string memory description,
+        string memory metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        proposalId = pool.proposeSingleAction(
-            to,
-            value,
-            "",
+        require(recipients.length == values.length, ExceptionsLibrary.INVALID_VALUE);
+
+        proposalId = pool.proposeTransfer(
+            recipients,
+            values,
             description,
             IProposalGateway.ProposalType.TransferETH,
-            0,
-            metaHash
+            metaHash,
+            address(0)
         );
     }
 
@@ -65,8 +66,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @dev Create TransferERC20 proposal
      * @param pool Pool address
      * @param token Token to be transfered
-     * @param to Transfer recipient
-     * @param value Token amount
+     * @param recipients Transfer recipients
+     * @param values Token amounts
      * @param description Proposal description
      * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
@@ -74,23 +75,20 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function createTransferERC20Proposal(
         IPool pool,
         address token,
-        address to,
-        uint256 value,
-        string calldata description,
-        string calldata metaHash
+        address[] memory recipients,
+        uint256[] memory values,
+        string memory description,
+        string memory metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        proposalId = pool.proposeSingleAction(
-            token,
-            0,
-            abi.encodeWithSelector(
-                IERC20Upgradeable.transfer.selector,
-                to,
-                value
-            ),
+        require(recipients.length == values.length, ExceptionsLibrary.INVALID_VALUE);
+
+        proposalId = pool.proposeTransfer(
+            recipients,
+            values,
             description,
             IProposalGateway.ProposalType.TransferERC20,
-            value,
-            metaHash
+            metaHash,
+            token
         );
     }
 
@@ -114,7 +112,6 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
             description,
             IProposalGateway.ProposalType.TGE,
-            0,
             metaHash
         );
     }
@@ -151,7 +148,6 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             ),
             description,
             IProposalGateway.ProposalType.GovernanceSettings,
-            0,
             metaHash
         );
     }

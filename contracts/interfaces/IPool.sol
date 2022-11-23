@@ -38,11 +38,19 @@ interface IPool {
     function proposeSingleAction(
         address target,
         uint256 value,
-        bytes calldata cd,
-        string calldata description,
+        bytes memory cd,
+        string memory description,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20,
         string memory metaHash
+    ) external returns (uint256 proposalId);
+
+    function proposeTransfer(
+        address[] memory targets,
+        uint256[] memory values,
+        string memory description,
+        IProposalGateway.ProposalType proposalType,
+        string memory metaHash,
+        address token_
     ) external returns (uint256 proposalId);
 
     function serviceCancelBallot(uint256 proposalId) external;

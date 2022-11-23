@@ -50,4 +50,5 @@ library ExceptionsLibrary {
     string public constant BLOCK_DELAY = "BLOCK_DELAY";
     string public constant SERVICE_PAUSED = "SERVICE_PAUSED";
     string public constant INVALID_PROPOSAL_TYPE = "INVALID_PROPOSAL_TYPE";
+    string public constant EXECUTION_FAILED = "EXECUTION_FAILED";
 }

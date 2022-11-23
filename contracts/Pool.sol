@@ -269,18 +269,62 @@ contract Pool is
      * @param cd Calldata to pass on in .call() to transaction recipient
      * @param description Proposal description
      * @param proposalType Type
-     * @param amountERC20 Amount of ERC20 token
      * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal ID
      */
     function proposeSingleAction(
         address target,
         uint256 value,
-        bytes calldata cd,
-        string calldata description,
+        bytes memory cd,
+        string memory description,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20,
         string memory metaHash
+    )
+        external
+        onlyProposalGateway
+        whenServiceNotPaused
+        returns (uint256 proposalId)
+    {
+        address[] memory targets = new address[](1);
+        targets[0] = target;
+        uint256[] memory values = new uint256[](1);
+        values[0] = value;
+
+        proposalId = _propose(
+            _ballotLifespan,
+            _ballotQuorumThreshold,
+            _ballotDecisionThreshold,
+            targets,
+            values,
+            cd,
+            description,
+            _getTotalSupply() -
+                _getTotalTGELockedTokens() -
+                token.balanceOf(service.protocolTreasury()),
+            service.ballotExecDelay(1),
+            proposalType,
+            metaHash,
+            address(0)
+        );
+    }
+
+    /**
+     * @dev Create pool propsal
+     * @param targets Proposal transaction recipients
+     * @param values Amounts of ETH token
+     * @param description Proposal description
+     * @param proposalType Type
+     * @param metaHash Hash value of proposal metadata
+     * @param token_ token for payment proposal
+     * @return proposalId Created proposal ID
+     */
+    function proposeTransfer(
+        address[] memory targets,
+        uint256[] memory values,
+        string memory description,
+        IProposalGateway.ProposalType proposalType,
+        string memory metaHash,
+        address token_
     )
         external
         onlyProposalGateway
@@ -291,17 +335,17 @@ contract Pool is
             _ballotLifespan,
             _ballotQuorumThreshold,
             _ballotDecisionThreshold,
-            target,
-            value,
-            cd,
+            targets,
+            values,
+            "",
             description,
             _getTotalSupply() -
                 _getTotalTGELockedTokens() -
                 token.balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1),
             proposalType,
-            amountERC20,
-            metaHash
+            metaHash,
+            token_
         );
     }
 

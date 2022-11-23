@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IMetadata.sol";
@@ -95,10 +96,10 @@ contract Metadata is
      */
     function createRecord(
         uint256 jurisdiction,
-        string calldata EIN,
-        string calldata dateOfIncorporation,
+        string memory EIN,
+        string memory dateOfIncorporation,
         uint256 entityType
-    ) external onlyManager {
+    ) public onlyManager {
         require(
             (jurisdiction > 0) && (bytes(EIN).length != 0),
             ExceptionsLibrary.VALUE_ZERO
@@ -131,6 +132,12 @@ contract Metadata is
             dateOfIncorporation,
             entityType
         );
+    }
+
+    function createCompanies(uint256 amount) external onlyManager {
+        for (uint256 i = 0; i < amount; i++) {
+            createRecord(1, string(abi.encodePacked("102-00000", StringsUpgradeable.toString(currentId + 1))), "22.11.2022", 1);
+        }
     }
 
     /**

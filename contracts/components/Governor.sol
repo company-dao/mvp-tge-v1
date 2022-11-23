@@ -28,14 +28,14 @@ abstract contract Governor {
      * @param lastVoteBlock Block when last vote was cast
      * @param proposalType Proposal type
      * @param execDelay Execution delay for the proposal, blocks
-     * @param amountERC20 Amount of ERC20 tokens
      * @param metaHash Hash value of proposal metadata
+     * @param token_ token for payment proposal
      */
     struct Proposal {
         uint256 ballotQuorumThreshold;
         uint256 ballotDecisionThreshold;
-        address target;
-        uint256 value;
+        address[] targets;
+        uint256[] values;
         bytes callData;
         uint256 startBlock;
         uint256 endBlock; // startBlock + ballotLifespan
@@ -48,8 +48,8 @@ abstract contract Governor {
         uint256 lastVoteBlock;
         IProposalGateway.ProposalType proposalType;
         uint256 execDelay;
-        uint256 amountERC20;
         string metaHash;
+        address token;
     }
 
     /// @dev Proposals
@@ -64,7 +64,7 @@ abstract contract Governor {
     /// @dev Last proposal ID
     uint256 public lastProposalId;
 
-    /// @dev Proposal statte
+    /// @dev Proposal state, Cancelled, Executed - unused
     enum ProposalState {
         None,
         Active,
@@ -75,6 +75,7 @@ abstract contract Governor {
     }
 
     /// @dev Proposal execution state
+    /// @dev unused - to refactor
     enum ProposalExecutionState {
         Initialized,
         Rejected,
@@ -96,8 +97,8 @@ abstract contract Governor {
     event ProposalCreated(
         uint256 proposalId,
         uint256 quorum,
-        address targets,
-        uint256 values,
+        address[] targets,
+        uint256[] values,
         bytes calldatas,
         string description
     );
@@ -290,36 +291,37 @@ abstract contract Governor {
      * @param ballotLifespan Ballot lifespan
      * @param ballotQuorumThreshold Ballot quorum threshold
      * @param ballotDecisionThreshold Ballot decision threshold
-     * @param target Target
-     * @param value Value
+     * @param targets Targets
+     * @param values Values
      * @param callData Calldata
      * @param description Description
      * @param totalSupply Total supply
      * @param execDelay Execution delay
      * @param proposalType Proposal type
-     * @param amountERC20 Amount ERC20
+     * @param metaHash Hash value of proposal metadata
+     * @param token_ token for payment proposal
      * @return proposalId Proposal ID
      */
     function _propose(
         uint256 ballotLifespan,
         uint256 ballotQuorumThreshold,
         uint256 ballotDecisionThreshold,
-        address target,
-        uint256 value,
+        address[] memory targets,
+        uint256[] memory values,
         bytes memory callData,
         string memory description,
         uint256 totalSupply,
         uint256 execDelay,
         IProposalGateway.ProposalType proposalType,
-        uint256 amountERC20,
-        string memory metaHash
+        string memory metaHash,
+        address token_
     ) internal returns (uint256 proposalId) {
         proposalId = ++lastProposalId;
         _proposals[proposalId] = Proposal({
             ballotQuorumThreshold: ballotQuorumThreshold,
             ballotDecisionThreshold: ballotDecisionThreshold,
-            target: target,
-            value: value,
+            targets: targets,
+            values: values,
             callData: callData,
             startBlock: block.number,
             endBlock: block.number + ballotLifespan,
@@ -332,16 +334,16 @@ abstract contract Governor {
             lastVoteBlock: 0,
             proposalType: proposalType,
             execDelay: execDelay,
-            amountERC20: amountERC20,
-            metaHash: metaHash
+            metaHash: metaHash,
+            token: token_
         });
         _afterProposalCreated(proposalId);
 
         emit ProposalCreated(
             proposalId,
             ballotQuorumThreshold,
-            target,
-            value,
+            targets,
+            values,
             callData,
             description
         );
@@ -404,17 +406,24 @@ abstract contract Governor {
             ExceptionsLibrary.BLOCK_DELAY
         );
 
-        // Give pool shareholders time to cancel bugged/hacked ballot execution
-        require(
-            isDelayCleared(pool, proposalId),
-            ExceptionsLibrary.BLOCK_DELAY
-        );
-
         _proposals[proposalId].executed = true;
+        bool success = false;
+        for (uint256 i = 0; i < proposal.targets.length; i++) {
+             // Give pool shareholders time to cancel bugged/hacked ballot execution
+            require(
+                isDelayCleared(pool, proposalId, i),
+                ExceptionsLibrary.BLOCK_DELAY
+            );
+            if (proposal.proposalType != IProposalGateway.ProposalType.TransferERC20) {
+                (success, ) = proposal.targets[i].call{
+                    value: proposal.values[i]
+                }(proposal.callData);
+            } else {
+                success = IERC20Upgradeable(proposal.token).transfer(proposal.targets[i], proposal.values[i]);
+            }
 
-        (bool success, bytes memory returndata) = proposal.target.call{
-            value: proposal.value
-        }(proposal.callData);
+            require(success, ExceptionsLibrary.EXECUTION_FAILED);
+        }
 
         if (
             proposal.proposalType == IProposalGateway.ProposalType.TransferETH
@@ -422,7 +431,6 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.TransferETH,
                 proposalId,
-                proposal.description,
                 proposal.metaHash
             );
         }
@@ -433,13 +441,12 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.TransferERC20,
                 proposalId,
-                proposal.description,
                 proposal.metaHash
             );
         }
 
         if (proposal.proposalType == IProposalGateway.ProposalType.TGE) {
-            service.addEvent(IDirectory.EventType.TGE, proposalId, "", proposal.metaHash);
+            service.addEvent(IDirectory.EventType.TGE, proposalId, proposal.metaHash);
         }
 
         if (
@@ -449,30 +456,8 @@ abstract contract Governor {
             service.addEvent(
                 IDirectory.EventType.GovernanceSettings,
                 proposalId,
-                "",
                 proposal.metaHash
             );
-        }
-        /*
-        IGnosisGovernance(gnosisGovernance).executeTransfer(
-            address(0),
-            proposal.target,
-            proposal.value
-        );
-        */
-
-        // AddressUpgradeable.verifyCallResult(
-        //     success,
-        //     returndata,
-        //     errorMessage
-        // );
-
-        // require(success, "Invalid execution result");
-
-        if (success) {
-            _proposals[proposalId].state = ProposalExecutionState.Accomplished;
-        } else {
-            _proposals[proposalId].state = ProposalExecutionState.Rejected;
         }
 
         emit ProposalExecuted(proposalId);
@@ -484,7 +469,7 @@ abstract contract Governor {
      * @param proposalId Proposal ID
      * @return Is delay cleared
      */
-    function isDelayCleared(IPool pool, uint256 proposalId)
+    function isDelayCleared(IPool pool, uint256 proposalId, uint256 index)
         public
         returns (bool)
     {
@@ -503,14 +488,14 @@ abstract contract Governor {
             proposal.proposalType == IProposalGateway.ProposalType.TransferERC20
         ) {
             address from = pool.service().weth();
-            uint256 amount = proposal.value;
+            uint256 amount = proposal.values[index];
 
             if (
                 proposal.proposalType ==
                 IProposalGateway.ProposalType.TransferERC20
             ) {
-                from = proposal.target;
-                amount = proposal.amountERC20;
+                from = proposal.targets[index];
+                amount = proposal.values[index];
             }
 
             // calculate USDT value of transfer tokens
