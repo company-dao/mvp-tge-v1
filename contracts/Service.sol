@@ -785,6 +785,10 @@ contract Service is
         return type(uint256).max - getProtocolTokenFee(type(uint256).max);
     }
 
+    function getBallotExecDelay() public view returns(uint256[10] memory) {
+        return ballotExecDelay;
+    }
+
     // MODIFIERS
 
     modifier onlyWhitelisted() {

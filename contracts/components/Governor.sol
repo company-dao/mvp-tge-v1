@@ -159,24 +159,11 @@ abstract contract Governor {
             proposal.ballotQuorumThreshold);
         uint256 totalCastVotes = proposal.forVotes + proposal.againstVotes;
 
-        if (
-            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
-            proposal.forVotes * 10000 >
-            totalCastVotes * proposal.ballotDecisionThreshold && // * 10000 because 10000 = 100%
-            proposal.forVotes * 10000 >=
-            totalAvailableVotes * proposal.ballotDecisionThreshold
-        ) {
-            return ProposalState.Successful;
-        }
-        if (
-            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
-            proposal.againstVotes * 10000 >
-            totalCastVotes * proposal.ballotDecisionThreshold && // * 10000 because 10000 = 100%
-            (totalAvailableVotes - proposal.againstVotes) * 10000 <
-            totalAvailableVotes * proposal.ballotDecisionThreshold
-        ) {
-            return ProposalState.Failed;
-        }
+        ProposalState aheadOfTimeBallotResult = AheadOfTimeBallotResult(totalCastVotes, quorumVotes,
+                                proposal, totalAvailableVotes);
+        if (aheadOfTimeBallotResult != ProposalState.None) {
+            return aheadOfTimeBallotResult;
+        } 
 
         if (block.number > proposal.endBlock) {
             if (
@@ -188,6 +175,32 @@ abstract contract Governor {
             } else return ProposalState.Failed;
         }
         return ProposalState.Active;
+    }
+
+    function AheadOfTimeBallotResult(uint256 totalCastVotes, uint256 quorumVotes, Proposal memory proposal, uint256  totalAvailableVotes) public pure returns (ProposalState) {
+        uint256 DONT_KNOW_HOW_TO_NAME_THIS = totalCastVotes * proposal.ballotDecisionThreshold;
+        uint256 minimumForVotes = totalAvailableVotes * proposal.ballotDecisionThreshold;
+
+        if (
+            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
+            proposal.forVotes * 10000 >
+            DONT_KNOW_HOW_TO_NAME_THIS && // * 10000 because 10000 = 100%
+            proposal.forVotes * 10000 >=
+            minimumForVotes
+        ) {
+            return ProposalState.Successful;
+        }
+        if (
+            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
+            proposal.againstVotes * 10000 >
+            DONT_KNOW_HOW_TO_NAME_THIS && // * 10000 because 10000 = 100%
+            (totalAvailableVotes - proposal.againstVotes) * 10000 <
+            minimumForVotes
+        ) {
+            return ProposalState.Failed;
+        }
+
+        return ProposalState.None;
     }
 
     /**
@@ -374,6 +387,8 @@ abstract contract Governor {
         }
 
         _proposals[proposalId].lastVoteBlock = block.number;
+        _proposals[proposalId].totalSupply = _getTotalSupply() -
+            _getTotalTGELockedTokens();
 
         emit VoteCast(msg.sender, proposalId, votes, support);
     }

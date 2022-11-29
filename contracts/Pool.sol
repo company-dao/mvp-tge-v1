@@ -79,6 +79,9 @@ contract Pool is
      */
     uint256[10] public ballotExecDelay;
 
+    /// @dev last proposal id created by account
+    mapping(address => uint256) public lastProposalIdForAccount;
+
     // INITIALIZER AND CONFIGURATOR
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -306,6 +309,7 @@ contract Pool is
             metaHash,
             address(0)
         );
+        lastProposalIdForAccount[tx.origin] = proposalId;
     }
 
     /**
@@ -347,6 +351,7 @@ contract Pool is
             metaHash,
             token_
         );
+        lastProposalIdForAccount[tx.origin] = proposalId;
     }
 
     /**
@@ -538,6 +543,10 @@ contract Pool is
         return _getProposalType(proposalId);
     }
 
+    function getBallotExecDelay() public view returns(uint256[10] memory) {
+        return ballotExecDelay;
+    }
+
     // INTERNAL FUNCTIONS
 
     function _afterProposalCreated(uint256 proposalId) internal override {
@@ -598,7 +607,7 @@ contract Pool is
         _;
     }
 
-    function test83212() external pure returns (uint256) {
-        return 3;
-    }
+    // function test83212() external pure returns (uint256) {
+    //     return 3;
+    // }
 }

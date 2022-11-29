@@ -73,7 +73,6 @@ struct Event {
   enum IDirectory.EventType eventType;
   address pool;
   uint256 proposalId;
-  string description;
   string metaHash;
 }
 ```
@@ -258,7 +257,7 @@ _Add proposal record_
 ### addEventRecord
 
 ```solidity
-function addEventRecord(address pool, enum IDirectory.EventType eventType, uint256 proposalId, string description, string metaHash) external returns (uint256 index)
+function addEventRecord(address pool, enum IDirectory.EventType eventType, uint256 proposalId, string metaHash) external returns (uint256 index)
 ```
 
 _Add event record_
@@ -270,7 +269,6 @@ _Add event record_
 | pool | address | Pool address |
 | eventType | enum IDirectory.EventType | Event type |
 | proposalId | uint256 | Proposal ID |
-| description | string | Description |
 | metaHash | string | Hash value of event metadata |
 
 #### Return Values
@@ -815,7 +813,7 @@ _Set Service in Metadata_
 ### createRecord
 
 ```solidity
-function createRecord(uint256 jurisdiction, string EIN, string dateOfIncorporation, uint256 entityType) external
+function createRecord(uint256 jurisdiction, string EIN, string dateOfIncorporation, uint256 entityType) public
 ```
 
 _Create metadata record_
@@ -828,6 +826,12 @@ _Create metadata record_
 | EIN | string | EIN |
 | dateOfIncorporation | string | Date of incorporation |
 | entityType | uint256 | Entity type |
+
+### createCompanies
+
+```solidity
+function createCompanies(uint256 amount) external
+```
 
 ### lockRecord
 
@@ -1074,6 +1078,14 @@ _block delay for executeBallot
 [4] - delay for TGE proposals
 [5] - delay for GovernanceSettings proposals_
 
+### lastProposalIdForAccount
+
+```solidity
+mapping(address => uint256) lastProposalIdForAccount
+```
+
+_last proposal id created by account_
+
 ### constructor
 
 ```solidity
@@ -1196,7 +1208,7 @@ _Cast ballot vote_
 ### proposeSingleAction
 
 ```solidity
-function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IProposalGateway.ProposalType proposalType, uint256 amountERC20, string metaHash) external returns (uint256 proposalId)
+function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IProposalGateway.ProposalType proposalType, string metaHash) external returns (uint256 proposalId)
 ```
 
 _Create pool propsal_
@@ -1210,8 +1222,32 @@ _Create pool propsal_
 | cd | bytes | Calldata to pass on in .call() to transaction recipient |
 | description | string | Proposal description |
 | proposalType | enum IProposalGateway.ProposalType | Type |
-| amountERC20 | uint256 | Amount of ERC20 token |
 | metaHash | string | Hash value of proposal metadata |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| proposalId | uint256 | Created proposal ID |
+
+### proposeTransfer
+
+```solidity
+function proposeTransfer(address[] targets, uint256[] values, string description, enum IProposalGateway.ProposalType proposalType, string metaHash, address token_) external returns (uint256 proposalId)
+```
+
+_Create pool propsal_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| targets | address[] | Proposal transaction recipients |
+| values | uint256[] | Amounts of ETH token |
+| description | string | Proposal description |
+| proposalType | enum IProposalGateway.ProposalType | Type |
+| metaHash | string | Hash value of proposal metadata |
+| token_ | address | token for payment proposal |
 
 #### Return Values
 
@@ -1497,6 +1533,12 @@ _Return type of proposal_
 | ---- | ---- | ----------- |
 | [0] | enum IProposalGateway.ProposalType | Proposal type |
 
+### getBallotExecDelay
+
+```solidity
+function getBallotExecDelay() public view returns (uint256[10])
+```
+
 ### _afterProposalCreated
 
 ```solidity
@@ -1561,12 +1603,6 @@ modifier onlyPool()
 modifier whenServiceNotPaused()
 ```
 
-### test83212
-
-```solidity
-function test83212() external pure returns (uint256)
-```
-
 ## ProposalGateway
 
 _Protocol entry point to create any proposal_
@@ -1601,7 +1637,7 @@ function _authorizeUpgrade(address) internal override onlyOwner {}
 ### createTransferETHProposal
 
 ```solidity
-function createTransferETHProposal(contract IPool pool, address to, uint256 value, string description, string metaHash) external returns (uint256 proposalId)
+function createTransferETHProposal(contract IPool pool, address[] recipients, uint256[] values, string description, string metaHash) external returns (uint256 proposalId)
 ```
 
 _Create TransferETH proposal_
@@ -1611,8 +1647,8 @@ _Create TransferETH proposal_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | pool | contract IPool | Pool address |
-| to | address | Transfer recipient |
-| value | uint256 | Token amount |
+| recipients | address[] | Transfer recipients |
+| values | uint256[] | Token amounts |
 | description | string | Proposal description |
 | metaHash | string | Hash value of proposal metadata |
 
@@ -1625,7 +1661,7 @@ _Create TransferETH proposal_
 ### createTransferERC20Proposal
 
 ```solidity
-function createTransferERC20Proposal(contract IPool pool, address token, address to, uint256 value, string description, string metaHash) external returns (uint256 proposalId)
+function createTransferERC20Proposal(contract IPool pool, address token, address[] recipients, uint256[] values, string description, string metaHash) external returns (uint256 proposalId)
 ```
 
 _Create TransferERC20 proposal_
@@ -1636,8 +1672,8 @@ _Create TransferERC20 proposal_
 | ---- | ---- | ----------- |
 | pool | contract IPool | Pool address |
 | token | address | Token to be transfered |
-| to | address | Transfer recipient |
-| value | uint256 | Token amount |
+| recipients | address[] | Transfer recipients |
+| values | uint256[] | Token amounts |
 | description | string | Proposal description |
 | metaHash | string | Hash value of proposal metadata |
 
@@ -2098,7 +2134,7 @@ _Add proposal to directory_
 ### addEvent
 
 ```solidity
-function addEvent(enum IDirectory.EventType eventType, uint256 proposalId, string description, string metaHash) external
+function addEvent(enum IDirectory.EventType eventType, uint256 proposalId, string metaHash) external
 ```
 
 _Add event to directory_
@@ -2109,7 +2145,6 @@ _Add event to directory_
 | ---- | ---- | ----------- |
 | eventType | enum IDirectory.EventType | Event type |
 | proposalId | uint256 | Proposal ID |
-| description | string | Description |
 | metaHash | string | Hash value of event metadata |
 
 ### addUserToWhitelist
@@ -2525,6 +2560,12 @@ _Return max hard cap accounting for protocol token fee_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | [0] | uint256 | Maximum hard cap |
+
+### getBallotExecDelay
+
+```solidity
+function getBallotExecDelay() public view returns (uint256[10])
+```
 
 ### onlyWhitelisted
 
@@ -3117,8 +3158,8 @@ _Proposal module for Pool's Governance Token_
 struct Proposal {
   uint256 ballotQuorumThreshold;
   uint256 ballotDecisionThreshold;
-  address target;
-  uint256 value;
+  address[] targets;
+  uint256[] values;
   bytes callData;
   uint256 startBlock;
   uint256 endBlock;
@@ -3131,8 +3172,8 @@ struct Proposal {
   uint256 lastVoteBlock;
   enum IProposalGateway.ProposalType proposalType;
   uint256 execDelay;
-  uint256 amountERC20;
   string metaHash;
+  address token;
 }
 ```
 
@@ -3195,7 +3236,7 @@ enum ProposalExecutionState {
 ### ProposalCreated
 
 ```solidity
-event ProposalCreated(uint256 proposalId, uint256 quorum, address targets, uint256 values, bytes calldatas, string description)
+event ProposalCreated(uint256 proposalId, uint256 quorum, address[] targets, uint256[] values, bytes calldatas, string description)
 ```
 
 _Event emitted on proposal creation_
@@ -3206,8 +3247,8 @@ _Event emitted on proposal creation_
 | ---- | ---- | ----------- |
 | proposalId | uint256 | Proposal ID |
 | quorum | uint256 | Quorum |
-| targets | address | Targets |
-| values | uint256 | Values |
+| targets | address[] | Targets |
+| values | uint256[] | Values |
 | calldatas | bytes | Calldata |
 | description | string | Description |
 
@@ -3275,6 +3316,12 @@ _Return proposal state_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | [0] | enum Governor.ProposalState | ProposalState |
+
+### AheadOfTimeBallotResult
+
+```solidity
+function AheadOfTimeBallotResult(uint256 totalCastVotes, uint256 quorumVotes, struct Governor.Proposal proposal, uint256 totalAvailableVotes) public pure returns (enum Governor.ProposalState)
+```
 
 ### getProposalBallotQuorumThreshold
 
@@ -3421,7 +3468,7 @@ _Return proposal type_
 ### _propose
 
 ```solidity
-function _propose(uint256 ballotLifespan, uint256 ballotQuorumThreshold, uint256 ballotDecisionThreshold, address target, uint256 value, bytes callData, string description, uint256 totalSupply, uint256 execDelay, enum IProposalGateway.ProposalType proposalType, uint256 amountERC20, string metaHash) internal returns (uint256 proposalId)
+function _propose(uint256 ballotLifespan, uint256 ballotQuorumThreshold, uint256 ballotDecisionThreshold, address[] targets, uint256[] values, bytes callData, string description, uint256 totalSupply, uint256 execDelay, enum IProposalGateway.ProposalType proposalType, string metaHash, address token_) internal returns (uint256 proposalId)
 ```
 
 _Create proposal_
@@ -3433,15 +3480,15 @@ _Create proposal_
 | ballotLifespan | uint256 | Ballot lifespan |
 | ballotQuorumThreshold | uint256 | Ballot quorum threshold |
 | ballotDecisionThreshold | uint256 | Ballot decision threshold |
-| target | address | Target |
-| value | uint256 | Value |
+| targets | address[] | Targets |
+| values | uint256[] | Values |
 | callData | bytes | Calldata |
 | description | string | Description |
 | totalSupply | uint256 | Total supply |
 | execDelay | uint256 | Execution delay |
 | proposalType | enum IProposalGateway.ProposalType | Proposal type |
-| amountERC20 | uint256 | Amount ERC20 |
-| metaHash | string |  |
+| metaHash | string | Hash value of proposal metadata |
+| token_ | address | token for payment proposal |
 
 #### Return Values
 
@@ -3484,7 +3531,7 @@ _Execute proposal_
 ### isDelayCleared
 
 ```solidity
-function isDelayCleared(contract IPool pool, uint256 proposalId) public returns (bool)
+function isDelayCleared(contract IPool pool, uint256 proposalId, uint256 index) public returns (bool)
 ```
 
 _Return: is proposal block delay cleared. Block delay is applied based on proposal type and pool governance settings._
@@ -3495,6 +3542,7 @@ _Return: is proposal block delay cleared. Block delay is applied based on propos
 | ---- | ---- | ----------- |
 | pool | contract IPool | Pool address |
 | proposalId | uint256 | Proposal ID |
+| index | uint256 |  |
 
 #### Return Values
 
@@ -3574,7 +3622,7 @@ function addProposalRecord(address pool, uint256 proposalId) external returns (u
 ### addEventRecord
 
 ```solidity
-function addEventRecord(address pool, enum IDirectory.EventType eventType, uint256 proposalId, string description, string metaHash) external returns (uint256 index)
+function addEventRecord(address pool, enum IDirectory.EventType eventType, uint256 proposalId, string metaHash) external returns (uint256 index)
 ```
 
 ### typeOf
@@ -3756,7 +3804,13 @@ function setGovernanceSettings(uint256 ballotQuorumThreshold_, uint256 ballotDec
 ### proposeSingleAction
 
 ```solidity
-function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IProposalGateway.ProposalType proposalType, uint256 amountERC20, string metaHash) external returns (uint256 proposalId)
+function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IProposalGateway.ProposalType proposalType, string metaHash) external returns (uint256 proposalId)
+```
+
+### proposeTransfer
+
+```solidity
+function proposeTransfer(address[] targets, uint256[] values, string description, enum IProposalGateway.ProposalType proposalType, string metaHash, address token_) external returns (uint256 proposalId)
 ```
 
 ### serviceCancelBallot
@@ -3868,7 +3922,7 @@ function addProposal(uint256 proposalId) external
 ### addEvent
 
 ```solidity
-function addEvent(enum IDirectory.EventType eventType, uint256 proposalId, string description, string metaHash) external
+function addEvent(enum IDirectory.EventType eventType, uint256 proposalId, string metaHash) external
 ```
 
 ### directory
@@ -4324,6 +4378,12 @@ string SERVICE_PAUSED
 
 ```solidity
 string INVALID_PROPOSAL_TYPE
+```
+
+### EXECUTION_FAILED
+
+```solidity
+string EXECUTION_FAILED
 ```
 
 ## ERC20Mock
