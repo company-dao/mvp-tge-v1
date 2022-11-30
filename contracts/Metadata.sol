@@ -226,6 +226,19 @@ contract Metadata is
         return flag;
     }
 
+    function avaliableCompaniesCount(uint256 jurisdiction) external view returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 1; i <= currentId; i++) {
+            if (
+                queueInfo[i].jurisdiction == jurisdiction &&
+                queueInfo[i].status == Status.NotUsed
+            ) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
     modifier onlyService() {
         require(msg.sender == address(service), ExceptionsLibrary.NOT_SERVICE);
         _;

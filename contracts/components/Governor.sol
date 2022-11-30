@@ -159,7 +159,7 @@ abstract contract Governor {
             proposal.ballotQuorumThreshold);
         uint256 totalCastVotes = proposal.forVotes + proposal.againstVotes;
 
-        ProposalState aheadOfTimeBallotResult = AheadOfTimeBallotResult(totalCastVotes, quorumVotes,
+        ProposalState aheadOfTimeBallotResult = aheadOfTimeBallot(totalCastVotes, quorumVotes,
                                 proposal, totalAvailableVotes);
         if (aheadOfTimeBallotResult != ProposalState.None) {
             return aheadOfTimeBallotResult;
@@ -168,7 +168,7 @@ abstract contract Governor {
         if (block.number > proposal.endBlock) {
             if (
                 totalCastVotes >= quorumVotes &&
-                proposal.forVotes * 10000 >
+                proposal.forVotes * 10000 >=
                 totalCastVotes * proposal.ballotDecisionThreshold
             ) {
                 return ProposalState.Successful;
@@ -177,25 +177,21 @@ abstract contract Governor {
         return ProposalState.Active;
     }
 
-    function AheadOfTimeBallotResult(uint256 totalCastVotes, uint256 quorumVotes, Proposal memory proposal, uint256  totalAvailableVotes) public pure returns (ProposalState) {
-        uint256 DONT_KNOW_HOW_TO_NAME_THIS = totalCastVotes * proposal.ballotDecisionThreshold;
-        uint256 minimumForVotes = totalAvailableVotes * proposal.ballotDecisionThreshold;
+    function aheadOfTimeBallot(uint256 totalCastVotes, uint256 quorumVotes, Proposal memory proposal, uint256  totalAvailableVotes) public pure returns (ProposalState) {
+        uint256 decisionVotes = totalCastVotes * proposal.ballotDecisionThreshold;
+        uint256 minForVotes = totalAvailableVotes * proposal.ballotDecisionThreshold;
 
         if (
             totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
-            proposal.forVotes * 10000 >
-            DONT_KNOW_HOW_TO_NAME_THIS && // * 10000 because 10000 = 100%
-            proposal.forVotes * 10000 >=
-            minimumForVotes
+            proposal.forVotes * 10000 >= decisionVotes && // * 10000 because 10000 = 100%
+            proposal.forVotes * 10000 >= minForVotes
         ) {
             return ProposalState.Successful;
         }
         if (
             totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
-            proposal.againstVotes * 10000 >
-            DONT_KNOW_HOW_TO_NAME_THIS && // * 10000 because 10000 = 100%
-            (totalAvailableVotes - proposal.againstVotes) * 10000 <
-            minimumForVotes
+            proposal.forVotes * 10000 < decisionVotes && // * 10000 because 10000 = 100%
+            (totalAvailableVotes - proposal.againstVotes) * 10000 < minForVotes
         ) {
             return ProposalState.Failed;
         }
