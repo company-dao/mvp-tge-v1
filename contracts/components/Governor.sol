@@ -2,14 +2,16 @@
 
 pragma solidity 0.8.17;
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "../libraries/ExceptionsLibrary.sol";
 import "../interfaces/IService.sol";
 import "../interfaces/IPool.sol";
-import "../interfaces/IDirectory.sol";
-import "../interfaces/IProposalGateway.sol";
+import "../interfaces/IDispatcher.sol";
 
 /// @dev Proposal module for Pool's Governance Token
 abstract contract Governor {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
     /**
      * @dev Proposal structure
      * @param ballotQuorumThreshold Ballot quorum threshold
@@ -46,7 +48,7 @@ abstract contract Governor {
         string description;
         uint256 totalSupply;
         uint256 lastVoteBlock;
-        IProposalGateway.ProposalType proposalType;
+        IDispatcher.ProposalType proposalType;
         uint256 execDelay;
         string metaHash;
         address token;
@@ -129,6 +131,12 @@ abstract contract Governor {
      */
     event ProposalCancelled(uint256 proposalId);
 
+    /**
+     * @dev Event emitted on error in try/catch block
+     * @param data Error data
+     */
+    event ErrorCaugth(bytes data);
+
     // PUBLIC VIEW FUNCTIONS
 
     /**
@@ -154,16 +162,15 @@ abstract contract Governor {
         }
 
         uint256 totalAvailableVotes = _getTotalSupply() -
-            _getTotalTGELockedTokens();
+            _getTotalTGEVestedTokens();
         uint256 quorumVotes = (totalAvailableVotes *
             proposal.ballotQuorumThreshold);
         uint256 totalCastVotes = proposal.forVotes + proposal.againstVotes;
 
         ProposalState aheadOfTimeBallotResult = aheadOfTimeBallot(totalCastVotes, quorumVotes,
                                 proposal, totalAvailableVotes);
-        if (aheadOfTimeBallotResult != ProposalState.None) {
+        if (aheadOfTimeBallotResult != ProposalState.None)
             return aheadOfTimeBallotResult;
-        } 
 
         if (block.number > proposal.endBlock) {
             if (
@@ -175,9 +182,15 @@ abstract contract Governor {
             } else return ProposalState.Failed;
         }
         return ProposalState.Active;
+
     }
 
-    function aheadOfTimeBallot(uint256 totalCastVotes, uint256 quorumVotes, Proposal memory proposal, uint256  totalAvailableVotes) public pure returns (ProposalState) {
+    function aheadOfTimeBallot(
+        uint256 totalCastVotes, 
+        uint256 quorumVotes, 
+        Proposal memory proposal, 
+        uint256 totalAvailableVotes
+    ) public pure returns (ProposalState) {
         uint256 decisionVotes = totalCastVotes * proposal.ballotDecisionThreshold;
         uint256 minForVotes = totalAvailableVotes * proposal.ballotDecisionThreshold;
 
@@ -197,46 +210,6 @@ abstract contract Governor {
         }
 
         return ProposalState.None;
-    }
-
-    /**
-     * @dev Return proposal quorum threshold
-     * @param proposalId Proposal ID
-     * @return Quorum threshold
-     */
-    function getProposalBallotQuorumThreshold(uint256 proposalId)
-        public
-        view
-        returns (uint256)
-    {
-        return _proposals[proposalId].ballotQuorumThreshold;
-    }
-
-    /**
-     * @dev Return proposal decsision threshold
-     * @param proposalId Proposal ID
-     * @return Decision threshold
-     */
-    function getProposalBallotDecisionThreshold(uint256 proposalId)
-        public
-        view
-        returns (uint256)
-    {
-        return _proposals[proposalId].ballotDecisionThreshold;
-    }
-
-    /**
-     * @dev Return proposal lifespan
-     * @param proposalId Proposal ID
-     * @return Lifespan
-     */
-    function getProposalBallotLifespan(uint256 proposalId)
-        public
-        view
-        returns (uint256)
-    {
-        return
-            _proposals[proposalId].endBlock - _proposals[proposalId].startBlock;
     }
 
     /**
@@ -280,19 +253,6 @@ abstract contract Governor {
         return _againstVotes[user][proposalId];
     }
 
-    /**
-     * @dev Return proposal type
-     * @param proposalId Proposal ID
-     * @return Proposal type
-     */
-    function _getProposalType(uint256 proposalId)
-        internal
-        view
-        returns (IProposalGateway.ProposalType)
-    {
-        return _proposals[proposalId].proposalType;
-    }
-
     // INTERNAL FUNCTIONS
 
     /**
@@ -321,7 +281,7 @@ abstract contract Governor {
         string memory description,
         uint256 totalSupply,
         uint256 execDelay,
-        IProposalGateway.ProposalType proposalType,
+        IDispatcher.ProposalType proposalType,
         string memory metaHash,
         address token_
     ) internal returns (uint256 proposalId) {
@@ -384,7 +344,7 @@ abstract contract Governor {
 
         _proposals[proposalId].lastVoteBlock = block.number;
         _proposals[proposalId].totalSupply = _getTotalSupply() -
-            _getTotalTGELockedTokens();
+            _getTotalTGEVestedTokens();
 
         emit VoteCast(msg.sender, proposalId, votes, support);
     }
@@ -393,12 +353,10 @@ abstract contract Governor {
      * @dev Execute proposal
      * @param proposalId Proposal ID
      * @param service Service address
-     * @param pool Pool address
      */
     function _executeBallot(
         uint256 proposalId,
-        IService service,
-        IPool pool
+        IService service
     ) internal {
         Proposal memory proposal = _proposals[proposalId];
 
@@ -411,61 +369,60 @@ abstract contract Governor {
             ExceptionsLibrary.ALREADY_EXECUTED
         );
 
-        // Mitigate against FlashLoan attacks
-        require(
-            proposal.lastVoteBlock + proposal.execDelay <= block.number,
-            ExceptionsLibrary.BLOCK_DELAY
-        );
+        if (block.number >= proposal.endBlock) {
+            require(block.number >= proposal.endBlock + proposal.execDelay, ExceptionsLibrary.BLOCK_DELAY);
+        } else {
+            require(block.number >= proposal.lastVoteBlock + proposal.execDelay, ExceptionsLibrary.BLOCK_DELAY);
+        }
 
         _proposals[proposalId].executed = true;
         bool success = false;
         for (uint256 i = 0; i < proposal.targets.length; i++) {
              // Give pool shareholders time to cancel bugged/hacked ballot execution
             require(
-                isDelayCleared(pool, proposalId, i),
+                isDelayCleared(IPool(address(this)), proposalId, i),
                 ExceptionsLibrary.BLOCK_DELAY
             );
-            if (proposal.proposalType != IProposalGateway.ProposalType.TransferERC20) {
+            if (proposal.proposalType != IDispatcher.ProposalType.TransferERC20) {
                 (success, ) = proposal.targets[i].call{
                     value: proposal.values[i]
                 }(proposal.callData);
+                require(success, ExceptionsLibrary.EXECUTION_FAILED);
             } else {
-                success = IERC20Upgradeable(proposal.token).transfer(proposal.targets[i], proposal.values[i]);
+                IERC20Upgradeable(proposal.token).safeTransfer(proposal.targets[i], proposal.values[i]);
             }
-
-            require(success, ExceptionsLibrary.EXECUTION_FAILED);
         }
 
         if (
-            proposal.proposalType == IProposalGateway.ProposalType.TransferETH
+            proposal.proposalType == IDispatcher.ProposalType.TransferETH
         ) {
             service.addEvent(
-                IDirectory.EventType.TransferETH,
+                IDispatcher.EventType.TransferETH,
                 proposalId,
                 proposal.metaHash
             );
         }
 
         if (
-            proposal.proposalType == IProposalGateway.ProposalType.TransferERC20
+            proposal.proposalType == IDispatcher.ProposalType.TransferERC20
         ) {
             service.addEvent(
-                IDirectory.EventType.TransferERC20,
+                IDispatcher.EventType.TransferERC20,
                 proposalId,
                 proposal.metaHash
             );
         }
 
-        if (proposal.proposalType == IProposalGateway.ProposalType.TGE) {
-            service.addEvent(IDirectory.EventType.TGE, proposalId, proposal.metaHash);
+        if (proposal.proposalType == IDispatcher.ProposalType.TGE) {
+            service.addEvent(IDispatcher.EventType.TGE, proposalId, proposal.metaHash);
         }
 
         if (
             proposal.proposalType ==
-            IProposalGateway.ProposalType.GovernanceSettings
+            IDispatcher.ProposalType.GovernanceSettings
         ) {
             service.addEvent(
-                IDirectory.EventType.GovernanceSettings,
+                IDispatcher.EventType.GovernanceSettings,
                 proposalId,
                 proposal.metaHash
             );
@@ -485,7 +442,7 @@ abstract contract Governor {
         returns (bool)
     {
         Proposal memory proposal = _proposals[proposalId];
-        uint256 valueUSDT = 0;
+        uint256 assetValue = 0;
 
         // proposal type based delay
         uint256 delay = pool.ballotExecDelay(
@@ -495,15 +452,15 @@ abstract contract Governor {
         // delay for transfer type proposals
         if (
             proposal.proposalType ==
-            IProposalGateway.ProposalType.TransferETH ||
-            proposal.proposalType == IProposalGateway.ProposalType.TransferERC20
+            IDispatcher.ProposalType.TransferETH ||
+            proposal.proposalType == IDispatcher.ProposalType.TransferERC20
         ) {
-            address from = pool.service().weth();
+            address from = pool.service().secondaryAsset();
             uint256 amount = proposal.values[index];
 
             if (
                 proposal.proposalType ==
-                IProposalGateway.ProposalType.TransferERC20
+                IDispatcher.ProposalType.TransferERC20
             ) {
                 from = proposal.targets[index];
                 amount = proposal.values[index];
@@ -517,17 +474,19 @@ abstract contract Governor {
             // In order to prevent executing proposals by temporary making token pair/pool not supported by uniswap (which would cause revert and allow proposal to be executed)
             try
                 pool.service().uniswapQuoter().quoteExactInput(
-                    abi.encodePacked(from, uint24(3000), pool.service().usdt()),
+                    abi.encodePacked(from, uint24(3000), pool.service().primaryAsset()),
                     amount
                 )
             returns (uint256 v) {
-                valueUSDT = v;
+                assetValue = v;
             } catch (
-                bytes memory /*lowLevelData*/
-            ) {}
+                bytes memory data /*lowLevelData*/
+            ) {
+                emit ErrorCaugth(data);
+            }
 
             if (
-                valueUSDT >= pool.ballotExecDelay(0) &&
+                assetValue >= pool.ballotExecDelay(0) &&
                 block.number <= delay + proposal.lastVoteBlock
             ) {
                 return false;
@@ -536,9 +495,9 @@ abstract contract Governor {
 
         // delay for non transfer type proposals
         if (
-            proposal.proposalType == IProposalGateway.ProposalType.TGE ||
+            proposal.proposalType == IDispatcher.ProposalType.TGE ||
             proposal.proposalType ==
-            IProposalGateway.ProposalType.GovernanceSettings
+            IDispatcher.ProposalType.GovernanceSettings
         ) {
             if (block.number <= delay + proposal.lastVoteBlock) {
                 return false;
@@ -568,5 +527,5 @@ abstract contract Governor {
 
     function _getTotalSupply() internal view virtual returns (uint256);
 
-    function _getTotalTGELockedTokens() internal view virtual returns (uint256);
+    function _getTotalTGEVestedTokens() internal view virtual returns (uint256);
 }

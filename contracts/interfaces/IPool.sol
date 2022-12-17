@@ -3,28 +3,19 @@
 pragma solidity 0.8.17;
 
 import "./IService.sol";
-import "./ITGE.sol";
-import "./IGovernanceToken.sol";
-import "./IProposalGateway.sol";
+import "./IToken.sol";
+import "./IDispatcher.sol";
 
 interface IPool {
     function initialize(
-        address poolCreator_,
         uint256 jurisdiction_,
-        string memory poolEIN_,
+        string memory EIN_,
         string memory dateOfIncorporation,
         uint256 entityType,
-        uint256 ballotQuorumThreshold_,
-        uint256 ballotDecisionThreshold_,
-        uint256 ballotLifespan_,
-        uint256[10] memory ballotExecDelay_,
-        uint256 metadataIndex,
-        string memory trademark
+        uint256 metadataIndex
     ) external;
 
     function setToken(address token_) external;
-
-    function setTGE(address tge_) external;
 
     function setPrimaryTGE(address tge_) external;
 
@@ -40,7 +31,7 @@ interface IPool {
         uint256 value,
         bytes memory cd,
         string memory description,
-        IProposalGateway.ProposalType proposalType,
+        IDispatcher.ProposalType proposalType,
         string memory metaHash
     ) external returns (uint256 proposalId);
 
@@ -48,10 +39,12 @@ interface IPool {
         address[] memory targets,
         uint256[] memory values,
         string memory description,
-        IProposalGateway.ProposalType proposalType,
+        IDispatcher.ProposalType proposalType,
         string memory metaHash,
         address token_
     ) external returns (uint256 proposalId);
+
+    function setLastProposalIdForAccount(address creator, uint256 proposalId) external;
 
     function serviceCancelBallot(uint256 proposalId) external;
 
@@ -61,22 +54,34 @@ interface IPool {
 
     function service() external view returns (IService);
 
-    function token() external view returns (IGovernanceToken);
+    function token() external view returns (IToken);
 
-    function tge() external view returns (ITGE);
+    function lastTGE() external view returns (address);
+
+    function getGovernanceTGEList() external view returns (address[] memory);
+
+    function primaryTGE() external view returns (address);
 
     function maxProposalId() external view returns (uint256);
 
     function isDAO() external view returns (bool);
 
-    function getPoolTrademark() external view returns (string memory);
+    function trademark() external view returns (string memory);
 
     function addTGE(address tge_) external;
 
-    function getProposalType(uint256 proposalId)
-        external
-        view
-        returns (IProposalGateway.ProposalType);
-
     function ballotExecDelay(uint256 _index) external view returns (uint256);
+
+    function paused() external view returns (bool);
+
+    function launch(
+        address owner_,
+        uint256 ballotQuorumThreshold_,
+        uint256 ballotDecisionThreshold_,
+        uint256 ballotLifespan_,
+        uint256[10] memory ballotExecDelay_,
+        string memory trademark
+    ) external;
+
+    function addPreferenceToken(address token_) external;
 }

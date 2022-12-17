@@ -15,33 +15,32 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
     getProxyAddress("Service")
   );
 
-  const tge = await ethers.getContractAt(
-    "TGE",
-    getProxyAddress("TGE")
+  const dispatcher = await ethers.getContractAt(
+    "Dispatcher",
+    getProxyAddress("Dispatcher")
   );
 
-  const pool = await ethers.getContractAt(
-    "Pool",
-    getProxyAddress("Pool")
-  );
-
-  const metadata = await ethers.getContractAt(
-    "Metadata",
-    getProxyAddress("Metadata")
-  );
-
-  const metadataCurrentId = await metadata.currentId();
+  const metadataCurrentId = await dispatcher.currentId();
   const nextMetadataId = metadataCurrentId.toNumber() + 1;
   console.log("nextMetadataId: " + nextMetadataId);
 
   // let t = await service.addUserToWhitelist("0x01d50e3899A79791c2448B9f489ae0Be30Dbd345");
   // await t.wait(1);
 
-  t = await metadata.createRecord(
+  let tx;
+  const deployer = await hre.ethers.provider.getSigner().getAddress(); // "0x01d50e3899A79791c2448B9f489ae0Be30Dbd345"
+
+  if (!(await service.isUserWhitelisted(deployer))) {
+    tx = await service.addUserToWhitelist(deployer);
+    await tx.wait(1);
+  } 
+
+  t = await dispatcher.createRecord(
     nextMetadataId,
     "serial",
     "date",
     123123,
+    1000000000000000
   );
   await t.wait(1);
 
@@ -50,7 +49,6 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
   t = await service.createPool(
     "0x0000000000000000000000000000000000000000",
     [
-        "NAME"+nextMetadataId,
         "SYMBOL"+nextMetadataId,
         "" + 10*10**18,
     ],
@@ -70,10 +68,11 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
     ],
     "1",
     "1",
-    "505",
+    "10",
     nextMetadataId,
     ballotExecDelay,
     "hhhj"+nextMetadataId,
+    123123,
     {value: 1000000000000000}
     );
   await t.wait(1);
@@ -83,5 +82,5 @@ task("createPool", "Sets up pool").setAction(async (taskArgs, hre) => {
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };

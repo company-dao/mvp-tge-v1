@@ -5,14 +5,13 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./components/Governor.sol";
 import "./interfaces/IService.sol";
 import "./interfaces/IPool.sol";
-import "./interfaces/IGovernanceToken.sol";
+import "./interfaces/IToken.sol";
 import "./interfaces/ITGE.sol";
-import "./interfaces/IWhitelistedTokens.sol";
-import "./interfaces/IMetadata.sol";
-import "./interfaces/IProposalGateway.sol";
+import "./interfaces/IDispatcher.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
 /// @dev Company Entry Point
@@ -20,6 +19,7 @@ contract Pool is
     Initializable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
     IPool,
     Governor
 {
@@ -27,46 +27,40 @@ contract Pool is
     IService public service;
 
     /// @dev Pool token address
-    IGovernanceToken public token;
-
-    /// @dev Last TGE address
-    ITGE public tge;
+    IToken public token;
 
     /// @dev Minimum amount of votes that ballot must receive
-    uint256 private _ballotQuorumThreshold;
+    uint256 public ballotQuorumThreshold;
 
     /// @dev Minimum amount of votes that ballot's choice must receive in order to pass
-    uint256 private _ballotDecisionThreshold;
+    uint256 public ballotDecisionThreshold;
 
     /// @dev Ballot voting duration, blocks
-    uint256 private _ballotLifespan;
-
-    /// @dev Pool name
-    string private _poolRegisteredName;
+    uint256 public ballotLifespan;
 
     /// @dev Pool trademark
-    string private _poolTrademark;
+    string public trademark;
 
     /// @dev Pool jurisdiction
-    uint256 private _poolJurisdiction;
+    uint256 public jurisdiction;
 
     /// @dev Pool EIN
-    string private _poolEIN;
+    string public EIN;
 
     /// @dev Metadata pool record index
-    uint256 private _poolMetadataIndex;
+    uint256 public metadataIndex;
 
     /// @dev Pool entity type
-    uint256 private _poolEntityType;
+    uint256 public entityType;
 
     /// @dev Pool date of incorporatio
-    string private _poolDateOfIncorporation;
+    string public dateOfIncorporation;
 
     /// @dev Pool's first TGE
     address public primaryTGE;
 
-    /// @dev List of all pool's TGEs
-    address[] private _tgeList;
+    /// @dev List of all governance pool's TGEs
+    address[] private _governanceTGEList;
 
     /**
      * @dev block delay for executeBallot
@@ -82,6 +76,12 @@ contract Pool is
     /// @dev last proposal id created by account
     mapping(address => uint256) public lastProposalIdForAccount;
 
+    /// @dev Is pool launched or not
+    bool public poolLaunched;
+
+    /// @dev List of all pool's preference tokens
+    address[] private _preferenceTokenList;
+
     // INITIALIZER AND CONFIGURATOR
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -91,57 +91,61 @@ contract Pool is
 
     /**
      * @dev Create TransferETH proposal
-     * @param poolCreator_ Pool owner
      * @param jurisdiction_ Jurisdiction
-     * @param poolEIN_ EIN
-     * @param dateOfIncorporation Date of incorporation
-     * @param poolEntityType_ Entity type
+     * @param EIN_ EIN
+     * @param dateOfIncorporation_ Date of incorporation
+     * @param entityType_ Entity type
+     * @param metadataIndex_ Metadata index
+     */
+    function initialize(
+        uint256 jurisdiction_,
+        string memory EIN_,
+        string memory dateOfIncorporation_,
+        uint256 entityType_,
+        uint256 metadataIndex_
+    ) external initializer {
+        __Ownable_init();
+
+        service = IService(IDispatcher(msg.sender).service());
+        _transferOwnership(address(service));
+        jurisdiction = jurisdiction_;
+        EIN = EIN_;
+        dateOfIncorporation = dateOfIncorporation_;
+        entityType = entityType_;
+        metadataIndex = metadataIndex_;
+    }
+
+    /**
+     * @dev Create TransferETH proposal
+     * @param owner_ Pool owner
      * @param ballotQuorumThreshold_ Ballot quorum threshold
      * @param ballotDecisionThreshold_ Ballot decision threshold
      * @param ballotLifespan_ Ballot lifespan
      * @param ballotExecDelay_ Ballot execution delay parameters
-     * @param metadataIndex Metadata index
-     * @param trademark Trademark
+     * @param trademark_ Trademark
      */
-    function initialize(
-        address poolCreator_,
-        uint256 jurisdiction_,
-        string memory poolEIN_,
-        string memory dateOfIncorporation,
-        uint256 poolEntityType_,
+    function launch(
+        address owner_,
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
         uint256 ballotLifespan_,
         uint256[10] memory ballotExecDelay_,
-        uint256 metadataIndex,
-        string memory trademark
-    ) public initializer {
-        require(poolCreator_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        string memory trademark_
+    ) external onlyService unlaunched {
+        poolLaunched = true;
+        _transferOwnership(owner_);
 
-        __Ownable_init();
-
-        service = IService(msg.sender);
-        _transferOwnership(poolCreator_);
-        _poolJurisdiction = jurisdiction_;
-        _poolEIN = poolEIN_;
-        _poolDateOfIncorporation = dateOfIncorporation;
-        _poolEntityType = poolEntityType_;
-        _poolTrademark = trademark;
-        _poolMetadataIndex = metadataIndex;
-
-        require(
-            ballotQuorumThreshold_ <= 10000,
-            ExceptionsLibrary.INVALID_VALUE
+        service.dispatcher().validateBallotParams(
+            ballotQuorumThreshold_,
+            ballotDecisionThreshold_,
+            ballotLifespan_, 
+            ballotExecDelay_
         );
-        require(
-            ballotDecisionThreshold_ <= 10000,
-            ExceptionsLibrary.INVALID_VALUE
-        );
-        require(ballotLifespan_ > 0, ExceptionsLibrary.INVALID_VALUE);
 
-        _ballotQuorumThreshold = ballotQuorumThreshold_;
-        _ballotDecisionThreshold = ballotDecisionThreshold_;
-        _ballotLifespan = ballotLifespan_;
+        trademark = trademark_;
+        ballotQuorumThreshold = ballotQuorumThreshold_;
+        ballotDecisionThreshold = ballotDecisionThreshold_;
+        ballotLifespan = ballotLifespan_;
         ballotExecDelay = ballotExecDelay_;
     }
 
@@ -149,54 +153,25 @@ contract Pool is
      * @dev Set pool governance token
      * @param token_ Token address
      */
-    function setToken(address token_) external onlyService {
+    function setToken(address token_) external onlyService launched {
         require(token_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
-        token = IGovernanceToken(token_);
-    }
-
-    /**
-     * @dev Set pool TGE
-     * @param tge_ TGE address
-     */
-    function setTGE(address tge_) external onlyService {
-        require(tge_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-
-        tge = ITGE(tge_);
+        token = IToken(token_);
     }
 
     /**
      * @dev Set pool primary TGE
      * @param tge_ TGE address
      */
-    function setPrimaryTGE(address tge_) external onlyService {
+    function setPrimaryTGE(address tge_) external onlyService launched {
         require(tge_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
         primaryTGE = tge_;
     }
 
     /**
-     * @dev Set pool registered name
-     * @param registeredName Registered name
-     */
-    function setRegisteredName(string memory registeredName)
-        external
-        onlyServiceOwner
-    {
-        require(
-            bytes(_poolRegisteredName).length == 0,
-            ExceptionsLibrary.ALREADY_SET
-        );
-        require(
-            bytes(registeredName).length != 0,
-            ExceptionsLibrary.VALUE_ZERO
-        );
-        _poolRegisteredName = registeredName;
-    }
-
-    /**
      * @dev Set Service governance settings
-     * @param ballotQuorumThreshold_ Ballot quorum theshold
+     * @param ballotQuorumThreshold_ Ballot quorum threshold
      * @param ballotDecisionThreshold_ Ballot decision threshold
      * @param ballotLifespan_ Ballot lifespan
      * @param ballotExecDelay_ Ballot execution delay parameters
@@ -206,26 +181,17 @@ contract Pool is
         uint256 ballotDecisionThreshold_,
         uint256 ballotLifespan_,
         uint256[10] calldata ballotExecDelay_
-    ) external onlyPool whenServiceNotPaused {
-        require(
-            ballotQuorumThreshold_ <= 10000,
-            ExceptionsLibrary.INVALID_VALUE
-        );
-        require(
-            ballotDecisionThreshold_ <= 10000,
-            ExceptionsLibrary.INVALID_VALUE
-        );
-        require(ballotLifespan_ > 0, ExceptionsLibrary.INVALID_VALUE);
-
-        // zero value allows FlashLoan attacks against executeBallot
-        require(
-            ballotExecDelay_[1] > 0 && ballotExecDelay_[1] < 20,
-            ExceptionsLibrary.INVALID_VALUE
+    ) external onlyPool whenNotPaused launched {
+        service.dispatcher().validateBallotParams(
+            ballotQuorumThreshold_,
+            ballotDecisionThreshold_,
+            ballotLifespan_, 
+            ballotExecDelay_
         );
 
-        _ballotQuorumThreshold = ballotQuorumThreshold_;
-        _ballotDecisionThreshold = ballotDecisionThreshold_;
-        _ballotLifespan = ballotLifespan_;
+        ballotQuorumThreshold = ballotQuorumThreshold_;
+        ballotDecisionThreshold = ballotDecisionThreshold_;
+        ballotLifespan = ballotLifespan_;
         ballotExecDelay = ballotExecDelay_;
     }
 
@@ -241,7 +207,7 @@ contract Pool is
         uint256 proposalId,
         uint256 votes,
         bool support
-    ) external nonReentrant whenServiceNotPaused {
+    ) external nonReentrant whenNotPaused launched {
         if (votes == type(uint256).max) {
             votes = token.unlockedBalanceOf(msg.sender, proposalId);
         } else {
@@ -251,22 +217,18 @@ contract Pool is
             );
         }
         require(votes > 0, ExceptionsLibrary.VALUE_ZERO);
-        // TODO: do not let to change votes (if have forVotes dont let vote against)
-        // if (support) {
-        //     proposals[proposalId].againstVotes
-        // }
+
         _castVote(proposalId, votes, support);
         token.lock(
             msg.sender,
             votes,
-            support,
             getProposal(proposalId).endBlock,
             proposalId
         );
     }
 
     /**
-     * @dev Create pool propsal
+     * @dev Create pool proposal
      * @param target Proposal transaction recipient
      * @param value Amount of ETH token
      * @param cd Calldata to pass on in .call() to transaction recipient
@@ -280,12 +242,13 @@ contract Pool is
         uint256 value,
         bytes memory cd,
         string memory description,
-        IProposalGateway.ProposalType proposalType,
+        IDispatcher.ProposalType proposalType,
         string memory metaHash
     )
         external
         onlyProposalGateway
-        whenServiceNotPaused
+        whenNotPaused
+        launched
         returns (uint256 proposalId)
     {
         address[] memory targets = new address[](1);
@@ -294,26 +257,25 @@ contract Pool is
         values[0] = value;
 
         proposalId = _propose(
-            _ballotLifespan,
-            _ballotQuorumThreshold,
-            _ballotDecisionThreshold,
+            ballotLifespan,
+            ballotQuorumThreshold,
+            ballotDecisionThreshold,
             targets,
             values,
             cd,
             description,
             _getTotalSupply() -
-                _getTotalTGELockedTokens() -
+                _getTotalTGEVestedTokens() -
                 token.balanceOf(service.protocolTreasury()),
-            service.ballotExecDelay(1),
+            service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
             address(0)
         );
-        lastProposalIdForAccount[tx.origin] = proposalId;
     }
 
     /**
-     * @dev Create pool propsal
+     * @dev Create pool proposal
      * @param targets Proposal transaction recipients
      * @param values Amounts of ETH token
      * @param description Proposal description
@@ -326,40 +288,52 @@ contract Pool is
         address[] memory targets,
         uint256[] memory values,
         string memory description,
-        IProposalGateway.ProposalType proposalType,
+        IDispatcher.ProposalType proposalType,
         string memory metaHash,
         address token_
     )
         external
         onlyProposalGateway
-        whenServiceNotPaused
+        whenNotPaused
+        launched
         returns (uint256 proposalId)
     {
         proposalId = _propose(
-            _ballotLifespan,
-            _ballotQuorumThreshold,
-            _ballotDecisionThreshold,
+            ballotLifespan,
+            ballotQuorumThreshold,
+            ballotDecisionThreshold,
             targets,
             values,
             "",
             description,
             _getTotalSupply() -
-                _getTotalTGELockedTokens() -
+                _getTotalTGEVestedTokens() -
                 token.balanceOf(service.protocolTreasury()),
-            service.ballotExecDelay(1),
+            service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
             token_
         );
-        lastProposalIdForAccount[tx.origin] = proposalId;
+    }
+
+    function setLastProposalIdForAccount(address creator, uint256 proposalId) external onlyProposalGateway launched {
+        lastProposalIdForAccount[creator] = proposalId;
     }
 
     /**
      * @dev Add TGE to TGE archive list
      * @param tge_ TGE address
      */
-    function addTGE(address tge_) external onlyService {
-        _tgeList.push(tge_);
+    function addTGE(address tge_) external onlyService launched {
+        _governanceTGEList.push(tge_);
+    }
+
+    /**
+     * @dev Add TGE to TGE archive list
+     * @param token_ Preference token address
+     */
+    function addPreferenceToken(address token_) external onlyService launched {
+        _preferenceTokenList.push(token_);
     }
 
     /**
@@ -368,8 +342,8 @@ contract Pool is
      */
     function getTVL() public returns (uint256) {
         IQuoter quoter = service.uniswapQuoter();
-        IWhitelistedTokens whitelistedTokens = service.whitelistedTokens();
-        address[] memory tokenWhitelist = whitelistedTokens.tokenWhitelist(); // service.tokenWhitelist();
+        IDispatcher dispatcher = service.dispatcher();
+        address[] memory tokenWhitelist = dispatcher.tokenWhitelist();
         uint256 tvl = 0;
 
         for (uint256 i = 0; i < tokenWhitelist.length; i++) {
@@ -380,7 +354,7 @@ contract Pool is
                     .balanceOf(address(this));
                 if (balance > 0) {
                     tvl += quoter.quoteExactInput(
-                        whitelistedTokens.tokenSwapPath(tokenWhitelist[i]),
+                        dispatcher.tokenSwapPath(tokenWhitelist[i]),
                         balance
                     );
                 }
@@ -393,16 +367,30 @@ contract Pool is
      * @dev Execute proposal
      * @param proposalId Proposal ID
      */
-    function executeBallot(uint256 proposalId) external whenServiceNotPaused {
-        _executeBallot(proposalId, service, IPool(address(this)));
+    function executeBallot(uint256 proposalId) external whenNotPaused launched {
+        _executeBallot(proposalId, service);
     }
 
     /**
      * @dev Cancel proposal, callable only by Service
      * @param proposalId Proposal ID
      */
-    function serviceCancelBallot(uint256 proposalId) external onlyService {
+    function serviceCancelBallot(uint256 proposalId) external onlyService launched {
         _cancelBallot(proposalId);
+    }
+
+    /**
+     * @dev Pause pool and corresponding TGEs and GovernanceToken
+     */
+    function pause() public onlyServiceOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Pause pool and corresponding TGEs and GovernanceToken
+     */
+    function unpause() public onlyServiceOwner {
+        _unpause();
     }
 
     // RECEIVE
@@ -414,90 +402,10 @@ contract Pool is
     // PUBLIC VIEW FUNCTIONS
 
     /**
-     * @dev Return pool trademark
-     * @return Trademark
-     */
-    function getPoolTrademark() external view returns (string memory) {
-        return _poolTrademark;
-    }
-
-    /**
-     * @dev Return pool registered name
-     * @return Registered name
-     */
-    function getPoolRegisteredName() public view returns (string memory) {
-        return _poolRegisteredName;
-    }
-
-    /**
-     * @dev Return pool proposal quorum threshold
-     * @return Ballot quorum threshold
-     */
-    function getBallotQuorumThreshold() public view returns (uint256) {
-        return _ballotQuorumThreshold;
-    }
-
-    /**
-     * @dev Return proposal decision threshold
-     * @return Ballot decision threshold
-     */
-    function getBallotDecisionThreshold() public view returns (uint256) {
-        return _ballotDecisionThreshold;
-    }
-
-    /**
-     * @dev Return proposal lifespan
-     * @return Proposal lifespan
-     */
-    function getBallotLifespan() public view returns (uint256) {
-        return _ballotLifespan;
-    }
-
-    /**
-     * @dev Return pool jurisdiction
-     * @return Jurisdiction
-     */
-    function getPoolJurisdiction() public view returns (uint256) {
-        return _poolJurisdiction;
-    }
-
-    /**
-     * @dev Return pool EIN
-     * @return EIN
-     */
-    function getPoolEIN() public view returns (string memory) {
-        return _poolEIN;
-    }
-
-    /**
-     * @dev Return pool data of incorporation
-     * @return Date of incorporation
-     */
-    function getPoolDateOfIncorporation() public view returns (string memory) {
-        return _poolDateOfIncorporation;
-    }
-
-    /**
-     * @dev Return pool entity type
-     * @return Entity type
-     */
-    function getPoolEntityType() public view returns (uint256) {
-        return _poolEntityType;
-    }
-
-    /**
-     * @dev Return pool metadata index
-     * @return Metadata index
-     */
-    function getPoolMetadataIndex() public view returns (uint256) {
-        return _poolMetadataIndex;
-    }
-
-    /**
      * @dev Return maximum proposal ID
      * @return Maximum proposal ID
      */
-    function maxProposalId() public view returns (uint256) {
+    function maxProposalId() external view returns (uint256) {
         return lastProposalId;
     }
 
@@ -505,7 +413,7 @@ contract Pool is
      * @dev Return if pool had a successful TGE
      * @return Is any TGE successful
      */
-    function isDAO() public view returns (bool) {
+    function isDAO() external view returns (bool) {
         return (ITGE(primaryTGE).state() == ITGE.State.Successful);
     }
 
@@ -513,8 +421,16 @@ contract Pool is
      * @dev Return list of pool's TGEs
      * @return TGE list
      */
-    function getTGEList() public view returns (address[] memory) {
-        return _tgeList;
+    function getGovernanceTGEList() external view returns (address[] memory) {
+        return _governanceTGEList;
+    }
+
+    /**
+     * @dev Return list of pool's TGEs
+     * @return TGE list
+     */
+    function lastTGE() external view returns (address) {
+        return _governanceTGEList[_governanceTGEList.length - 1];
     }
 
     /**
@@ -530,21 +446,16 @@ contract Pool is
         return super.owner();
     }
 
-    /**
-     * @dev Return type of proposal
-     * @param proposalId Proposal ID
-     * @return Proposal type
-     */
-    function getProposalType(uint256 proposalId)
-        public
-        view
-        returns (IProposalGateway.ProposalType)
-    {
-        return _getProposalType(proposalId);
+    function getBallotExecDelay() external view returns(uint256[10] memory) {
+        return ballotExecDelay;
     }
 
-    function getBallotExecDelay() public view returns(uint256[10] memory) {
-        return ballotExecDelay;
+    /**
+     * @dev Return list of pool's preference tokens
+     * @return TGE list
+     */
+    function getPreferenceTokenList() external view returns (address[] memory) {
+        return _preferenceTokenList;
     }
 
     // INTERNAL FUNCTIONS
@@ -562,22 +473,60 @@ contract Pool is
     }
 
     /**
-     * @dev Return amount of tokens currently locked in TGE vesting contract(s)
+     * @dev Return amount of tokens currently vested in TGE vesting contract(s)
      * @return Total pool vesting tokens
      */
-    function _getTotalTGELockedTokens()
+    function _getTotalTGEVestedTokens()
         internal
         view
         override
         returns (uint256)
     {
-        return token.totalTGELockedTokens();
+        return getTotalTGEVestedTokens();
+    }
+
+    /**
+     * @dev Return pool paused status
+     * @return Is pool paused
+     */
+    function paused()
+        public
+        view
+        override(IPool, PausableUpgradeable)
+        returns (bool)
+    {
+        // Pausable
+        return super.paused();
+    }   
+
+    /**
+     * @dev Return amount of tokens currently vested in TGE vesting contract(s)
+     * @return Total pool vesting tokens
+     */
+    function getTotalTGEVestedTokens() public view returns (uint256) {
+        address[] memory tgeList = _governanceTGEList;
+        uint256 totalVested = 0;
+        for (uint256 i; i < tgeList.length; i++) {
+            if (ITGE(tgeList[i]).state() != ITGE.State.Failed)
+                totalVested += ITGE(tgeList[i]).getTotalVested();
+        }
+        return totalVested;
     }
 
     // MODIFIER
 
     modifier onlyService() {
         require(msg.sender == address(service), ExceptionsLibrary.NOT_SERVICE);
+        _;
+    }
+
+    modifier launched() {
+        require(poolLaunched, ExceptionsLibrary.NOT_LAUNCHED);
+        _;
+    }
+
+    modifier unlaunched() {
+        require(!poolLaunched, ExceptionsLibrary.LAUNCHED);
         _;
     }
 
@@ -592,7 +541,7 @@ contract Pool is
     modifier onlyProposalGateway() {
         require(
             msg.sender == service.proposalGateway(),
-            ExceptionsLibrary.NOT_PROPOSAL_GATEWAY
+            ExceptionsLibrary.NOT_DISPATCHER
         );
         _;
     }
@@ -602,12 +551,7 @@ contract Pool is
         _;
     }
 
-    modifier whenServiceNotPaused() {
-        require(!service.paused(), ExceptionsLibrary.SERVICE_PAUSED);
-        _;
+    function test83212() external pure returns (uint256) {
+        return 3;
     }
-
-    // function test83212() external pure returns (uint256) {
-    //     return 3;
-    // }
 }

@@ -10,8 +10,8 @@ task("forceImport", "").setAction(async (taskArgs, hre) => {
   await hre.run("compile");
 
   await hre.upgrades.forceImport(
-    getProxyAddress("Directory"),
-    await hre.ethers.getContractFactory("Directory"),
+    getProxyAddress("Dispatcher"),
+    await hre.ethers.getContractFactory("Dispatcher"),
     { kind: "uups" }
   );
 
@@ -22,26 +22,14 @@ task("forceImport", "").setAction(async (taskArgs, hre) => {
   );
 
   await hre.upgrades.forceImport(
-    getProxyAddress("WhitelistedTokens"),
-    await hre.ethers.getContractFactory("WhitelistedTokens"),
-    { kind: "uups" }
-  );
-
-  await hre.upgrades.forceImport(
-    getProxyAddress("Metadata"),
-    await hre.ethers.getContractFactory("Metadata"),
-    { kind: "uups" }
-  );
-
-  await hre.upgrades.forceImport(
     getProxyAddress("Pool"),
     await hre.ethers.getContractFactory("Pool"),
     { kind: "beacon" }
   );
 
   await hre.upgrades.forceImport(
-    getProxyAddress("GovernanceToken"),
-    await hre.ethers.getContractFactory("GovernanceToken"),
+    getProxyAddress("Token"),
+    await hre.ethers.getContractFactory("Token"),
     { kind: "beacon" }
   );
 
@@ -62,5 +50,5 @@ task("forceImport", "").setAction(async (taskArgs, hre) => {
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };

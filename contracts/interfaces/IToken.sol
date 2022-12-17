@@ -5,14 +5,26 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./IService.sol";
 
-interface IGovernanceToken is IERC20Upgradeable {
+interface IToken is IERC20Upgradeable {
     struct TokenInfo {
-        string name;
         string symbol;
         uint256 cap;
     }
 
-    function initialize(address pool_, TokenInfo calldata info) external;
+    enum TokenType {
+        None,
+        Governance,
+        Preference
+    }
+
+    function initialize(
+        address pool_, 
+        string memory symbol_, 
+        uint256 cap_, 
+        TokenType tokenType_, 
+        address preferenceTGE_, 
+        string memory description_
+    ) external;
 
     function mint(address to, uint256 amount) external;
 
@@ -21,7 +33,6 @@ interface IGovernanceToken is IERC20Upgradeable {
     function lock(
         address account,
         uint256 amount,
-        bool support,
         uint256 deadline,
         uint256 proposalId
     ) external;
@@ -41,9 +52,7 @@ interface IGovernanceToken is IERC20Upgradeable {
 
     function decimals() external view returns (uint8);
 
-    function increaseTotalTGELockedTokens(uint256 _amount) external;
+    function symbol() external view returns (string memory);
 
-    function decreaseTotalTGELockedTokens(uint256 _amount) external;
-
-    function totalTGELockedTokens() external view returns (uint256);
+    function tokenType() external view returns (TokenType);
 }

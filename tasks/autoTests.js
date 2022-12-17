@@ -11,7 +11,6 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
 
     const { AddressZero } = ethers.constants;
     const tgeData = [
-        "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
         "" + 3*10**16,
         "" + 5*10**18,
         "" + 1*10**18,
@@ -23,6 +22,8 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
         "1041",
         [],
         AddressZero,
+        0,
+        0
     ];
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const ballotExecDelay = [1, 3, 40, 40, 40, 0, 0, 0, 0, 0]; // number of blocks
@@ -32,44 +33,62 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
         getProxyAddress("Service")
     );
 
-    const metadata = await ethers.getContractAt(
-        "Metadata",
-        getProxyAddress("Metadata")
+    const dispatcher = await ethers.getContractAt(
+        "Dispatcher",
+        getProxyAddress("Dispatcher")
     );
 
-    const metadataCurrentId = await metadata.currentId();
+    const metadataCurrentId = await dispatcher.currentId();
     const nextMetadataId = metadataCurrentId.toNumber() + 1;
     console.log("nextMetadataId: " + nextMetadataId);
 
-    // let tx = await service.addUserToWhitelist("0x01d50e3899A79791c2448B9f489ae0Be30Dbd345");
-    // await tx.wait(1);
-
     let tx;
+    const deployer = await hre.ethers.provider.getSigner().getAddress(); // "0x01d50e3899A79791c2448B9f489ae0Be30Dbd345"
+
+    if (!(await service.isUserWhitelisted(deployer))) {
+        tx = await service.addUserToWhitelist(deployer);
+        await tx.wait(1);
+    }
 
     const jurisdiction = 100000;
-    const jurisdictionAvailable = await metadata.jurisdictionAvailable(jurisdiction);
-    if (jurisdictionAvailable != 2) {
-        tx = await metadata.createRecord(
+    const entityType = 1;
+    const fee = 1000000000000000;
+    let [available, _] = await dispatcher.poolAvailable(jurisdiction, entityType);
+    if (available != 2) {
+        tx = await dispatcher.createRecord(
             jurisdiction,
-            "serial"+nextMetadataId,
+            "EIN" + nextMetadataId,
             "date",
-            123123,
+            entityType,
+            fee
         );
         await tx.wait(1);
     }
-    
+
     const tokenData =
         [
-            "NAME"+nextMetadataId,
-            "SYMBOL"+nextMetadataId,
+            "SYMBOL" + nextMetadataId,
             "" + 10*10**18,
         ];
 
     console.log("Test1: incorrect fee passed to createPool");
-    const fee = await service.fee();
     await expect(
         service
-            .createPool(AddressZero, tokenData, tgeData, 50, 50, 25, jurisdiction, ballotExecDelay, "Name"+nextMetadataId, {
+            .createPool(
+                AddressZero, 
+                tokenData, 
+                tgeData, 
+                [
+                    5100,
+                    5100,
+                    25
+                ], 
+                jurisdiction, 
+                ballotExecDelay, 
+                "Name" + nextMetadataId, 
+                entityType,
+                "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
+                {
                 value: (fee + 1),
             })
     ).to.be.revertedWith("INCORRECT_ETH_PASSED");
@@ -78,7 +97,21 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
     console.log("Test2: no company available");
     await expect(
         service
-            .createPool(AddressZero, tokenData, tgeData, 50, 50, 25, jurisdiction + 1, ballotExecDelay, "Name"+nextMetadataId, {
+            .createPool(
+                AddressZero, 
+                tokenData, 
+                tgeData, 
+                [
+                    5100,
+                    5100,
+                    25
+                ], 
+                jurisdiction + 1, 
+                ballotExecDelay, 
+                "Name" + nextMetadataId, 
+                entityType,
+                "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
+                {
                 value: fee,
             })
     ).to.be.revertedWith("NO_COMPANY");
@@ -87,7 +120,21 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
     console.log("Test3: successful pool creature");
     await expect(
         service
-            .createPool(AddressZero, tokenData, tgeData, 50, 50, 25, jurisdiction, ballotExecDelay, "Name"+nextMetadataId, {
+            .createPool(
+                AddressZero, 
+                tokenData, 
+                tgeData, 
+                [
+                    5100,
+                    5100,
+                    25
+                ], 
+                jurisdiction, 
+                ballotExecDelay, 
+                "Name" + nextMetadataId, 
+                entityType,
+                "ipfs://QmNqLpTVKujSSzmNTbc2k3gxWG4TgiGhY69rvBUd851TrH",
+                {
                 value: fee,
             })
     ).to.be.not.reverted;
@@ -98,5 +145,5 @@ task("autoTests", "Runs automated tests after push").setAction(async (taskArgs, 
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };

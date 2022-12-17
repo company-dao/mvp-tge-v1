@@ -9,7 +9,7 @@ library ExceptionsLibrary {
     string public constant INVALID_TOKEN = "INVALID_TOKEN";
     string public constant NOT_POOL = "NOT_POOL";
     string public constant NOT_TGE = "NOT_TGE";
-    string public constant NOT_PROPOSAL_GATEWAY = "NOT_PROPOSAL_GATEWAY";
+    string public constant NOT_DISPATCHER = "NOT_DISPATCHER";
     string public constant NOT_POOL_OWNER = "NOT_POOL_OWNER";
     string public constant NOT_SERVICE_OWNER = "NOT_SERVICE_OWNER";
     string public constant IS_DAO = "IS_DAO";
@@ -51,4 +51,8 @@ library ExceptionsLibrary {
     string public constant SERVICE_PAUSED = "SERVICE_PAUSED";
     string public constant INVALID_PROPOSAL_TYPE = "INVALID_PROPOSAL_TYPE";
     string public constant EXECUTION_FAILED = "EXECUTION_FAILED";
+    string public constant INVALID_USER = "INVALID_USER";
+    string public constant NOT_LAUNCHED = "NOT_LAUNCHED";
+    string public constant LAUNCHED = "LAUNCHED";
+    string public constant VESTING_TVL_REACHED = "VESTING_TVL_REACHED";
 }

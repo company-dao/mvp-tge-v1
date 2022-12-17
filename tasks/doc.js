@@ -259,7 +259,7 @@ task("doc", "Generates project documentation")
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };
 
 function sleep(milliseconds) {

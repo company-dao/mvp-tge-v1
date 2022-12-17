@@ -8,12 +8,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IService.sol";
+import "./interfaces/IDispatcher.sol";
 import "./interfaces/ITGE.sol";
-import "./interfaces/IProposalGateway.sol";
+import "./interfaces/IToken.sol";
 import "./libraries/ExceptionsLibrary.sol";
 
 /// @dev Protocol entry point to create any proposal
-contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract ProposalGateway is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
+    address public dispatcher;
     // INITIALIZER
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -21,9 +27,11 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _disableInitializers();
     }
 
-    function initialize() public initializer {
+    function initialize(address dispatcher_) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
+        require(dispatcher_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+        dispatcher = dispatcher_;
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -32,7 +40,6 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         onlyOwner
     {}
 
-    // PROPOSAL FUNCTIONS
 
     /**
      * @dev Create TransferETH proposal
@@ -56,16 +63,17 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             recipients,
             values,
             description,
-            IProposalGateway.ProposalType.TransferETH,
+            IDispatcher.ProposalType.TransferETH,
             metaHash,
             address(0)
         );
+        pool.setLastProposalIdForAccount(msg.sender, proposalId);
     }
 
     /**
      * @dev Create TransferERC20 proposal
      * @param pool Pool address
-     * @param token Token to be transfered
+     * @param token Token to transfer
      * @param recipients Transfer recipients
      * @param values Token amounts
      * @param description Proposal description
@@ -86,10 +94,11 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             recipients,
             values,
             description,
-            IProposalGateway.ProposalType.TransferERC20,
+            IDispatcher.ProposalType.TransferERC20,
             metaHash,
             token
         );
+        pool.setLastProposalIdForAccount(msg.sender, proposalId);
     }
 
     /**
@@ -104,16 +113,22 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         IPool pool,
         ITGE.TGEInfo calldata info,
         string calldata description,
-        string calldata metaHash
+        string calldata metaHash,
+        string memory metadataURI,
+        IToken.TokenType tokenType,
+        string memory tokenDescription
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
+        IDispatcher(dispatcher).validateTGEInfo(info, pool.token());
+
         proposalId = pool.proposeSingleAction(
             address(pool.service()),
             0,
-            abi.encodeWithSelector(IService.createSecondaryTGE.selector, info),
+            abi.encodeWithSelector(IService.createSecondaryTGE.selector, info, metadataURI, tokenType, tokenDescription),
             description,
-            IProposalGateway.ProposalType.TGE,
+            IDispatcher.ProposalType.TGE,
             metaHash
         );
+        pool.setLastProposalIdForAccount(msg.sender, proposalId);
     }
 
     /**
@@ -122,8 +137,8 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param ballotQuorumThreshold Ballot quorum threshold
      * @param ballotDecisionThreshold Ballot decision threshold
      * @param ballotLifespan Ballot lifespan
+     * @param ballotExecDelay Ballot execution delay parameters
      * @param description Proposal description
-     * @param ballotExecDelay_ Ballot execution delay parameters
      * @param metaHash Hash value of proposal metadata
      * @return proposalId Created proposal's ID
      */
@@ -132,10 +147,17 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 ballotQuorumThreshold,
         uint256 ballotDecisionThreshold,
         uint256 ballotLifespan,
+        uint256[10] calldata ballotExecDelay,
         string calldata description,
-        uint256[10] calldata ballotExecDelay_,
         string calldata metaHash
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
+        IDispatcher(dispatcher).validateBallotParams(
+            ballotQuorumThreshold,
+            ballotDecisionThreshold, 
+            ballotLifespan,
+            ballotExecDelay
+        );
+
         proposalId = pool.proposeSingleAction(
             address(pool),
             0,
@@ -144,15 +166,14 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 ballotQuorumThreshold,
                 ballotDecisionThreshold,
                 ballotLifespan,
-                ballotExecDelay_
+                ballotExecDelay
             ),
             description,
-            IProposalGateway.ProposalType.GovernanceSettings,
+            IDispatcher.ProposalType.GovernanceSettings,
             metaHash
         );
+        pool.setLastProposalIdForAccount(msg.sender, proposalId);
     }
-
-    // MODIFIERS
 
     modifier onlyPoolShareholder(IPool pool) {
         require(
@@ -163,7 +184,4 @@ contract ProposalGateway is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _;
     }
 
-    function test82312() external pure returns (uint256) {
-        return 3;
-    }
 }

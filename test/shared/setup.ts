@@ -231,7 +231,7 @@ export async function setup() {
         price: parseUnits("0.01"),
         hardcap: 5000,
         softcap: 1000,
-        minPurchase: 100000,
+        minPurchase: 10,
         maxPurchase: 3000,
         lockupPercent: 50,
         lockupDuration: 50,

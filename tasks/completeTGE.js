@@ -7,7 +7,7 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
     return;
   }
 
-  const poolAddress = "0xa04cdb764b2edbaed63fcbd6d7e0b97b4d5f559b";
+  const poolAddress = "0xe865b190a4f8f65ada3e369f66c3493efd916229";
   const transferTarget = "0x613e46D06A3667D2b46bf6C0d9689aA17DbFCAbc";
 
   const pool = await ethers.getContractAt(
@@ -15,12 +15,12 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
     poolAddress
   );
 
-  const proposalGateway = await ethers.getContractAt(
-    "ProposalGateway",
-    getProxyAddress("ProposalGateway")
+  const dispatcher = await ethers.getContractAt(
+    "Dispatcher",
+    getProxyAddress("Dispatcher")
   );
 
-  const tgeAddress = await pool.tge();
+  const tgeAddress = await pool.lastTGE();
 
   const tge = await ethers.getContractAt(
     "TGE",
@@ -31,24 +31,24 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
     Purchase
   */
 
-  const tgeTokenPrice = await tge.price();
+  const tgeTokenPrice = (await tge.info()).price;
   console.log("tgeTokenPrice: " + tgeTokenPrice);
 
-  const tgeHardCap = await tge.hardcap();
+  const tgeHardCap = (await tge.info()).hardcap;
   const tgePurchaseValue = (BigInt(tgeHardCap) / BigInt(10 ** 18)) *  BigInt(tgeTokenPrice);
   console.log("tgeHardCap: " + tgeHardCap);
 
-  t = await tge.purchase(tgeHardCap, { value: tgePurchaseValue });
-  await t.wait(1);
+  // t = await tge.purchase(tgeHardCap, { value: tgePurchaseValue });
+  // await t.wait(1);
 
-  t = await tge.transferFunds();
-  await t.wait(1);
+  // t = await tge.transferFunds();
+  // await t.wait(1);
 
   /*
     Proposal
   */
 
-  t = await proposalGateway.createTransferETHProposal(poolAddress, transferTarget, tgePurchaseValue / BigInt(2), "test");
+  t = await dispatcher.createTransferETHProposal(poolAddress, [transferTarget], [tgePurchaseValue / BigInt(2)], "test", "testMetaHash");
   await t.wait(1);
 
   const lastProposalId = await pool.lastProposalId();
@@ -70,14 +70,14 @@ task("completeTGE", "").setAction(async (taskArgs, hre) => {
   console.log("proposalState: " + proposalState);
  
   //  t = await proposalGateway.createTransferERC20Proposal(poolAddress, "0x0", transferTarget, tgeHardCap / 2, "test");
-//  await t.wait(1);
+  //  await t.wait(1);
 
   console.log("\n==== Task Complete ====");
 });
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };
 
 function sleep(milliseconds) {

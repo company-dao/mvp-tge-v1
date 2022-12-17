@@ -23,7 +23,7 @@ task("safeVerify", "Verifies contract on Etherscan safely")
     // await contract.deployTransaction.wait(5);
 
     try {
-      sleep(3000 * 1);
+      sleep(10000 * 1);
       console.log("Verifying ...");
 
       await hre.run("verify:verify", {
@@ -41,7 +41,7 @@ task("safeVerify", "Verifies contract on Etherscan safely")
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };
 
 function sleep(milliseconds) {

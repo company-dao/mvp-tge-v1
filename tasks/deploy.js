@@ -1,6 +1,5 @@
 const { setProxyAddress, getProxyAddress } = require("../helpers/proxymap");
-
-// const { getProxyFactoryDeployment, getSafeSingletonDeployment } = require("@gnosis.pm/safe-deployments");
+const fs = require("fs");
 
 task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -12,9 +11,9 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   const isForceCreateNewContracts = false;
   const isVerify = true;
 
-  const fee = 0;
+  const fee = 1000000000000000;
   const ballotQuorumThreshold = 5100;
-  const ballotDecisionThreshold = 7500;
+  const ballotDecisionThreshold = 5100;
   const ballotLifespan = 23;
   const ballotExecDelay = [1, 3, 40, 40, 40, 0, 0, 0, 0, 0]; // number of blocks
 
@@ -33,7 +32,7 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   await hre.run("docgen");
 
   await hre.run("deployContract", {
-    contractName: "Directory",
+    contractName: "Dispatcher",
     proxyType: "uups",
     constructorArguments: [],
     forceCreate: isForceCreateNewContracts,
@@ -43,23 +42,9 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   await hre.run("deployContract", {
     contractName: "ProposalGateway",
     proxyType: "uups",
-    constructorArguments: [],
-    forceCreate: isForceCreateNewContracts,
-    verify: isVerify,
-  });
-
-  await hre.run("deployContract", {
-    contractName: "WhitelistedTokens",
-    proxyType: "uups",
-    constructorArguments: [],
-    forceCreate: isForceCreateNewContracts,
-    verify: isVerify,
-  });
-
-  await hre.run("deployContract", {
-    contractName: "Metadata",
-    proxyType: "uups",
-    constructorArguments: [],
+    constructorArguments: [
+      getProxyAddress("Dispatcher")
+    ],
     forceCreate: isForceCreateNewContracts,
     verify: isVerify,
   });
@@ -73,7 +58,7 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
   });
 
   await hre.run("deployContract", {
-    contractName: "GovernanceToken",
+    contractName: "Token",
     proxyType: "beacon",
     constructorArguments: [],
     forceCreate: isForceCreateNewContracts,
@@ -92,38 +77,27 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
     contractName: "Service",
     proxyType: "uups",
     constructorArguments: [
-      getProxyAddress("Directory"),
+      getProxyAddress("Dispatcher"),
       getProxyAddress("Pool"),
-      getProxyAddress("ProposalGateway"),
-      getProxyAddress("GovernanceToken"),
+      getProxyAddress("Token"),
       getProxyAddress("TGE"),
-      getProxyAddress("Metadata"),
-      fee,
-      [ballotQuorumThreshold, ballotLifespan, ballotDecisionThreshold, ...ballotExecDelay],
+      getProxyAddress("ProposalGateway"),
+      [ballotQuorumThreshold, ballotDecisionThreshold, ballotLifespan, ...ballotExecDelay],
       UNISWAP_ROUTER_ADDRESS,
       UNISWAP_QUOTER_ADDRESS,
-      getProxyAddress("WhitelistedTokens"),
       protocolTokenFee
     ],
     forceCreate: isForceCreateNewContracts,
     verify: isVerify,
   });
 
-  const directory = await ethers.getContractAt(
-    "Directory",
-    getProxyAddress("Directory")
+  const dispatcher = await ethers.getContractAt(
+    "Dispatcher",
+    getProxyAddress("Dispatcher")
   );
-  let t = await directory.setService(getProxyAddress("Service"));
+  let t = await dispatcher.setService(getProxyAddress("Service"));
   await t.wait(1);
-  console.log("Service is set in Directory");
-
-  const metadata = await ethers.getContractAt(
-    "Metadata",
-    getProxyAddress("Metadata")
-  );
-  t = await metadata.setService(getProxyAddress("Service"));
-  await t.wait(1);
-  console.log("Service is set in Metadata");
+  console.log("Service is set in Dispatcher");
 
   /*
     Set Service values
@@ -134,31 +108,39 @@ task("deploy", "Deploys entire project").setAction(async (taskArgs, hre) => {
     getProxyAddress("Service")
   );
 
-  t = await service.setUsdt(USDT_ADDRESS);
+  t = await service.setPrimaryAsset(USDT_ADDRESS);
   await t.wait(1);
   console.log("usdt is set in Service: " + USDT_ADDRESS);
 
-  t = await service.setWeth(WETH_ADDRESS);
+  t = await service.setSecondaryAsset(WETH_ADDRESS);
   await t.wait(1);
   console.log("weth is set in Service: " + WETH_ADDRESS);
 
-  const whitelistedTokens = await ethers.getContractAt(
-    "WhitelistedTokens",
-    getProxyAddress("WhitelistedTokens")
-  );
-
-  t = await whitelistedTokens.addTokensToWhitelist(
+  t = await dispatcher.addTokensToWhitelist(
     ["0x0000000000000000000000000000000000000000"],
     ["0x"],
     ["0x"]
   );
   await t.wait(1);
-  console.log("ETH is added to WhitelistedTokens");
+  console.log("ETH is added to Dispatcher");
 
+  console.log("Copying abi from artifacts/ to abi/ ....");
+  fs.copyFileSync(
+    'contract_proxy_address_map.json',
+    'abi/contract_proxy_address_map.json',
+  );
+  const contracts = ['Dispatcher', 'ProposalGateway', 'Pool', 'Token', 'TGE', 'Service'];
+  for (let i = 0; i < contracts.length; i++) {
+    fs.copyFileSync(
+      'artifacts/contracts/' + contracts[i] + '.sol/' + contracts[i] + '.json',
+      'abi/' + contracts[i] + '.json'
+    );
+    console.log("Contarct " + contracts[i] + " copied");
+  }
   console.log("\n==== Project Deploy Complete ====");
 });
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: "0.8.17",
 };
