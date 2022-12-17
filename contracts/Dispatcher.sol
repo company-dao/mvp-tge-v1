@@ -297,12 +297,6 @@ contract Dispatcher is
         emit ContractRecordAdded(index, address(pool), IDispatcher.ContractType.Pool);
     }
 
-    // function createCompanies(uint256 amount) external onlyManager {
-    //     for (uint256 i = 0; i < amount; i++) {
-    //         createRecord(1, string(abi.encodePacked("102-00000", StringsUpgradeable.toString(currentId + 1))), "22.11.2022", 1, 0);
-    //     }
-    // }
-
     /**
      * @dev Lock metadata record
      * @param jurisdiction Jurisdiction
