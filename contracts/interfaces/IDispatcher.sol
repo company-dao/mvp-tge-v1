@@ -11,6 +11,7 @@ interface IDispatcher {
         None,
         Pool,
         GovernanceToken,
+        PreferenceToken,
         TGE
     }
 
@@ -76,7 +77,12 @@ interface IDispatcher {
         GovernanceSettings
     }
 
-    function validateTGEInfo(ITGE.TGEInfo calldata info, IToken token_) external view returns (bool);
+    function validateTGEInfo(
+        ITGE.TGEInfo calldata info, 
+        IToken.TokenType tokenType, 
+        uint256 cap, 
+        uint256 totalSupply
+    ) external view returns (bool);
 
     function validateBallotParams(
         uint256 ballotQuorumThreshold,

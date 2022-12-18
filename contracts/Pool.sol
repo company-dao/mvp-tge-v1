@@ -26,9 +26,6 @@ contract Pool is
     /// @dev Service address
     IService public service;
 
-    /// @dev Pool token address
-    IToken public token;
-
     /// @dev Minimum amount of votes that ballot must receive
     uint256 public ballotQuorumThreshold;
 
@@ -56,11 +53,11 @@ contract Pool is
     /// @dev Pool date of incorporatio
     string public dateOfIncorporation;
 
-    /// @dev Pool's first TGE
-    address public primaryTGE;
+    /// @dev Pool governance token address
+    IToken public governanceToken;
 
-    /// @dev List of all governance pool's TGEs
-    address[] private _governanceTGEList;
+    /// @dev Pool preference token address
+    IToken public preferenceToken;
 
     /**
      * @dev block delay for executeBallot
@@ -78,9 +75,6 @@ contract Pool is
 
     /// @dev Is pool launched or not
     bool public poolLaunched;
-
-    /// @dev List of all pool's preference tokens
-    address[] private _preferenceTokenList;
 
     // INITIALIZER AND CONFIGURATOR
 
@@ -153,20 +147,20 @@ contract Pool is
      * @dev Set pool governance token
      * @param token_ Token address
      */
-    function setToken(address token_) external onlyService launched {
+    function setGovernanceToken(address token_) external onlyService launched {
         require(token_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
-        token = IToken(token_);
+        governanceToken = IToken(token_);
     }
 
     /**
-     * @dev Set pool primary TGE
-     * @param tge_ TGE address
+     * @dev Set pool preference token
+     * @param token_ Token address
      */
-    function setPrimaryTGE(address tge_) external onlyService launched {
-        require(tge_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
+    function setPreferenceToken(address token_) external onlyService launched {
+        require(token_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
-        primaryTGE = tge_;
+        preferenceToken = IToken(token_);
     }
 
     /**
@@ -209,17 +203,17 @@ contract Pool is
         bool support
     ) external nonReentrant whenNotPaused launched {
         if (votes == type(uint256).max) {
-            votes = token.unlockedBalanceOf(msg.sender, proposalId);
+            votes = governanceToken.unlockedBalanceOf(msg.sender, proposalId);
         } else {
             require(
-                votes <= token.unlockedBalanceOf(msg.sender, proposalId),
+                votes <= governanceToken.unlockedBalanceOf(msg.sender, proposalId),
                 ExceptionsLibrary.LOW_UNLOCKED_BALANCE
             );
         }
         require(votes > 0, ExceptionsLibrary.VALUE_ZERO);
 
         _castVote(proposalId, votes, support);
-        token.lock(
+        governanceToken.lock(
             msg.sender,
             votes,
             getProposal(proposalId).endBlock,
@@ -266,7 +260,7 @@ contract Pool is
             description,
             _getTotalSupply() -
                 _getTotalTGEVestedTokens() -
-                token.balanceOf(service.protocolTreasury()),
+                governanceToken.balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
@@ -308,7 +302,7 @@ contract Pool is
             description,
             _getTotalSupply() -
                 _getTotalTGEVestedTokens() -
-                token.balanceOf(service.protocolTreasury()),
+                governanceToken.balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
@@ -318,22 +312,6 @@ contract Pool is
 
     function setLastProposalIdForAccount(address creator, uint256 proposalId) external onlyProposalGateway launched {
         lastProposalIdForAccount[creator] = proposalId;
-    }
-
-    /**
-     * @dev Add TGE to TGE archive list
-     * @param tge_ TGE address
-     */
-    function addTGE(address tge_) external onlyService launched {
-        _governanceTGEList.push(tge_);
-    }
-
-    /**
-     * @dev Add TGE to TGE archive list
-     * @param token_ Preference token address
-     */
-    function addPreferenceToken(address token_) external onlyService launched {
-        _preferenceTokenList.push(token_);
     }
 
     /**
@@ -410,27 +388,11 @@ contract Pool is
     }
 
     /**
-     * @dev Return if pool had a successful TGE
-     * @return Is any TGE successful
+     * @dev Return if pool had a successful governance TGE
+     * @return Is any governance TGE successful
      */
     function isDAO() external view returns (bool) {
-        return (ITGE(primaryTGE).state() == ITGE.State.Successful);
-    }
-
-    /**
-     * @dev Return list of pool's TGEs
-     * @return TGE list
-     */
-    function getGovernanceTGEList() external view returns (address[] memory) {
-        return _governanceTGEList;
-    }
-
-    /**
-     * @dev Return list of pool's TGEs
-     * @return TGE list
-     */
-    function lastTGE() external view returns (address) {
-        return _governanceTGEList[_governanceTGEList.length - 1];
+        return governanceToken.isPrimaryTGESuccessful();
     }
 
     /**
@@ -450,14 +412,6 @@ contract Pool is
         return ballotExecDelay;
     }
 
-    /**
-     * @dev Return list of pool's preference tokens
-     * @return TGE list
-     */
-    function getPreferenceTokenList() external view returns (address[] memory) {
-        return _preferenceTokenList;
-    }
-
     // INTERNAL FUNCTIONS
 
     function _afterProposalCreated(uint256 proposalId) internal override {
@@ -469,7 +423,7 @@ contract Pool is
      * @return Total pool token supply
      */
     function _getTotalSupply() internal view override returns (uint256) {
-        return token.totalSupply();
+        return governanceToken.totalSupply();
     }
 
     /**
@@ -482,7 +436,7 @@ contract Pool is
         override
         returns (uint256)
     {
-        return getTotalTGEVestedTokens();
+        return governanceToken.getTotalTGEVestedTokens();
     }
 
     /**
@@ -497,20 +451,6 @@ contract Pool is
     {
         // Pausable
         return super.paused();
-    }   
-
-    /**
-     * @dev Return amount of tokens currently vested in TGE vesting contract(s)
-     * @return Total pool vesting tokens
-     */
-    function getTotalTGEVestedTokens() public view returns (uint256) {
-        address[] memory tgeList = _governanceTGEList;
-        uint256 totalVested = 0;
-        for (uint256 i; i < tgeList.length; i++) {
-            if (ITGE(tgeList[i]).state() != ITGE.State.Failed)
-                totalVested += ITGE(tgeList[i]).getTotalVested();
-        }
-        return totalVested;
     }
 
     // MODIFIER

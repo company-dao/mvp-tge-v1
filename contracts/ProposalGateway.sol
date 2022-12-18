@@ -107,6 +107,9 @@ contract ProposalGateway is
      * @param info TGE parameters
      * @param description Proposal description
      * @param metaHash Hash value of proposal metadata
+     * @param tokenType Token type
+     * @param preferenceTokenDescription Description for preference token
+     * @param preferenceTokenCap Preference token cap
      * @return proposalId Created proposal's ID
      */
     function createTGEProposal(
@@ -116,14 +119,28 @@ contract ProposalGateway is
         string calldata metaHash,
         string memory metadataURI,
         IToken.TokenType tokenType,
-        string memory tokenDescription
+        string memory preferenceTokenDescription,
+        uint256 preferenceTokenCap
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        IDispatcher(dispatcher).validateTGEInfo(info, pool.token());
+        // IDispatcher(dispatcher).validateTGEInfo(info, pool.token());
+        // if (tokenType == IToken.TokenType.Preference) {
+        //     require(
+        //         !pool.preferenceToken().isPrimaryTGESuccessful(), 
+        //         ExceptionsLibrary.ACTIVE_TGE_EXISTS // probably rename
+        //     );
+        // }
 
         proposalId = pool.proposeSingleAction(
             address(pool.service()),
             0,
-            abi.encodeWithSelector(IService.createSecondaryTGE.selector, info, metadataURI, tokenType, tokenDescription),
+            abi.encodeWithSelector(
+                IService.createSecondaryTGE.selector, 
+                info, 
+                metadataURI, 
+                tokenType, 
+                preferenceTokenDescription,
+                preferenceTokenCap
+            ),
             description,
             IDispatcher.ProposalType.TGE,
             metaHash
@@ -177,7 +194,7 @@ contract ProposalGateway is
 
     modifier onlyPoolShareholder(IPool pool) {
         require(
-            pool.token().balanceOf(msg.sender) > 0,
+            pool.governanceToken().balanceOf(msg.sender) > 0,
             ExceptionsLibrary.NOT_SHAREHOLDER
         );
         require(pool.isDAO(), ExceptionsLibrary.NOT_DAO);

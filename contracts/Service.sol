@@ -290,12 +290,9 @@ contract Service is
             ""
         );
 
-        token.initialize(address(pool), tokenInfo.symbol, tokenInfo.cap, IToken.TokenType.Governance, address(0), "");
-        pool.setToken(address(token));
-
+        token.initialize(address(pool), tokenInfo.symbol, tokenInfo.cap, IToken.TokenType.Governance, address(tge), "");
+        pool.setGovernanceToken(address(token));
         tge.initialize(token, tgeInfo);
-        pool.setPrimaryTGE(address(tge));
-        pool.addTGE(address(tge));
 
         _userWhitelist.remove(msg.sender);
 
@@ -312,7 +309,8 @@ contract Service is
         ITGE.TGEInfo calldata tgeInfo, 
         string memory metadataURI, 
         IToken.TokenType tokenType, 
-        string memory tokenDescription
+        string memory tokenDescription,
+        uint256 preferenceTokenCap
     )
         external
         override
@@ -323,21 +321,41 @@ contract Service is
         ITGE tge;
         IToken token; 
         if (tokenType == IToken.TokenType.Governance) {
+            IToken governanceToken = IPool(msg.sender).governanceToken();
             require(
-                ITGE(IPool(msg.sender).lastTGE()).state() != ITGE.State.Active,
+                ITGE(governanceToken.lastTGE()).state() != ITGE.State.Active,
                 ExceptionsLibrary.ACTIVE_TGE_EXISTS
             );
 
             tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
-            tge.initialize(IPool(msg.sender).token(), tgeInfo);
-            IPool(msg.sender).addTGE(address(tge));
+            tge.initialize(governanceToken, tgeInfo);
+            governanceToken.addTGE(address(tge));
         }
         if (tokenType == IToken.TokenType.Preference) {
+            IToken preferenceToken = IPool(msg.sender).preferenceToken();
             tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
-            token = IToken(address(new BeaconProxy(tokenBeacon, "")));
-            token.initialize(msg.sender, "", tgeInfo.hardcap, tokenType, address(tge), tokenDescription);
-            tge.initialize(token, tgeInfo);
-            IPool(msg.sender).addPreferenceToken(address(token));
+            if (address(preferenceToken) == address(0)) {
+                token = IToken(address(new BeaconProxy(tokenBeacon, "")));
+                token.initialize(msg.sender, "", preferenceTokenCap, tokenType, address(tge), tokenDescription);
+                tge.initialize(token, tgeInfo);
+                IPool(msg.sender).setPreferenceToken(address(token));
+                dispatcher.addContractRecord(address(token), IDispatcher.ContractType.PreferenceToken, "");
+            } else {
+                if (ITGE(preferenceToken.getTGEList()[0]).state() == ITGE.State.Failed) {
+                    token = IToken(address(new BeaconProxy(tokenBeacon, "")));
+                    token.initialize(msg.sender, "", preferenceTokenCap, tokenType, address(tge), tokenDescription);
+                    tge.initialize(token, tgeInfo);
+                    IPool(msg.sender).setPreferenceToken(address(token));
+                    dispatcher.addContractRecord(address(token), IDispatcher.ContractType.PreferenceToken, "");
+                } else {
+                    require(
+                        ITGE(preferenceToken.lastTGE()).state() != ITGE.State.Active,
+                        ExceptionsLibrary.ACTIVE_TGE_EXISTS
+                    );
+                    tge.initialize(preferenceToken, tgeInfo);
+                    preferenceToken.addTGE(address(tge));
+                }
+            }
         }
         dispatcher.addContractRecord(address(tge), IDispatcher.ContractType.TGE, metadataURI);
 
@@ -629,8 +647,8 @@ contract Service is
             IPool(_pool).isDAO()
         ) {
             return
-                IPool(_pool).token().cap() -
-                getProtocolTokenFee(IPool(_pool).token().cap());
+                IPool(_pool).governanceToken().cap() -
+                getProtocolTokenFee(IPool(_pool).governanceToken().cap());
         }
 
         return type(uint256).max - getProtocolTokenFee(type(uint256).max);

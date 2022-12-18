@@ -25,7 +25,8 @@ interface IService {
         ITGE.TGEInfo calldata tgeInfo, 
         string memory metadataURI, 
         IToken.TokenType tokenType, 
-        string memory tokenDescription
+        string memory tokenDescription,
+        uint256 preferenceTokenCap
     ) external;
 
     function addProposal(uint256 proposalId) external;

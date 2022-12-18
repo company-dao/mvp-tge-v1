@@ -28,11 +28,11 @@ contract Token is
     /// @dev Token type
     TokenType public tokenType;
 
-    /// @dev Preference TGE for preference token, for Governance token - address(0)
-    address public preferenceTGE;
-
     /// @dev Preference token description, allows up to 5000 characters, for others - ""
     string public description;
+
+    /// @dev List of all TGEs
+    address[] private _tgeList;
 
     /**
      * @dev Votes lockup structure
@@ -63,7 +63,7 @@ contract Token is
      * @param symbol_ Token symbol for GovernanceToken
      * @param cap_ Token cap
      * @param tokenType_ Token type
-     * @param preferenceTGE_ Preference tge address for Preference token
+     * @param primaryTGE_ Primary tge address
      * @param description_ Token description for Preference token
      */
     function initialize(
@@ -71,7 +71,7 @@ contract Token is
         string memory symbol_, 
         uint256 cap_, 
         TokenType tokenType_, 
-        address preferenceTGE_, 
+        address primaryTGE_, 
         string memory description_
     )
         external
@@ -82,13 +82,16 @@ contract Token is
         __Ownable_init();
 
         if (tokenType_ == TokenType.Preference) {
-            __ERC20_init(IPool(pool_).trademark(), string(abi.encodePacked("p", IPool(pool_).token().symbol())));
-            preferenceTGE = preferenceTGE_;
+            __ERC20_init(
+                IPool(pool_).trademark(), 
+                string(abi.encodePacked("p", IPool(pool_).governanceToken().symbol()))
+            );
             description = description_;
         } else {
             __ERC20_init(IPool(pool_).trademark(), symbol_);
         }
 
+        _tgeList.push(primaryTGE_);
         tokenType = tokenType_;
         service = IService(msg.sender);
         pool = pool_;        
@@ -138,6 +141,14 @@ contract Token is
             amount: lockedBalanceOf(account, proposalId) + amount,
             deadline: deadline
         });
+    }
+
+    /**
+     * @dev Add TGE to TGE archive list
+     * @param tge_ TGE address
+     */
+    function addTGE(address tge_) external onlyService {
+        _tgeList.push(tge_);
     }
 
     // VIEW FUNCTIONS
@@ -242,13 +253,56 @@ contract Token is
         return min;
     }
 
-    function containsTGE(address wallet) public view returns (bool) {
-        address[] memory tgeList = IPool(pool).getGovernanceTGEList();
+    function containsTGE(address wallet, TokenType tokenType_) public view returns (bool) {
+        address[] memory tgeList;
+        if (tokenType_ == TokenType.Governance) {
+            tgeList = IPool(pool).governanceToken().getTGEList();
+        } else {
+            tgeList = IPool(pool).preferenceToken().getTGEList();
+        }
         for (uint256 i = 0; i < tgeList.length; i++) {
             if (wallet == tgeList[i])
                 return true;
         }
         return false;
+    }
+
+    /**
+     * @dev Return if pool had a successful TGE
+     * @return Is any TGE successful
+     */
+    function isPrimaryTGESuccessful() external view returns (bool) {
+        return (ITGE(_tgeList[0]).state() == ITGE.State.Successful);
+    }
+
+    /**
+     * @dev Return list of pool's TGEs
+     * @return TGE list
+     */
+    function getTGEList() external view returns (address[] memory) {
+        return _tgeList;
+    }
+
+    /**
+     * @dev Return list of pool's TGEs
+     * @return TGE list
+     */
+    function lastTGE() external view returns (address) {
+        return _tgeList[_tgeList.length - 1];
+    }
+
+    /**
+     * @dev Return amount of tokens currently vested in TGE vesting contract(s)
+     * @return Total vesting tokens
+     */
+    function getTotalTGEVestedTokens() public view returns (uint256) {
+        address[] memory tgeList = _tgeList;
+        uint256 totalVested = 0;
+        for (uint256 i; i < tgeList.length; i++) {
+            if (ITGE(tgeList[i]).state() != ITGE.State.Failed)
+                totalVested += ITGE(tgeList[i]).getTotalVested();
+        }
+        return totalVested;
     }
 
     // INTERNAL FUNCTIONS
@@ -272,16 +326,22 @@ contract Token is
         }
 
         if (tokenType == TokenType.Preference) {
-            require(
-                ITGE(preferenceTGE).transferUnlocked() &&
-                    (
-                        from == address(service) || to == address(service) || 
-                        from == pool || to == pool || 
-                        from == preferenceTGE || to == preferenceTGE ||
-                        containsTGE(from) || containsTGE(to)
-                    ),
-                ExceptionsLibrary.INVALID_USER
-            );
+            address[] memory tgeList = _tgeList;
+            uint256 transferAmountAvailable = balanceOf(msg.sender);
+            if (!(
+                    from == address(service) || to == address(service) || 
+                    from == pool || to == pool || 
+                    containsTGE(from, TokenType.Governance) || containsTGE(to, TokenType.Governance) ||
+                    containsTGE(from, TokenType.Preference) || containsTGE(to, TokenType.Preference)
+                )
+            ) {
+                for (uint256 i = 0; i < tgeList.length; i++) {
+                    if (!(ITGE(tgeList[i]).transferUnlocked())) {
+                        transferAmountAvailable += ITGE(tgeList[i]).vestedBalanceOf(from) - ITGE(tgeList[i]).purchaseOf(from);
+                    }
+                }
+                require(amount <= transferAmountAvailable, ExceptionsLibrary.INVALID_VALUE);
+            }
         }
 
         super._transfer(from, to, amount);
@@ -291,6 +351,11 @@ contract Token is
 
     modifier onlyPool() {
         require(msg.sender == pool, ExceptionsLibrary.NOT_POOL);
+        _;
+    }
+
+    modifier onlyService() {
+        require(msg.sender == address(service), ExceptionsLibrary.NOT_SERVICE);
         _;
     }
 

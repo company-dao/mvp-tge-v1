@@ -22,7 +22,7 @@ interface IToken is IERC20Upgradeable {
         string memory symbol_, 
         uint256 cap_, 
         TokenType tokenType_, 
-        address preferenceTGE_, 
+        address primaryTGE_, 
         string memory description_
     ) external;
 
@@ -55,4 +55,14 @@ interface IToken is IERC20Upgradeable {
     function symbol() external view returns (string memory);
 
     function tokenType() external view returns (TokenType);
+
+    function lastTGE() external view returns (address);
+
+    function getTGEList() external view returns (address[] memory);
+
+    function isPrimaryTGESuccessful() external view returns (bool);
+
+    function addTGE(address tge_) external;
+
+    function getTotalTGEVestedTokens() external view returns (uint256);
 }

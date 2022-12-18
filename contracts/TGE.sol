@@ -97,7 +97,12 @@ contract TGE is
         IToken token_,
         TGEInfo calldata info_
     ) external initializer {
-        token_.service().dispatcher().validateTGEInfo(info_, token_);
+        token_.service().dispatcher().validateTGEInfo(
+            info_, 
+            token_.tokenType(), 
+            token_.cap(), 
+            token_.totalSupply()
+        );
 
         token = token_;
         info = info_;
@@ -273,6 +278,9 @@ contract TGE is
             return;
         }
         IToken _token = token;
+        if (_token.tokenType() == IToken.TokenType.Preference) {
+            return;
+        }
         uint256 tokenFee = _token.service().getProtocolTokenFee(_totalPurchased);
 
         isProtocolTokenFeeClaimed = true;
@@ -315,7 +323,7 @@ contract TGE is
         } else if (_totalPurchased >= info.softcap) {
             return State.Successful;
         } else {
-            if (address(this) == IPool(token.pool()).primaryTGE())
+            if (address(this) == token.getTGEList()[0])
                 return State.Failed;
             else
                 return State.Successful;

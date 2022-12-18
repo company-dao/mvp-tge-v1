@@ -55,4 +55,5 @@ library ExceptionsLibrary {
     string public constant NOT_LAUNCHED = "NOT_LAUNCHED";
     string public constant LAUNCHED = "LAUNCHED";
     string public constant VESTING_TVL_REACHED = "VESTING_TVL_REACHED";
+    string public constant PREFERENCE_TOKEN_EXISTS = "PREFERENCE_TOKEN_EXISTS";
 }

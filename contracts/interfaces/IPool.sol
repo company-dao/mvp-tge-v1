@@ -15,10 +15,6 @@ interface IPool {
         uint256 metadataIndex
     ) external;
 
-    function setToken(address token_) external;
-
-    function setPrimaryTGE(address tge_) external;
-
     function setGovernanceSettings(
         uint256 ballotQuorumThreshold_,
         uint256 ballotDecisionThreshold_,
@@ -54,21 +50,11 @@ interface IPool {
 
     function service() external view returns (IService);
 
-    function token() external view returns (IToken);
-
-    function lastTGE() external view returns (address);
-
-    function getGovernanceTGEList() external view returns (address[] memory);
-
-    function primaryTGE() external view returns (address);
-
     function maxProposalId() external view returns (uint256);
 
     function isDAO() external view returns (bool);
 
     function trademark() external view returns (string memory);
-
-    function addTGE(address tge_) external;
 
     function ballotExecDelay(uint256 _index) external view returns (uint256);
 
@@ -83,5 +69,11 @@ interface IPool {
         string memory trademark
     ) external;
 
-    function addPreferenceToken(address token_) external;
+    function governanceToken() external view returns (IToken);
+
+    function preferenceToken() external view returns (IToken);
+
+    function setGovernanceToken(address token_) external;
+
+    function setPreferenceToken(address token_) external;
 }

@@ -627,7 +627,12 @@ contract Dispatcher is
         return _tokenWhitelist.contains(token);
     }
 
-    function validateTGEInfo(ITGE.TGEInfo calldata info, IToken token_) public view returns (bool) {
+    function validateTGEInfo(
+        ITGE.TGEInfo calldata info, 
+        IToken.TokenType tokenType, 
+        uint256 cap, 
+        uint256 totalSupply
+    ) public view returns (bool) {
         if (info.unitOfAccount != address(0))
             require(
                 IERC20Upgradeable(info.unitOfAccount).totalSupply() > 0, 
@@ -635,18 +640,18 @@ contract Dispatcher is
             );
 
         require(
-            info.hardcap >= token_.service().getMinSoftCap(),
+            info.hardcap >= IService(service).getMinSoftCap(),
             ExceptionsLibrary.INVALID_HARDCAP
         );
-        if (token_.tokenType() == IToken.TokenType.Governance) {
-            uint256 remainingSupply = token_.cap() - token_.totalSupply();
+        if (tokenType == IToken.TokenType.Governance) {
+            uint256 remainingSupply = cap - totalSupply;
             require(
                 info.hardcap <= remainingSupply,
                 ExceptionsLibrary.HARDCAP_OVERFLOW_REMAINING_SUPPLY
             );
             require(
                 info.hardcap +
-                    token_.service().getProtocolTokenFee(
+                    IService(service).getProtocolTokenFee(
                         info.hardcap
                     ) <=
                     remainingSupply,

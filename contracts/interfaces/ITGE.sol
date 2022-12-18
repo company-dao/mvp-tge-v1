@@ -37,4 +37,8 @@ interface ITGE {
     function transferUnlocked() external view returns (bool);
 
     function getTotalVested() external view returns (uint256);
+
+    function purchaseOf(address user) external view returns (uint256);
+
+    function vestedBalanceOf(address user) external view returns (uint256);
 }
