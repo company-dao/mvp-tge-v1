@@ -101,6 +101,9 @@ contract Dispatcher is
      */
     mapping(address => bytes) public tokenSwapReversePath;
 
+    /// @dev List of managers
+    EnumerableSetUpgradeable.AddressSet private _managerWhitelist;
+
     // EVENTS
 
     /**
@@ -252,7 +255,7 @@ contract Dispatcher is
         string memory dateOfIncorporation,
         uint256 entityType,
         uint256 fee
-    ) public onlyServiceOwner {
+    ) public onlyManager {
         require(
             jurisdiction > 0 && bytes(EIN).length != 0 && 
                 bytes(dateOfIncorporation).length != 0 && entityType > 0,
@@ -435,6 +438,28 @@ contract Dispatcher is
                 ExceptionsLibrary.ALREADY_NOT_WHITELISTED
             );
         }
+    }
+
+    /**
+     * @dev Add manager to whitelist
+     * @param account Manager address
+     */
+    function addManagerToWhitelist(address account) external onlyOwner {
+        require(
+            _managerWhitelist.add(account),
+            ExceptionsLibrary.ALREADY_WHITELISTED
+        );
+    }
+
+    /**
+     * @dev Remove manager from whitelist
+     * @param account Manager address
+     */
+    function removeManagerFromWhitelist(address account) external onlyOwner {
+        require(
+            _managerWhitelist.remove(account),
+            ExceptionsLibrary.ALREADY_NOT_WHITELISTED
+        );
     }
 
     // PUBLIC VIEW FUNCTIONS
@@ -627,6 +652,15 @@ contract Dispatcher is
         return _tokenWhitelist.contains(token);
     }
 
+    /**
+     * @dev Return manager's whitelist status
+     * @param account Manager's address
+     * @return Whitelist status
+     */
+    function isManagerWhitelisted(address account) public view returns (bool) {
+        return _managerWhitelist.contains(account);
+    }
+
     function validateTGEInfo(
         ITGE.TGEInfo calldata info, 
         IToken.TokenType tokenType, 
@@ -697,10 +731,10 @@ contract Dispatcher is
         _;
     }
 
-    modifier onlyServiceOwner() {
+    modifier onlyManager() {
         require(
-            msg.sender == IService(service).owner(),
-            ExceptionsLibrary.NOT_SERVICE_OWNER
+            isManagerWhitelisted(msg.sender),
+            ExceptionsLibrary.NOT_WHITELISTED
         );
         _;
     }

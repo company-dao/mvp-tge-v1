@@ -84,7 +84,7 @@ contract Token is
         if (tokenType_ == TokenType.Preference) {
             __ERC20_init(
                 IPool(pool_).trademark(), 
-                string(abi.encodePacked("p", IPool(pool_).governanceToken().symbol()))
+                string(abi.encodePacked("p", IPool(pool_).tokens(IToken.TokenType.Governance).symbol()))
             );
             description = description_;
         } else {
@@ -254,12 +254,7 @@ contract Token is
     }
 
     function containsTGE(address wallet, TokenType tokenType_) public view returns (bool) {
-        address[] memory tgeList;
-        if (tokenType_ == TokenType.Governance) {
-            tgeList = IPool(pool).governanceToken().getTGEList();
-        } else {
-            tgeList = IPool(pool).preferenceToken().getTGEList();
-        }
+        address[] memory tgeList = IPool(pool).tokens(tokenType_).getTGEList();
         for (uint256 i = 0; i < tgeList.length; i++) {
             if (wallet == tgeList[i])
                 return true;

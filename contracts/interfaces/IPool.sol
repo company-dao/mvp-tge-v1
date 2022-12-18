@@ -69,11 +69,7 @@ interface IPool {
         string memory trademark
     ) external;
 
-    function governanceToken() external view returns (IToken);
+    function setToken(address token_, IToken.TokenType tokenType_) external;
 
-    function preferenceToken() external view returns (IToken);
-
-    function setGovernanceToken(address token_) external;
-
-    function setPreferenceToken(address token_) external;
+    function tokens(IToken.TokenType tokenType_) external view returns (IToken);
 }

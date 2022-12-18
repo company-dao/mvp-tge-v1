@@ -291,7 +291,7 @@ contract Service is
         );
 
         token.initialize(address(pool), tokenInfo.symbol, tokenInfo.cap, IToken.TokenType.Governance, address(tge), "");
-        pool.setGovernanceToken(address(token));
+        pool.setToken(address(token), IToken.TokenType.Governance);
         tge.initialize(token, tgeInfo);
 
         _userWhitelist.remove(msg.sender);
@@ -318,42 +318,37 @@ contract Service is
         nonReentrant
         whenNotPaused
     {
-        ITGE tge;
-        IToken token; 
+        ITGE tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
+        IToken token = IPool(msg.sender).tokens(tokenType); 
         if (tokenType == IToken.TokenType.Governance) {
-            IToken governanceToken = IPool(msg.sender).governanceToken();
             require(
-                ITGE(governanceToken.lastTGE()).state() != ITGE.State.Active,
+                ITGE(token.lastTGE()).state() != ITGE.State.Active,
                 ExceptionsLibrary.ACTIVE_TGE_EXISTS
             );
-
-            tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
-            tge.initialize(governanceToken, tgeInfo);
-            governanceToken.addTGE(address(tge));
+            tge.initialize(token, tgeInfo);
+            token.addTGE(address(tge));
         }
         if (tokenType == IToken.TokenType.Preference) {
-            IToken preferenceToken = IPool(msg.sender).preferenceToken();
-            tge = ITGE(address(new BeaconProxy(tgeBeacon, "")));
-            if (address(preferenceToken) == address(0)) {
+            if (address(token) == address(0)) {
                 token = IToken(address(new BeaconProxy(tokenBeacon, "")));
                 token.initialize(msg.sender, "", preferenceTokenCap, tokenType, address(tge), tokenDescription);
                 tge.initialize(token, tgeInfo);
-                IPool(msg.sender).setPreferenceToken(address(token));
+                IPool(msg.sender).setToken(address(token), IToken.TokenType.Preference);
                 dispatcher.addContractRecord(address(token), IDispatcher.ContractType.PreferenceToken, "");
             } else {
-                if (ITGE(preferenceToken.getTGEList()[0]).state() == ITGE.State.Failed) {
+                if (ITGE(token.getTGEList()[0]).state() == ITGE.State.Failed) {
                     token = IToken(address(new BeaconProxy(tokenBeacon, "")));
                     token.initialize(msg.sender, "", preferenceTokenCap, tokenType, address(tge), tokenDescription);
                     tge.initialize(token, tgeInfo);
-                    IPool(msg.sender).setPreferenceToken(address(token));
+                    IPool(msg.sender).setToken(address(token), IToken.TokenType.Preference);
                     dispatcher.addContractRecord(address(token), IDispatcher.ContractType.PreferenceToken, "");
                 } else {
                     require(
-                        ITGE(preferenceToken.lastTGE()).state() != ITGE.State.Active,
+                        ITGE(token.lastTGE()).state() != ITGE.State.Active,
                         ExceptionsLibrary.ACTIVE_TGE_EXISTS
                     );
-                    tge.initialize(preferenceToken, tgeInfo);
-                    preferenceToken.addTGE(address(tge));
+                    tge.initialize(token, tgeInfo);
+                    token.addTGE(address(tge));
                 }
             }
         }
@@ -647,8 +642,8 @@ contract Service is
             IPool(_pool).isDAO()
         ) {
             return
-                IPool(_pool).governanceToken().cap() -
-                getProtocolTokenFee(IPool(_pool).governanceToken().cap());
+                IPool(_pool).tokens(IToken.TokenType.Governance).cap() -
+                getProtocolTokenFee(IPool(_pool).tokens(IToken.TokenType.Governance).cap());
         }
 
         return type(uint256).max - getProtocolTokenFee(type(uint256).max);

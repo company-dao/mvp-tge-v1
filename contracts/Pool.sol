@@ -53,12 +53,6 @@ contract Pool is
     /// @dev Pool date of incorporatio
     string public dateOfIncorporation;
 
-    /// @dev Pool governance token address
-    IToken public governanceToken;
-
-    /// @dev Pool preference token address
-    IToken public preferenceToken;
-
     /**
      * @dev block delay for executeBallot
      * [0] - ballot value in USDT after which delay kicks in
@@ -75,6 +69,9 @@ contract Pool is
 
     /// @dev Is pool launched or not
     bool public poolLaunched;
+
+    /// @dev Pool tokens addresses
+    mapping(IToken.TokenType => IToken) public tokens;
 
     // INITIALIZER AND CONFIGURATOR
 
@@ -144,23 +141,14 @@ contract Pool is
     }
 
     /**
-     * @dev Set pool governance token
-     * @param token_ Token address
-     */
-    function setGovernanceToken(address token_) external onlyService launched {
-        require(token_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-
-        governanceToken = IToken(token_);
-    }
-
-    /**
      * @dev Set pool preference token
      * @param token_ Token address
+     * @param tokenType_ Token type
      */
-    function setPreferenceToken(address token_) external onlyService launched {
+    function setToken(address token_, IToken.TokenType tokenType_) external onlyService launched {
         require(token_ != address(0), ExceptionsLibrary.ADDRESS_ZERO);
 
-        preferenceToken = IToken(token_);
+        tokens[tokenType_] = IToken(token_);
     }
 
     /**
@@ -203,17 +191,17 @@ contract Pool is
         bool support
     ) external nonReentrant whenNotPaused launched {
         if (votes == type(uint256).max) {
-            votes = governanceToken.unlockedBalanceOf(msg.sender, proposalId);
+            votes = tokens[IToken.TokenType.Governance].unlockedBalanceOf(msg.sender, proposalId);
         } else {
             require(
-                votes <= governanceToken.unlockedBalanceOf(msg.sender, proposalId),
+                votes <= tokens[IToken.TokenType.Governance].unlockedBalanceOf(msg.sender, proposalId),
                 ExceptionsLibrary.LOW_UNLOCKED_BALANCE
             );
         }
         require(votes > 0, ExceptionsLibrary.VALUE_ZERO);
 
         _castVote(proposalId, votes, support);
-        governanceToken.lock(
+        tokens[IToken.TokenType.Governance].lock(
             msg.sender,
             votes,
             getProposal(proposalId).endBlock,
@@ -260,7 +248,7 @@ contract Pool is
             description,
             _getTotalSupply() -
                 _getTotalTGEVestedTokens() -
-                governanceToken.balanceOf(service.protocolTreasury()),
+                tokens[IToken.TokenType.Governance].balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
@@ -302,7 +290,7 @@ contract Pool is
             description,
             _getTotalSupply() -
                 _getTotalTGEVestedTokens() -
-                governanceToken.balanceOf(service.protocolTreasury()),
+                tokens[IToken.TokenType.Governance].balanceOf(service.protocolTreasury()),
             service.ballotExecDelay(1), // --> ballotExecDelay(1)
             proposalType,
             metaHash,
@@ -392,7 +380,7 @@ contract Pool is
      * @return Is any governance TGE successful
      */
     function isDAO() external view returns (bool) {
-        return governanceToken.isPrimaryTGESuccessful();
+        return tokens[IToken.TokenType.Governance].isPrimaryTGESuccessful();
     }
 
     /**
@@ -423,7 +411,7 @@ contract Pool is
      * @return Total pool token supply
      */
     function _getTotalSupply() internal view override returns (uint256) {
-        return governanceToken.totalSupply();
+        return tokens[IToken.TokenType.Governance].totalSupply();
     }
 
     /**
@@ -436,7 +424,7 @@ contract Pool is
         override
         returns (uint256)
     {
-        return governanceToken.getTotalTGEVestedTokens();
+        return tokens[IToken.TokenType.Governance].getTotalTGEVestedTokens();
     }
 
     /**

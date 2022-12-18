@@ -131,6 +131,14 @@ mapping(address => bytes) tokenSwapReversePath
 
 _Uniswap reverse swap path_
 
+### _managerWhitelist
+
+```solidity
+struct EnumerableSetUpgradeable.AddressSet _managerWhitelist
+```
+
+_List of managers_
+
 ### ContractRecordAdded
 
 ```solidity
@@ -418,6 +426,34 @@ _Remove tokens from whitelist_
 | ---- | ---- | ----------- |
 | tokens | address[] | Tokens |
 
+### addManagerToWhitelist
+
+```solidity
+function addManagerToWhitelist(address account) external
+```
+
+_Add manager to whitelist_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | Manager address |
+
+### removeManagerFromWhitelist
+
+```solidity
+function removeManagerFromWhitelist(address account) external
+```
+
+_Remove manager from whitelist_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | Manager address |
+
 ### typeOf
 
 ```solidity
@@ -559,10 +595,30 @@ _Check if token is whitelisted_
 | ---- | ---- | ----------- |
 | [0] | bool | Is token whitelisted |
 
+### isManagerWhitelisted
+
+```solidity
+function isManagerWhitelisted(address account) public view returns (bool)
+```
+
+_Return manager's whitelist status_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | Manager's address |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | Whitelist status |
+
 ### validateTGEInfo
 
 ```solidity
-function validateTGEInfo(struct ITGE.TGEInfo info, contract IToken token_) public view returns (bool)
+function validateTGEInfo(struct ITGE.TGEInfo info, enum IToken.TokenType tokenType, uint256 cap, uint256 totalSupply) public view returns (bool)
 ```
 
 ### validateBallotParams
@@ -577,855 +633,10 @@ function validateBallotParams(uint256 ballotQuorumThreshold, uint256 ballotDecis
 modifier onlyService()
 ```
 
-### onlyServiceOwner
+### onlyManager
 
 ```solidity
-modifier onlyServiceOwner()
-```
-
-## IDispatcher
-
-### ContractType
-
-```solidity
-enum ContractType {
-  None,
-  Pool,
-  GovernanceToken,
-  TGE
-}
-```
-
-### EventType
-
-```solidity
-enum EventType {
-  None,
-  TransferETH,
-  TransferERC20,
-  TGE,
-  GovernanceSettings
-}
-```
-
-### addContractRecord
-
-```solidity
-function addContractRecord(address addr, enum IDispatcher.ContractType contractType, string description) external returns (uint256 index)
-```
-
-### addProposalRecord
-
-```solidity
-function addProposalRecord(address pool, uint256 proposalId) external returns (uint256 index)
-```
-
-### addEventRecord
-
-```solidity
-function addEventRecord(address pool, enum IDispatcher.EventType eventType, uint256 proposalId, string metaHash) external returns (uint256 index)
-```
-
-### typeOf
-
-```solidity
-function typeOf(address addr) external view returns (enum IDispatcher.ContractType)
-```
-
-### Status
-
-```solidity
-enum Status {
-  NotUsed,
-  Used
-}
-```
-
-### QueueInfo
-
-```solidity
-struct QueueInfo {
-  uint256 jurisdiction;
-  string EIN;
-  string dateOfIncorporation;
-  uint256 entityType;
-  enum IDispatcher.Status status;
-  address pool;
-  uint256 fee;
-}
-```
-
-### initialize
-
-```solidity
-function initialize() external
-```
-
-### service
-
-```solidity
-function service() external view returns (address)
-```
-
-### lockRecord
-
-```solidity
-function lockRecord(uint256 jurisdiction, uint256 entityType) external returns (address, uint256)
-```
-
-### tokenWhitelist
-
-```solidity
-function tokenWhitelist() external view returns (address[])
-```
-
-### isTokenWhitelisted
-
-```solidity
-function isTokenWhitelisted(address token) external view returns (bool)
-```
-
-### tokenSwapPath
-
-```solidity
-function tokenSwapPath(address) external view returns (bytes)
-```
-
-### tokenSwapReversePath
-
-```solidity
-function tokenSwapReversePath(address) external view returns (bytes)
-```
-
-### ProposalType
-
-```solidity
-enum ProposalType {
-  None,
-  TransferETH,
-  TransferERC20,
-  TGE,
-  GovernanceSettings
-}
-```
-
-### validateTGEInfo
-
-```solidity
-function validateTGEInfo(struct ITGE.TGEInfo info, contract IToken token_) external view returns (bool)
-```
-
-### validateBallotParams
-
-```solidity
-function validateBallotParams(uint256 ballotQuorumThreshold, uint256 ballotDecisionThreshold, uint256 ballotLifespan, uint256[10] ballotExecDelay) external pure returns (bool)
-```
-
-## IPool
-
-### initialize
-
-```solidity
-function initialize(uint256 jurisdiction_, string EIN_, string dateOfIncorporation, uint256 entityType, uint256 metadataIndex) external
-```
-
-### setToken
-
-```solidity
-function setToken(address token_) external
-```
-
-### setPrimaryTGE
-
-```solidity
-function setPrimaryTGE(address tge_) external
-```
-
-### setGovernanceSettings
-
-```solidity
-function setGovernanceSettings(uint256 ballotQuorumThreshold_, uint256 ballotDecisionThreshold_, uint256 ballotLifespan_, uint256[10] ballotExecDelay) external
-```
-
-### proposeSingleAction
-
-```solidity
-function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IDispatcher.ProposalType proposalType, string metaHash) external returns (uint256 proposalId)
-```
-
-### proposeTransfer
-
-```solidity
-function proposeTransfer(address[] targets, uint256[] values, string description, enum IDispatcher.ProposalType proposalType, string metaHash, address token_) external returns (uint256 proposalId)
-```
-
-### setLastProposalIdForAccount
-
-```solidity
-function setLastProposalIdForAccount(address creator, uint256 proposalId) external
-```
-
-### serviceCancelBallot
-
-```solidity
-function serviceCancelBallot(uint256 proposalId) external
-```
-
-### getTVL
-
-```solidity
-function getTVL() external returns (uint256)
-```
-
-### owner
-
-```solidity
-function owner() external view returns (address)
-```
-
-### service
-
-```solidity
-function service() external view returns (contract IService)
-```
-
-### token
-
-```solidity
-function token() external view returns (contract IToken)
-```
-
-### lastTGE
-
-```solidity
-function lastTGE() external view returns (address)
-```
-
-### getGovernanceTGEList
-
-```solidity
-function getGovernanceTGEList() external view returns (address[])
-```
-
-### primaryTGE
-
-```solidity
-function primaryTGE() external view returns (address)
-```
-
-### maxProposalId
-
-```solidity
-function maxProposalId() external view returns (uint256)
-```
-
-### isDAO
-
-```solidity
-function isDAO() external view returns (bool)
-```
-
-### trademark
-
-```solidity
-function trademark() external view returns (string)
-```
-
-### addTGE
-
-```solidity
-function addTGE(address tge_) external
-```
-
-### ballotExecDelay
-
-```solidity
-function ballotExecDelay(uint256 _index) external view returns (uint256)
-```
-
-### paused
-
-```solidity
-function paused() external view returns (bool)
-```
-
-### launch
-
-```solidity
-function launch(address owner_, uint256 ballotQuorumThreshold_, uint256 ballotDecisionThreshold_, uint256 ballotLifespan_, uint256[10] ballotExecDelay_, string trademark) external
-```
-
-### addPreferenceToken
-
-```solidity
-function addPreferenceToken(address token_) external
-```
-
-## IService
-
-### initialize
-
-```solidity
-function initialize(contract IDispatcher dispatcher_, address poolBeacon_, address tokenBeacon_, address tgeBeacon_, address proposalGateway_, uint256[13] ballotParams, contract ISwapRouter uniswapRouter_, contract IQuoter uniswapQuoter_, uint256 protocolTokenFee_) external
-```
-
-### createSecondaryTGE
-
-```solidity
-function createSecondaryTGE(struct ITGE.TGEInfo tgeInfo, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription) external
-```
-
-### addProposal
-
-```solidity
-function addProposal(uint256 proposalId) external
-```
-
-### addEvent
-
-```solidity
-function addEvent(enum IDispatcher.EventType eventType, uint256 proposalId, string metaHash) external
-```
-
-### isManagerWhitelisted
-
-```solidity
-function isManagerWhitelisted(address account) external view returns (bool)
-```
-
-### owner
-
-```solidity
-function owner() external view returns (address)
-```
-
-### uniswapRouter
-
-```solidity
-function uniswapRouter() external view returns (contract ISwapRouter)
-```
-
-### uniswapQuoter
-
-```solidity
-function uniswapQuoter() external view returns (contract IQuoter)
-```
-
-### dispatcher
-
-```solidity
-function dispatcher() external view returns (contract IDispatcher)
-```
-
-### proposalGateway
-
-```solidity
-function proposalGateway() external view returns (address)
-```
-
-### protocolTreasury
-
-```solidity
-function protocolTreasury() external view returns (address)
-```
-
-### protocolTokenFee
-
-```solidity
-function protocolTokenFee() external view returns (uint256)
-```
-
-### getMinSoftCap
-
-```solidity
-function getMinSoftCap() external view returns (uint256)
-```
-
-### getProtocolTokenFee
-
-```solidity
-function getProtocolTokenFee(uint256 amount) external view returns (uint256)
-```
-
-### ballotExecDelay
-
-```solidity
-function ballotExecDelay(uint256 _index) external view returns (uint256)
-```
-
-### primaryAsset
-
-```solidity
-function primaryAsset() external view returns (address)
-```
-
-### secondaryAsset
-
-```solidity
-function secondaryAsset() external view returns (address)
-```
-
-### poolBeacon
-
-```solidity
-function poolBeacon() external view returns (address)
-```
-
-### tgeBeacon
-
-```solidity
-function tgeBeacon() external view returns (address)
-```
-
-## ITGE
-
-### TGEInfo
-
-```solidity
-struct TGEInfo {
-  uint256 price;
-  uint256 hardcap;
-  uint256 softcap;
-  uint256 minPurchase;
-  uint256 maxPurchase;
-  uint256 vestingPercent;
-  uint256 vestingDuration;
-  uint256 vestingTVL;
-  uint256 duration;
-  address[] userWhitelist;
-  address unitOfAccount;
-  uint256 lockupDuration;
-  uint256 lockupTVL;
-}
-```
-
-### initialize
-
-```solidity
-function initialize(contract IToken token_, struct ITGE.TGEInfo info) external
-```
-
-### State
-
-```solidity
-enum State {
-  Active,
-  Failed,
-  Successful
-}
-```
-
-### state
-
-```solidity
-function state() external view returns (enum ITGE.State)
-```
-
-### transferUnlocked
-
-```solidity
-function transferUnlocked() external view returns (bool)
-```
-
-### getTotalVested
-
-```solidity
-function getTotalVested() external view returns (uint256)
-```
-
-## IToken
-
-### TokenInfo
-
-```solidity
-struct TokenInfo {
-  string symbol;
-  uint256 cap;
-}
-```
-
-### TokenType
-
-```solidity
-enum TokenType {
-  None,
-  Governance,
-  Preference
-}
-```
-
-### initialize
-
-```solidity
-function initialize(address pool_, string symbol_, uint256 cap_, enum IToken.TokenType tokenType_, address preferenceTGE_, string description_) external
-```
-
-### mint
-
-```solidity
-function mint(address to, uint256 amount) external
-```
-
-### burn
-
-```solidity
-function burn(address from, uint256 amount) external
-```
-
-### lock
-
-```solidity
-function lock(address account, uint256 amount, uint256 deadline, uint256 proposalId) external
-```
-
-### cap
-
-```solidity
-function cap() external view returns (uint256)
-```
-
-### minUnlockedBalanceOf
-
-```solidity
-function minUnlockedBalanceOf(address from) external view returns (uint256)
-```
-
-### unlockedBalanceOf
-
-```solidity
-function unlockedBalanceOf(address account, uint256 proposalId) external view returns (uint256)
-```
-
-### pool
-
-```solidity
-function pool() external view returns (address)
-```
-
-### service
-
-```solidity
-function service() external view returns (contract IService)
-```
-
-### decimals
-
-```solidity
-function decimals() external view returns (uint8)
-```
-
-### symbol
-
-```solidity
-function symbol() external view returns (string)
-```
-
-### tokenType
-
-```solidity
-function tokenType() external view returns (enum IToken.TokenType)
-```
-
-## ExceptionsLibrary
-
-### ADDRESS_ZERO
-
-```solidity
-string ADDRESS_ZERO
-```
-
-### INCORRECT_ETH_PASSED
-
-```solidity
-string INCORRECT_ETH_PASSED
-```
-
-### NO_COMPANY
-
-```solidity
-string NO_COMPANY
-```
-
-### INVALID_TOKEN
-
-```solidity
-string INVALID_TOKEN
-```
-
-### NOT_POOL
-
-```solidity
-string NOT_POOL
-```
-
-### NOT_TGE
-
-```solidity
-string NOT_TGE
-```
-
-### NOT_DISPATCHER
-
-```solidity
-string NOT_DISPATCHER
-```
-
-### NOT_POOL_OWNER
-
-```solidity
-string NOT_POOL_OWNER
-```
-
-### NOT_SERVICE_OWNER
-
-```solidity
-string NOT_SERVICE_OWNER
-```
-
-### IS_DAO
-
-```solidity
-string IS_DAO
-```
-
-### NOT_DAO
-
-```solidity
-string NOT_DAO
-```
-
-### NOT_SHAREHOLDER
-
-```solidity
-string NOT_SHAREHOLDER
-```
-
-### NOT_WHITELISTED
-
-```solidity
-string NOT_WHITELISTED
-```
-
-### ALREADY_WHITELISTED
-
-```solidity
-string ALREADY_WHITELISTED
-```
-
-### ALREADY_NOT_WHITELISTED
-
-```solidity
-string ALREADY_NOT_WHITELISTED
-```
-
-### NOT_SERVICE
-
-```solidity
-string NOT_SERVICE
-```
-
-### WRONG_STATE
-
-```solidity
-string WRONG_STATE
-```
-
-### TRANSFER_FAILED
-
-```solidity
-string TRANSFER_FAILED
-```
-
-### CLAIM_NOT_AVAILABLE
-
-```solidity
-string CLAIM_NOT_AVAILABLE
-```
-
-### NO_LOCKED_BALANCE
-
-```solidity
-string NO_LOCKED_BALANCE
-```
-
-### LOCKUP_TVL_REACHED
-
-```solidity
-string LOCKUP_TVL_REACHED
-```
-
-### HARDCAP_OVERFLOW
-
-```solidity
-string HARDCAP_OVERFLOW
-```
-
-### MAX_PURCHASE_OVERFLOW
-
-```solidity
-string MAX_PURCHASE_OVERFLOW
-```
-
-### HARDCAP_OVERFLOW_REMAINING_SUPPLY
-
-```solidity
-string HARDCAP_OVERFLOW_REMAINING_SUPPLY
-```
-
-### HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
-
-```solidity
-string HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
-```
-
-### MIN_PURCHASE_UNDERFLOW
-
-```solidity
-string MIN_PURCHASE_UNDERFLOW
-```
-
-### LOW_UNLOCKED_BALANCE
-
-```solidity
-string LOW_UNLOCKED_BALANCE
-```
-
-### ZERO_PURCHASE_AMOUNT
-
-```solidity
-string ZERO_PURCHASE_AMOUNT
-```
-
-### NOTHING_TO_REDEEM
-
-```solidity
-string NOTHING_TO_REDEEM
-```
-
-### RECORD_IN_USE
-
-```solidity
-string RECORD_IN_USE
-```
-
-### INVALID_EIN
-
-```solidity
-string INVALID_EIN
-```
-
-### VALUE_ZERO
-
-```solidity
-string VALUE_ZERO
-```
-
-### ALREADY_SET
-
-```solidity
-string ALREADY_SET
-```
-
-### VOTING_FINISHED
-
-```solidity
-string VOTING_FINISHED
-```
-
-### ALREADY_EXECUTED
-
-```solidity
-string ALREADY_EXECUTED
-```
-
-### ACTIVE_TGE_EXISTS
-
-```solidity
-string ACTIVE_TGE_EXISTS
-```
-
-### INVALID_VALUE
-
-```solidity
-string INVALID_VALUE
-```
-
-### INVALID_CAP
-
-```solidity
-string INVALID_CAP
-```
-
-### INVALID_HARDCAP
-
-```solidity
-string INVALID_HARDCAP
-```
-
-### ONLY_POOL
-
-```solidity
-string ONLY_POOL
-```
-
-### ETH_TRANSFER_FAIL
-
-```solidity
-string ETH_TRANSFER_FAIL
-```
-
-### TOKEN_TRANSFER_FAIL
-
-```solidity
-string TOKEN_TRANSFER_FAIL
-```
-
-### BLOCK_DELAY
-
-```solidity
-string BLOCK_DELAY
-```
-
-### SERVICE_PAUSED
-
-```solidity
-string SERVICE_PAUSED
-```
-
-### INVALID_PROPOSAL_TYPE
-
-```solidity
-string INVALID_PROPOSAL_TYPE
-```
-
-### EXECUTION_FAILED
-
-```solidity
-string EXECUTION_FAILED
-```
-
-### INVALID_USER
-
-```solidity
-string INVALID_USER
-```
-
-### NOT_LAUNCHED
-
-```solidity
-string NOT_LAUNCHED
-```
-
-### LAUNCHED
-
-```solidity
-string LAUNCHED
-```
-
-### VESTING_TVL_REACHED
-
-```solidity
-string VESTING_TVL_REACHED
+modifier onlyManager()
 ```
 
 ## Pool
@@ -1439,14 +650,6 @@ contract IService service
 ```
 
 _Service address_
-
-### token
-
-```solidity
-contract IToken token
-```
-
-_Pool token address_
 
 ### ballotQuorumThreshold
 
@@ -1520,22 +723,6 @@ string dateOfIncorporation
 
 _Pool date of incorporatio_
 
-### primaryTGE
-
-```solidity
-address primaryTGE
-```
-
-_Pool's first TGE_
-
-### _governanceTGEList
-
-```solidity
-address[] _governanceTGEList
-```
-
-_List of all governance pool's TGEs_
-
 ### ballotExecDelay
 
 ```solidity
@@ -1566,13 +753,13 @@ bool poolLaunched
 
 _Is pool launched or not_
 
-### _preferenceTokenList
+### tokens
 
 ```solidity
-address[] _preferenceTokenList
+mapping(enum IToken.TokenType => contract IToken) tokens
 ```
 
-_List of all pool's preference tokens_
+_Pool tokens addresses_
 
 ### constructor
 
@@ -1620,30 +807,17 @@ _Create TransferETH proposal_
 ### setToken
 
 ```solidity
-function setToken(address token_) external
+function setToken(address token_, enum IToken.TokenType tokenType_) external
 ```
 
-_Set pool governance token_
+_Set pool preference token_
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | token_ | address | Token address |
-
-### setPrimaryTGE
-
-```solidity
-function setPrimaryTGE(address tge_) external
-```
-
-_Set pool primary TGE_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| tge_ | address | TGE address |
+| tokenType_ | enum IToken.TokenType | Token type |
 
 ### setGovernanceSettings
 
@@ -1734,34 +908,6 @@ _Create pool proposal_
 function setLastProposalIdForAccount(address creator, uint256 proposalId) external
 ```
 
-### addTGE
-
-```solidity
-function addTGE(address tge_) external
-```
-
-_Add TGE to TGE archive list_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| tge_ | address | TGE address |
-
-### addPreferenceToken
-
-```solidity
-function addPreferenceToken(address token_) external
-```
-
-_Add TGE to TGE archive list_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| token_ | address | Preference token address |
-
 ### getTVL
 
 ```solidity
@@ -1846,41 +992,13 @@ _Return maximum proposal ID_
 function isDAO() external view returns (bool)
 ```
 
-_Return if pool had a successful TGE_
+_Return if pool had a successful governance TGE_
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | bool | Is any TGE successful |
-
-### getGovernanceTGEList
-
-```solidity
-function getGovernanceTGEList() external view returns (address[])
-```
-
-_Return list of pool's TGEs_
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | address[] | TGE list |
-
-### lastTGE
-
-```solidity
-function lastTGE() external view returns (address)
-```
-
-_Return list of pool's TGEs_
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | address | TGE list |
+| [0] | bool | Is any governance TGE successful |
 
 ### owner
 
@@ -1901,20 +1019,6 @@ _Return pool owner_
 ```solidity
 function getBallotExecDelay() external view returns (uint256[10])
 ```
-
-### getPreferenceTokenList
-
-```solidity
-function getPreferenceTokenList() external view returns (address[])
-```
-
-_Return list of pool's preference tokens_
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | address[] | TGE list |
 
 ### _afterProposalCreated
 
@@ -1963,20 +1067,6 @@ _Return pool paused status_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | [0] | bool | Is pool paused |
-
-### getTotalTGEVestedTokens
-
-```solidity
-function getTotalTGEVestedTokens() public view returns (uint256)
-```
-
-_Return amount of tokens currently vested in TGE vesting contract(s)_
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | Total pool vesting tokens |
 
 ### onlyService
 
@@ -2109,7 +1199,7 @@ _Create TransferERC20 proposal_
 ### createTGEProposal
 
 ```solidity
-function createTGEProposal(contract IPool pool, struct ITGE.TGEInfo info, string description, string metaHash, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription) external returns (uint256 proposalId)
+function createTGEProposal(contract IPool pool, struct ITGE.TGEInfo info, string description, string metaHash, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription, uint256 tokenCap) external returns (uint256 proposalId)
 ```
 
 _Create TGE proposal_
@@ -2123,8 +1213,9 @@ _Create TGE proposal_
 | description | string | Proposal description |
 | metaHash | string | Hash value of proposal metadata |
 | metadataURI | string |  |
-| tokenType | enum IToken.TokenType |  |
-| tokenDescription | string |  |
+| tokenType | enum IToken.TokenType | Token type |
+| tokenDescription | string | Description for preference token |
+| tokenCap | uint256 | Preference token cap |
 
 #### Return Values
 
@@ -2454,7 +1545,7 @@ _Create pool_
 ### createSecondaryTGE
 
 ```solidity
-function createSecondaryTGE(struct ITGE.TGEInfo tgeInfo, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription) external
+function createSecondaryTGE(struct ITGE.TGEInfo tgeInfo, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription, uint256 preferenceTokenCap) external
 ```
 
 _Create secondary TGE_
@@ -2467,6 +1558,7 @@ _Create secondary TGE_
 | metadataURI | string |  |
 | tokenType | enum IToken.TokenType |  |
 | tokenDescription | string |  |
+| preferenceTokenCap | uint256 |  |
 
 ### addProposal
 
@@ -3255,14 +2347,6 @@ enum IToken.TokenType tokenType
 
 _Token type_
 
-### preferenceTGE
-
-```solidity
-address preferenceTGE
-```
-
-_Preference TGE for preference token, for Governance token - address(0)_
-
 ### description
 
 ```solidity
@@ -3270,6 +2354,14 @@ string description
 ```
 
 _Preference token description, allows up to 5000 characters, for others - ""_
+
+### _tgeList
+
+```solidity
+address[] _tgeList
+```
+
+_List of all TGEs_
 
 ### LockedBalance
 
@@ -3297,7 +2389,7 @@ constructor() public
 ### initialize
 
 ```solidity
-function initialize(address pool_, string symbol_, uint256 cap_, enum IToken.TokenType tokenType_, address preferenceTGE_, string description_) external
+function initialize(address pool_, string symbol_, uint256 cap_, enum IToken.TokenType tokenType_, address primaryTGE_, string description_) external
 ```
 
 _Constructor function, can only be called once_
@@ -3310,7 +2402,7 @@ _Constructor function, can only be called once_
 | symbol_ | string | Token symbol for GovernanceToken |
 | cap_ | uint256 | Token cap |
 | tokenType_ | enum IToken.TokenType | Token type |
-| preferenceTGE_ | address | Preference tge address for Preference token |
+| primaryTGE_ | address | Primary tge address |
 | description_ | string | Token description for Preference token |
 
 ### mint
@@ -3359,6 +2451,20 @@ _Lock votes (tokens) as a result of voting for a proposal_
 | amount | uint256 | Amount of tokens |
 | deadline | uint256 | Lockup deadline |
 | proposalId | uint256 | Proposal ID |
+
+### addTGE
+
+```solidity
+function addTGE(address tge_) external
+```
+
+_Add TGE to TGE archive list_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tge_ | address | TGE address |
 
 ### unlockedBalanceOf
 
@@ -3476,8 +2582,64 @@ _Return least amount of unlocked tokens for any proposal that user might have vo
 ### containsTGE
 
 ```solidity
-function containsTGE(address wallet) public view returns (bool)
+function containsTGE(address wallet, enum IToken.TokenType tokenType_) public view returns (bool)
 ```
+
+### isPrimaryTGESuccessful
+
+```solidity
+function isPrimaryTGESuccessful() external view returns (bool)
+```
+
+_Return if pool had a successful TGE_
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | Is any TGE successful |
+
+### getTGEList
+
+```solidity
+function getTGEList() external view returns (address[])
+```
+
+_Return list of pool's TGEs_
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address[] | TGE list |
+
+### lastTGE
+
+```solidity
+function lastTGE() external view returns (address)
+```
+
+_Return list of pool's TGEs_
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address | TGE list |
+
+### getTotalTGEVestedTokens
+
+```solidity
+function getTotalTGEVestedTokens() public view returns (uint256)
+```
+
+_Return amount of tokens currently vested in TGE vesting contract(s)_
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | Total vesting tokens |
 
 ### _transfer
 
@@ -3501,6 +2663,12 @@ to least amount of unlocked tokens for any proposal that user might have voted f
 
 ```solidity
 modifier onlyPool()
+```
+
+### onlyService
+
+```solidity
+modifier onlyService()
 ```
 
 ### onlyTGE
@@ -3886,6 +3054,864 @@ function _getTotalSupply() internal view virtual returns (uint256)
 
 ```solidity
 function _getTotalTGEVestedTokens() internal view virtual returns (uint256)
+```
+
+## IDispatcher
+
+### ContractType
+
+```solidity
+enum ContractType {
+  None,
+  Pool,
+  GovernanceToken,
+  PreferenceToken,
+  TGE
+}
+```
+
+### EventType
+
+```solidity
+enum EventType {
+  None,
+  TransferETH,
+  TransferERC20,
+  TGE,
+  GovernanceSettings
+}
+```
+
+### addContractRecord
+
+```solidity
+function addContractRecord(address addr, enum IDispatcher.ContractType contractType, string description) external returns (uint256 index)
+```
+
+### addProposalRecord
+
+```solidity
+function addProposalRecord(address pool, uint256 proposalId) external returns (uint256 index)
+```
+
+### addEventRecord
+
+```solidity
+function addEventRecord(address pool, enum IDispatcher.EventType eventType, uint256 proposalId, string metaHash) external returns (uint256 index)
+```
+
+### typeOf
+
+```solidity
+function typeOf(address addr) external view returns (enum IDispatcher.ContractType)
+```
+
+### Status
+
+```solidity
+enum Status {
+  NotUsed,
+  Used
+}
+```
+
+### QueueInfo
+
+```solidity
+struct QueueInfo {
+  uint256 jurisdiction;
+  string EIN;
+  string dateOfIncorporation;
+  uint256 entityType;
+  enum IDispatcher.Status status;
+  address pool;
+  uint256 fee;
+}
+```
+
+### initialize
+
+```solidity
+function initialize() external
+```
+
+### service
+
+```solidity
+function service() external view returns (address)
+```
+
+### lockRecord
+
+```solidity
+function lockRecord(uint256 jurisdiction, uint256 entityType) external returns (address, uint256)
+```
+
+### tokenWhitelist
+
+```solidity
+function tokenWhitelist() external view returns (address[])
+```
+
+### isTokenWhitelisted
+
+```solidity
+function isTokenWhitelisted(address token) external view returns (bool)
+```
+
+### tokenSwapPath
+
+```solidity
+function tokenSwapPath(address) external view returns (bytes)
+```
+
+### tokenSwapReversePath
+
+```solidity
+function tokenSwapReversePath(address) external view returns (bytes)
+```
+
+### ProposalType
+
+```solidity
+enum ProposalType {
+  None,
+  TransferETH,
+  TransferERC20,
+  TGE,
+  GovernanceSettings
+}
+```
+
+### validateTGEInfo
+
+```solidity
+function validateTGEInfo(struct ITGE.TGEInfo info, enum IToken.TokenType tokenType, uint256 cap, uint256 totalSupply) external view returns (bool)
+```
+
+### validateBallotParams
+
+```solidity
+function validateBallotParams(uint256 ballotQuorumThreshold, uint256 ballotDecisionThreshold, uint256 ballotLifespan, uint256[10] ballotExecDelay) external pure returns (bool)
+```
+
+## IPool
+
+### initialize
+
+```solidity
+function initialize(uint256 jurisdiction_, string EIN_, string dateOfIncorporation, uint256 entityType, uint256 metadataIndex) external
+```
+
+### setGovernanceSettings
+
+```solidity
+function setGovernanceSettings(uint256 ballotQuorumThreshold_, uint256 ballotDecisionThreshold_, uint256 ballotLifespan_, uint256[10] ballotExecDelay) external
+```
+
+### proposeSingleAction
+
+```solidity
+function proposeSingleAction(address target, uint256 value, bytes cd, string description, enum IDispatcher.ProposalType proposalType, string metaHash) external returns (uint256 proposalId)
+```
+
+### proposeTransfer
+
+```solidity
+function proposeTransfer(address[] targets, uint256[] values, string description, enum IDispatcher.ProposalType proposalType, string metaHash, address token_) external returns (uint256 proposalId)
+```
+
+### setLastProposalIdForAccount
+
+```solidity
+function setLastProposalIdForAccount(address creator, uint256 proposalId) external
+```
+
+### serviceCancelBallot
+
+```solidity
+function serviceCancelBallot(uint256 proposalId) external
+```
+
+### getTVL
+
+```solidity
+function getTVL() external returns (uint256)
+```
+
+### owner
+
+```solidity
+function owner() external view returns (address)
+```
+
+### service
+
+```solidity
+function service() external view returns (contract IService)
+```
+
+### maxProposalId
+
+```solidity
+function maxProposalId() external view returns (uint256)
+```
+
+### isDAO
+
+```solidity
+function isDAO() external view returns (bool)
+```
+
+### trademark
+
+```solidity
+function trademark() external view returns (string)
+```
+
+### ballotExecDelay
+
+```solidity
+function ballotExecDelay(uint256 _index) external view returns (uint256)
+```
+
+### paused
+
+```solidity
+function paused() external view returns (bool)
+```
+
+### launch
+
+```solidity
+function launch(address owner_, uint256 ballotQuorumThreshold_, uint256 ballotDecisionThreshold_, uint256 ballotLifespan_, uint256[10] ballotExecDelay_, string trademark) external
+```
+
+### setToken
+
+```solidity
+function setToken(address token_, enum IToken.TokenType tokenType_) external
+```
+
+### tokens
+
+```solidity
+function tokens(enum IToken.TokenType tokenType_) external view returns (contract IToken)
+```
+
+## IService
+
+### initialize
+
+```solidity
+function initialize(contract IDispatcher dispatcher_, address poolBeacon_, address tokenBeacon_, address tgeBeacon_, address proposalGateway_, uint256[13] ballotParams, contract ISwapRouter uniswapRouter_, contract IQuoter uniswapQuoter_, uint256 protocolTokenFee_) external
+```
+
+### createSecondaryTGE
+
+```solidity
+function createSecondaryTGE(struct ITGE.TGEInfo tgeInfo, string metadataURI, enum IToken.TokenType tokenType, string tokenDescription, uint256 preferenceTokenCap) external
+```
+
+### addProposal
+
+```solidity
+function addProposal(uint256 proposalId) external
+```
+
+### addEvent
+
+```solidity
+function addEvent(enum IDispatcher.EventType eventType, uint256 proposalId, string metaHash) external
+```
+
+### isManagerWhitelisted
+
+```solidity
+function isManagerWhitelisted(address account) external view returns (bool)
+```
+
+### owner
+
+```solidity
+function owner() external view returns (address)
+```
+
+### uniswapRouter
+
+```solidity
+function uniswapRouter() external view returns (contract ISwapRouter)
+```
+
+### uniswapQuoter
+
+```solidity
+function uniswapQuoter() external view returns (contract IQuoter)
+```
+
+### dispatcher
+
+```solidity
+function dispatcher() external view returns (contract IDispatcher)
+```
+
+### proposalGateway
+
+```solidity
+function proposalGateway() external view returns (address)
+```
+
+### protocolTreasury
+
+```solidity
+function protocolTreasury() external view returns (address)
+```
+
+### protocolTokenFee
+
+```solidity
+function protocolTokenFee() external view returns (uint256)
+```
+
+### getMinSoftCap
+
+```solidity
+function getMinSoftCap() external view returns (uint256)
+```
+
+### getProtocolTokenFee
+
+```solidity
+function getProtocolTokenFee(uint256 amount) external view returns (uint256)
+```
+
+### ballotExecDelay
+
+```solidity
+function ballotExecDelay(uint256 _index) external view returns (uint256)
+```
+
+### primaryAsset
+
+```solidity
+function primaryAsset() external view returns (address)
+```
+
+### secondaryAsset
+
+```solidity
+function secondaryAsset() external view returns (address)
+```
+
+### poolBeacon
+
+```solidity
+function poolBeacon() external view returns (address)
+```
+
+### tgeBeacon
+
+```solidity
+function tgeBeacon() external view returns (address)
+```
+
+## ITGE
+
+### TGEInfo
+
+```solidity
+struct TGEInfo {
+  uint256 price;
+  uint256 hardcap;
+  uint256 softcap;
+  uint256 minPurchase;
+  uint256 maxPurchase;
+  uint256 vestingPercent;
+  uint256 vestingDuration;
+  uint256 vestingTVL;
+  uint256 duration;
+  address[] userWhitelist;
+  address unitOfAccount;
+  uint256 lockupDuration;
+  uint256 lockupTVL;
+}
+```
+
+### initialize
+
+```solidity
+function initialize(contract IToken token_, struct ITGE.TGEInfo info) external
+```
+
+### State
+
+```solidity
+enum State {
+  Active,
+  Failed,
+  Successful
+}
+```
+
+### state
+
+```solidity
+function state() external view returns (enum ITGE.State)
+```
+
+### transferUnlocked
+
+```solidity
+function transferUnlocked() external view returns (bool)
+```
+
+### getTotalVested
+
+```solidity
+function getTotalVested() external view returns (uint256)
+```
+
+### purchaseOf
+
+```solidity
+function purchaseOf(address user) external view returns (uint256)
+```
+
+### vestedBalanceOf
+
+```solidity
+function vestedBalanceOf(address user) external view returns (uint256)
+```
+
+## IToken
+
+### TokenInfo
+
+```solidity
+struct TokenInfo {
+  string symbol;
+  uint256 cap;
+}
+```
+
+### TokenType
+
+```solidity
+enum TokenType {
+  None,
+  Governance,
+  Preference
+}
+```
+
+### initialize
+
+```solidity
+function initialize(address pool_, string symbol_, uint256 cap_, enum IToken.TokenType tokenType_, address primaryTGE_, string description_) external
+```
+
+### mint
+
+```solidity
+function mint(address to, uint256 amount) external
+```
+
+### burn
+
+```solidity
+function burn(address from, uint256 amount) external
+```
+
+### lock
+
+```solidity
+function lock(address account, uint256 amount, uint256 deadline, uint256 proposalId) external
+```
+
+### cap
+
+```solidity
+function cap() external view returns (uint256)
+```
+
+### minUnlockedBalanceOf
+
+```solidity
+function minUnlockedBalanceOf(address from) external view returns (uint256)
+```
+
+### unlockedBalanceOf
+
+```solidity
+function unlockedBalanceOf(address account, uint256 proposalId) external view returns (uint256)
+```
+
+### pool
+
+```solidity
+function pool() external view returns (address)
+```
+
+### service
+
+```solidity
+function service() external view returns (contract IService)
+```
+
+### decimals
+
+```solidity
+function decimals() external view returns (uint8)
+```
+
+### symbol
+
+```solidity
+function symbol() external view returns (string)
+```
+
+### tokenType
+
+```solidity
+function tokenType() external view returns (enum IToken.TokenType)
+```
+
+### lastTGE
+
+```solidity
+function lastTGE() external view returns (address)
+```
+
+### getTGEList
+
+```solidity
+function getTGEList() external view returns (address[])
+```
+
+### isPrimaryTGESuccessful
+
+```solidity
+function isPrimaryTGESuccessful() external view returns (bool)
+```
+
+### addTGE
+
+```solidity
+function addTGE(address tge_) external
+```
+
+### getTotalTGEVestedTokens
+
+```solidity
+function getTotalTGEVestedTokens() external view returns (uint256)
+```
+
+## ExceptionsLibrary
+
+### ADDRESS_ZERO
+
+```solidity
+string ADDRESS_ZERO
+```
+
+### INCORRECT_ETH_PASSED
+
+```solidity
+string INCORRECT_ETH_PASSED
+```
+
+### NO_COMPANY
+
+```solidity
+string NO_COMPANY
+```
+
+### INVALID_TOKEN
+
+```solidity
+string INVALID_TOKEN
+```
+
+### NOT_POOL
+
+```solidity
+string NOT_POOL
+```
+
+### NOT_TGE
+
+```solidity
+string NOT_TGE
+```
+
+### NOT_DISPATCHER
+
+```solidity
+string NOT_DISPATCHER
+```
+
+### NOT_POOL_OWNER
+
+```solidity
+string NOT_POOL_OWNER
+```
+
+### NOT_SERVICE_OWNER
+
+```solidity
+string NOT_SERVICE_OWNER
+```
+
+### IS_DAO
+
+```solidity
+string IS_DAO
+```
+
+### NOT_DAO
+
+```solidity
+string NOT_DAO
+```
+
+### NOT_SHAREHOLDER
+
+```solidity
+string NOT_SHAREHOLDER
+```
+
+### NOT_WHITELISTED
+
+```solidity
+string NOT_WHITELISTED
+```
+
+### ALREADY_WHITELISTED
+
+```solidity
+string ALREADY_WHITELISTED
+```
+
+### ALREADY_NOT_WHITELISTED
+
+```solidity
+string ALREADY_NOT_WHITELISTED
+```
+
+### NOT_SERVICE
+
+```solidity
+string NOT_SERVICE
+```
+
+### WRONG_STATE
+
+```solidity
+string WRONG_STATE
+```
+
+### TRANSFER_FAILED
+
+```solidity
+string TRANSFER_FAILED
+```
+
+### CLAIM_NOT_AVAILABLE
+
+```solidity
+string CLAIM_NOT_AVAILABLE
+```
+
+### NO_LOCKED_BALANCE
+
+```solidity
+string NO_LOCKED_BALANCE
+```
+
+### LOCKUP_TVL_REACHED
+
+```solidity
+string LOCKUP_TVL_REACHED
+```
+
+### HARDCAP_OVERFLOW
+
+```solidity
+string HARDCAP_OVERFLOW
+```
+
+### MAX_PURCHASE_OVERFLOW
+
+```solidity
+string MAX_PURCHASE_OVERFLOW
+```
+
+### HARDCAP_OVERFLOW_REMAINING_SUPPLY
+
+```solidity
+string HARDCAP_OVERFLOW_REMAINING_SUPPLY
+```
+
+### HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
+
+```solidity
+string HARDCAP_AND_PROTOCOL_FEE_OVERFLOW_REMAINING_SUPPLY
+```
+
+### MIN_PURCHASE_UNDERFLOW
+
+```solidity
+string MIN_PURCHASE_UNDERFLOW
+```
+
+### LOW_UNLOCKED_BALANCE
+
+```solidity
+string LOW_UNLOCKED_BALANCE
+```
+
+### ZERO_PURCHASE_AMOUNT
+
+```solidity
+string ZERO_PURCHASE_AMOUNT
+```
+
+### NOTHING_TO_REDEEM
+
+```solidity
+string NOTHING_TO_REDEEM
+```
+
+### RECORD_IN_USE
+
+```solidity
+string RECORD_IN_USE
+```
+
+### INVALID_EIN
+
+```solidity
+string INVALID_EIN
+```
+
+### VALUE_ZERO
+
+```solidity
+string VALUE_ZERO
+```
+
+### ALREADY_SET
+
+```solidity
+string ALREADY_SET
+```
+
+### VOTING_FINISHED
+
+```solidity
+string VOTING_FINISHED
+```
+
+### ALREADY_EXECUTED
+
+```solidity
+string ALREADY_EXECUTED
+```
+
+### ACTIVE_TGE_EXISTS
+
+```solidity
+string ACTIVE_TGE_EXISTS
+```
+
+### INVALID_VALUE
+
+```solidity
+string INVALID_VALUE
+```
+
+### INVALID_CAP
+
+```solidity
+string INVALID_CAP
+```
+
+### INVALID_HARDCAP
+
+```solidity
+string INVALID_HARDCAP
+```
+
+### ONLY_POOL
+
+```solidity
+string ONLY_POOL
+```
+
+### ETH_TRANSFER_FAIL
+
+```solidity
+string ETH_TRANSFER_FAIL
+```
+
+### TOKEN_TRANSFER_FAIL
+
+```solidity
+string TOKEN_TRANSFER_FAIL
+```
+
+### BLOCK_DELAY
+
+```solidity
+string BLOCK_DELAY
+```
+
+### SERVICE_PAUSED
+
+```solidity
+string SERVICE_PAUSED
+```
+
+### INVALID_PROPOSAL_TYPE
+
+```solidity
+string INVALID_PROPOSAL_TYPE
+```
+
+### EXECUTION_FAILED
+
+```solidity
+string EXECUTION_FAILED
+```
+
+### INVALID_USER
+
+```solidity
+string INVALID_USER
+```
+
+### NOT_LAUNCHED
+
+```solidity
+string NOT_LAUNCHED
+```
+
+### LAUNCHED
+
+```solidity
+string LAUNCHED
+```
+
+### VESTING_TVL_REACHED
+
+```solidity
+string VESTING_TVL_REACHED
+```
+
+### PREFERENCE_TOKEN_EXISTS
+
+```solidity
+string PREFERENCE_TOKEN_EXISTS
 ```
 
 ## ERC20Mock

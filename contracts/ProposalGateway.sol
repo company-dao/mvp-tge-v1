@@ -108,27 +108,43 @@ contract ProposalGateway is
      * @param description Proposal description
      * @param metaHash Hash value of proposal metadata
      * @param tokenType Token type
-     * @param preferenceTokenDescription Description for preference token
-     * @param preferenceTokenCap Preference token cap
+     * @param tokenDescription Description for preference token
+     * @param tokenCap Preference token cap
      * @return proposalId Created proposal's ID
      */
     function createTGEProposal(
         IPool pool,
-        ITGE.TGEInfo calldata info,
-        string calldata description,
-        string calldata metaHash,
+        ITGE.TGEInfo memory info,
+        string memory description,
+        string memory metaHash,
         string memory metadataURI,
         IToken.TokenType tokenType,
-        string memory preferenceTokenDescription,
-        uint256 preferenceTokenCap
+        string memory tokenDescription,
+        uint256 tokenCap
     ) external onlyPoolShareholder(pool) returns (uint256 proposalId) {
-        // IDispatcher(dispatcher).validateTGEInfo(info, pool.token());
-        // if (tokenType == IToken.TokenType.Preference) {
-        //     require(
-        //         !pool.preferenceToken().isPrimaryTGESuccessful(), 
-        //         ExceptionsLibrary.ACTIVE_TGE_EXISTS // probably rename
-        //     );
-        // }
+        uint256 totalSupply = 0;
+        IToken token = pool.tokens(tokenType);
+
+        if (tokenType == IToken.TokenType.Governance) {
+            tokenCap = token.cap();
+            totalSupply = token.totalSupply();
+        }
+
+        if (tokenType == IToken.TokenType.Preference) {
+            if (address(token) != address(0)) {
+                if (token.isPrimaryTGESuccessful()) {
+                    tokenCap = token.cap();
+                    totalSupply = token.totalSupply();
+                }
+            }
+        }
+
+        IDispatcher(dispatcher).validateTGEInfo(
+            info, 
+            tokenType, 
+            tokenCap, 
+            totalSupply
+        );
 
         proposalId = pool.proposeSingleAction(
             address(pool.service()),
@@ -138,8 +154,8 @@ contract ProposalGateway is
                 info, 
                 metadataURI, 
                 tokenType, 
-                preferenceTokenDescription,
-                preferenceTokenCap
+                tokenDescription,
+                tokenCap
             ),
             description,
             IDispatcher.ProposalType.TGE,
@@ -194,7 +210,7 @@ contract ProposalGateway is
 
     modifier onlyPoolShareholder(IPool pool) {
         require(
-            pool.governanceToken().balanceOf(msg.sender) > 0,
+            pool.tokens(IToken.TokenType.Governance).balanceOf(msg.sender) > 0,
             ExceptionsLibrary.NOT_SHAREHOLDER
         );
         require(pool.isDAO(), ExceptionsLibrary.NOT_DAO);
