@@ -202,7 +202,6 @@ abstract contract Governor {
             return ProposalState.Successful;
         }
         if (
-            totalCastVotes * 10000 >= quorumVotes && // /10000 because 10000 = 100%
             proposal.forVotes * 10000 < decisionVotes && // * 10000 because 10000 = 100%
             (totalAvailableVotes - proposal.againstVotes) * 10000 < minForVotes
         ) {

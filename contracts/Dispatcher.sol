@@ -255,7 +255,7 @@ contract Dispatcher is
         string memory dateOfIncorporation,
         uint256 entityType,
         uint256 fee
-    ) public onlyManager {
+    ) public onlyPoolManager {
         require(
             jurisdiction > 0 && bytes(EIN).length != 0 && 
                 bytes(dateOfIncorporation).length != 0 && entityType > 0,
@@ -329,7 +329,7 @@ contract Dispatcher is
      * @dev Delete queue record
      * @param id Queue index
      */
-    function deleteRecord(uint256 id) external onlyOwner {
+    function deleteRecord(uint256 id) external onlyPoolManager {
         require(
             queueInfo[id].status == Status.NotUsed,
             ExceptionsLibrary.RECORD_IN_USE
@@ -731,7 +731,7 @@ contract Dispatcher is
         _;
     }
 
-    modifier onlyManager() {
+    modifier onlyPoolManager() {
         require(
             isManagerWhitelisted(msg.sender),
             ExceptionsLibrary.NOT_WHITELISTED
