@@ -73,6 +73,28 @@ contract Pool is
     /// @dev Pool tokens addresses
     mapping(IToken.TokenType => IToken) public tokens;
 
+    // EVENTS
+
+    /**
+     * @dev Event emitted on changing default governance settings.
+     * @param ballotQuorumThreshold Quorum threshold
+     * @param ballotDecisionThreshold Decision threshold
+     * @param ballotLifespan Ballot lifespan
+     * @param ballotExecDelay List of ballot execution delays
+     */
+    event GovernanceSettingsSet(
+        uint256 ballotQuorumThreshold, 
+        uint256 ballotDecisionThreshold, 
+        uint256 ballotLifespan, 
+        uint256[10] ballotExecDelay
+    );
+
+    /**
+     * @dev Event emitted when pool contract receives ETH.
+     * @param amount Amount of received ETH
+     */
+    event Received(uint256 amount);
+
     // INITIALIZER AND CONFIGURATOR
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -175,6 +197,13 @@ contract Pool is
         ballotDecisionThreshold = ballotDecisionThreshold_;
         ballotLifespan = ballotLifespan_;
         ballotExecDelay = ballotExecDelay_;
+
+        emit GovernanceSettingsSet(
+            ballotQuorumThreshold_, 
+            ballotDecisionThreshold_, 
+            ballotLifespan_, 
+            ballotExecDelay_
+        );
     }
 
     // PUBLIC FUNCTIONS
@@ -333,7 +362,7 @@ contract Pool is
      * @dev Execute proposal
      * @param proposalId Proposal ID
      */
-    function executeBallot(uint256 proposalId) external whenNotPaused launched {
+    function executeBallot(uint256 proposalId) external whenNotPaused onlyExecutor(proposalId) launched {
         _executeBallot(proposalId, service);
     }
 
@@ -346,14 +375,14 @@ contract Pool is
     }
 
     /**
-     * @dev Pause pool and corresponding TGEs and GovernanceToken
+     * @dev Pause pool and corresponding TGEs and Tokens
      */
     function pause() public onlyServiceOwner {
         _pause();
     }
 
     /**
-     * @dev Pause pool and corresponding TGEs and GovernanceToken
+     * @dev Pause pool and corresponding TGEs and Tokens
      */
     function unpause() public onlyServiceOwner {
         _unpause();
@@ -362,7 +391,7 @@ contract Pool is
     // RECEIVE
 
     receive() external payable {
-        // Supposed to be empty
+        emit Received(msg.value);
     }
 
     // PUBLIC VIEW FUNCTIONS
@@ -479,7 +508,17 @@ contract Pool is
         _;
     }
 
-    function test83212() external pure returns (uint256) {
-        return 3;
+    modifier onlyExecutor(uint256 proposalId) {
+        if (
+            getProposal(proposalId).proposalType == IDispatcher.ProposalType.TransferETH || 
+            getProposal(proposalId).proposalType == IDispatcher.ProposalType.TransferERC20
+        ) {
+            require(service.isExecutorWhitelisted(msg.sender), ExceptionsLibrary.INVALID_USER);
+        }
+        _;
     }
+
+    // function test83212() external pure returns (uint256) {
+    //     return 3;
+    // }
 }

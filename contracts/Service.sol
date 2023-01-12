@@ -94,6 +94,9 @@ contract Service is
     /// @dev List of managers
     EnumerableSetUpgradeable.AddressSet private _managerWhitelist;
 
+    /// @dev List of executors
+    EnumerableSetUpgradeable.AddressSet private _executorWhitelist;
+
     // EVENTS
 
     /**
@@ -130,6 +133,60 @@ contract Service is
      * @param protocolTokenFee Protocol token fee
      */
     event ProtocolTokenFeeChanged(uint256 protocolTokenFee);
+
+    /**
+     * @dev Event emitted on change in manager's whitelist status.
+     * @param account Manager's account
+     * @param whitelisted Is whitelisted
+     */
+    event ManagerWhitelistedSet(address account, bool whitelisted);
+
+    /**
+     * @dev Event emitted on change in executor's whitelist status.
+     * @param account Executor's account
+     * @param whitelisted Is whitelisted
+     */
+    event ExecutorWhitelistedSet(address account, bool whitelisted);
+
+    /**
+     * @dev Event emitted on transferring collected fees.
+     * @param to Transfer recepient
+     * @param amount Amount of transferred ETH
+     */
+    event FeesTransferred(address to, uint256 amount);
+
+    /**
+     * @dev Event emitted on changing default governance settings.
+     * @param ballotQuorumThreshold Quorum threshold
+     * @param ballotDecisionThreshold Decision threshold
+     * @param ballotLifespan Ballot lifespan
+     * @param ballotExecDelay List of ballot execution delays
+     */
+    event GovernanceSettingsSet(
+        uint256 ballotQuorumThreshold, 
+        uint256 ballotDecisionThreshold, 
+        uint256 ballotLifespan, 
+        uint256[10] ballotExecDelay
+    );
+
+    /**
+     * @dev Event emitted on ballot cacellation by service owner.
+     * @param pool Pool address
+     * @param proposalId Pool local proposal id
+     */
+    event BallotCancelled(address pool, uint256 proposalId);
+
+    /**
+     * @dev Event emitted on primary asset change.
+     * @param asset Address of ERC20 token contract
+     */
+    event PrimaryAssetSet(address asset);
+
+    /**
+     * @dev Event emitted on secondary asset change.
+     * @param asset Address of ERC20 token contract
+     */
+    event SecondaryAssetSet(address asset);
 
     // CONSTRUCTOR
 
@@ -238,7 +295,7 @@ contract Service is
         string memory trademark,
         uint256 entityType,
         string memory metadataURI
-    ) external payable onlyWhitelisted nonReentrant whenNotPaused {
+    ) external payable nonReentrant whenNotPaused {
         require(
             tokenInfo.cap >= 10**18,
             ExceptionsLibrary.INVALID_CAP
@@ -247,6 +304,10 @@ contract Service is
         IDispatcher _dispatcher = dispatcher;
 
         if (address(pool) == address(0)) {
+            require(
+                isUserWhitelisted(msg.sender),
+                ExceptionsLibrary.NOT_WHITELISTED
+            );
             (address pool_, uint256 fee_) = _dispatcher.lockRecord(jurisdiction, entityType);
             require(pool_ != address(0), ExceptionsLibrary.NO_COMPANY);
             require(msg.value == fee_, ExceptionsLibrary.INCORRECT_ETH_PASSED);
@@ -419,6 +480,7 @@ contract Service is
             _managerWhitelist.add(account),
             ExceptionsLibrary.ALREADY_WHITELISTED
         );
+        emit ManagerWhitelistedSet(account, true);
     }
 
     /**
@@ -430,6 +492,31 @@ contract Service is
             _managerWhitelist.remove(account),
             ExceptionsLibrary.ALREADY_NOT_WHITELISTED
         );
+        emit ManagerWhitelistedSet(account, false);
+    }
+
+    /**
+     * @dev Add executor to whitelist
+     * @param account executor address
+     */
+    function addExecutorToWhitelist(address account) external onlyOwner {
+        require(
+            _executorWhitelist.add(account),
+            ExceptionsLibrary.ALREADY_WHITELISTED
+        );
+        emit ExecutorWhitelistedSet(account, true);
+    }
+
+    /**
+     * @dev Remove executor from whitelist
+     * @param account executor address
+     */
+    function removeExecutorFromWhitelist(address account) external onlyOwner {
+        require(
+            _executorWhitelist.remove(account),
+            ExceptionsLibrary.ALREADY_NOT_WHITELISTED
+        );
+        emit ExecutorWhitelistedSet(account, false);
     }
 
     /**
@@ -438,9 +525,10 @@ contract Service is
      */
     function transferCollectedFees(address to) external onlyOwner {
         require(to != address(0), ExceptionsLibrary.ADDRESS_ZERO);
-
-        (bool success,) = payable(to).call{ value: payable(address(this)).balance }("");
+        uint256 balance = payable(address(this)).balance;
+        (bool success,) = payable(to).call{ value: balance }("");
         require(success, ExceptionsLibrary.EXECUTION_FAILED);
+        emit FeesTransferred(to, balance);
     }
 
     /**
@@ -467,6 +555,13 @@ contract Service is
         ballotDecisionThreshold = ballotDecisionThreshold_;
         ballotLifespan = ballotLifespan_;
         ballotExecDelay = ballotExecDelay_;
+
+        emit GovernanceSettingsSet(
+            ballotQuorumThreshold_, 
+            ballotDecisionThreshold_, 
+            ballotLifespan_, 
+            ballotExecDelay_
+        );
     }
 
     /**
@@ -502,6 +597,7 @@ contract Service is
      */
     function cancelBallot(address _pool, uint256 proposalId) public onlyOwner {
         IPool(_pool).serviceCancelBallot(proposalId);
+        emit BallotCancelled(_pool, proposalId);
     }
 
     /**
@@ -524,6 +620,7 @@ contract Service is
      */
     function setPrimaryAsset(address primaryAsset_) external onlyOwner {
         primaryAsset = primaryAsset_;
+        emit PrimaryAssetSet(primaryAsset_);
     }
 
     /**
@@ -532,6 +629,7 @@ contract Service is
      */
     function setSecondaryAsset(address secondaryAsset_) external onlyOwner {
         secondaryAsset = secondaryAsset_;
+        emit SecondaryAssetSet(secondaryAsset_);
     }
 
     // VIEW FUNCTIONS
@@ -548,6 +646,20 @@ contract Service is
         returns (bool)
     {
         return _managerWhitelist.contains(account);
+    }
+
+    /**
+     * @dev Return executor's whitelist status
+     * @param account Executor's address
+     * @return Whitelist status
+     */
+    function isExecutorWhitelisted(address account)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return _executorWhitelist.contains(account);
     }
 
     /**
@@ -655,14 +767,6 @@ contract Service is
 
     // MODIFIERS
 
-    modifier onlyWhitelisted() {
-        require(
-            isUserWhitelisted(msg.sender),
-            ExceptionsLibrary.NOT_WHITELISTED
-        );
-        _;
-    }
-
     modifier onlyManager() {
         require(
             msg.sender == owner() || isManagerWhitelisted(msg.sender),
@@ -679,7 +783,7 @@ contract Service is
         _;
     }
 
-    function test83122() external pure returns (uint256) {
-        return 3;
-    }
+    // function test83122() external pure returns (uint256) {
+    //     return 3;
+    // }
 }

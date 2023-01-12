@@ -81,6 +81,26 @@ contract TGE is
      */
     event ProtocolTokenFeeClaimed(address token, uint256 tokenFee);
 
+    /**
+     * @dev Event emitted on token claim.
+     * @param account Redeemer address
+     * @param refundValue Refund value
+     */
+    event Redeemed(address account, uint256 refundValue);
+
+    /**
+     * @dev Event emitted on token claim.
+     * @param account Claimer address
+     * @param amount Amount of claimed tokens
+     */
+    event Claimed(address account, uint256 amount);
+
+    /**
+     * @dev Event emitted on transfer funds to pool.
+     * @param amount Amount of transferred tokens/ETH
+     */
+    event FundsTransferred(uint256 amount);
+
     // CONSTRUCTOR
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -216,6 +236,7 @@ contract TGE is
         } else {
             IERC20Upgradeable(info.unitOfAccount).safeTransfer(msg.sender, refundValue);
         }
+        emit Redeemed(msg.sender, refundValue);
     }
 
     /**
@@ -233,6 +254,7 @@ contract TGE is
         _totalVested -= balance;
 
         IERC20Upgradeable(address(token)).safeTransfer(msg.sender, balance);
+        emit Claimed(msg.sender, balance);
     }
 
     function setVestingTVLReached() external whenPoolNotPaused onlyManager {
@@ -259,17 +281,18 @@ contract TGE is
 
         address unitOfAccount = info.unitOfAccount;
         address pool = token.pool();
+        uint256 balance = 0;
 
         if (info.price != 0) {
             if (unitOfAccount == address(0)) {
-                payable(pool).sendValue(address(this).balance);
+                balance = address(this).balance;
+                payable(pool).sendValue(balance);
             } else {
-                IERC20Upgradeable(unitOfAccount).safeTransfer(
-                    pool,
-                    IERC20Upgradeable(unitOfAccount).balanceOf(address(this))
-                );
+                balance = IERC20Upgradeable(unitOfAccount).balanceOf(address(this));
+                IERC20Upgradeable(unitOfAccount).safeTransfer(pool, balance);
             }
         }
+        emit FundsTransferred(balance);
     }
 
     /// @dev Transfers protocol token fee in form of pool's governance tokens to protocol treasury

@@ -36,6 +36,8 @@ interface IService {
 
     function isManagerWhitelisted(address account) external view returns (bool);
 
+    function isExecutorWhitelisted(address account) external view returns (bool);
+
     function owner() external view returns (address);
 
     function uniswapRouter() external view returns (ISwapRouter);

@@ -461,8 +461,7 @@ abstract contract Governor {
                 proposal.proposalType ==
                 IDispatcher.ProposalType.TransferERC20
             ) {
-                from = proposal.targets[index];
-                amount = proposal.values[index];
+                from = proposal.token;
             }
 
             // calculate USDT value of transfer tokens

@@ -38,6 +38,10 @@ const networkConfig = (url: string | null | undefined) => ({
   url: url || "",
   accounts:
     process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    // networkCheckTimeout: 999999,
+    // timeoutBlocks: 200,
+    // gas: 12400000,
+    gasPrice: 25000000000,
 });
 
 const defaultNetworkConfig = networkConfig(process.env.RPC_URL);
@@ -69,7 +73,7 @@ const config: HardhatUserConfig = {
         //     blockNumber: 15050841,
         // },
     },
-    // mainnet: defaultNetworkConfig,8000000000
+    mainnet: {...defaultNetworkConfig, ...{chainId: 1}}, // 8000000000
     // ropsten: defaultNetworkConfig,1322222229
     // rinkeby: defaultNetworkConfig,
     // kovan: defaultNetworkConfig,

@@ -134,6 +134,43 @@ contract Dispatcher is
      */
     event EventRecordAdded(EventType eventType, address pool, uint256 proposalId);
 
+    /**
+     * @dev Event emitted on company creation
+     * @param metadataIndex Company metadata index
+     * @param jurisdiction Jurisdiction
+     * @param entityType Entity type
+     * @param fee Fee for createPool
+     * @param pool Deployed pool address
+     */
+    event CompanyCreated(uint256 metadataIndex, uint256 jurisdiction, uint256 entityType, uint256 fee, address pool);
+
+    /**
+     * @dev Event emitted on company deletion
+     * @param metadataIndex Company metadata index
+     */
+    event CompanyDeleted(uint256 metadataIndex);
+
+    /**
+     * @dev Event emitted on company deletion
+     * @param metadataIndex Company metadata index
+     * @param fee Fee for createPool
+     */
+    event FeeUpdated(uint256 metadataIndex, uint256 fee);
+
+    /**
+     * @dev Event emitted on change in token whitelist.
+     * @param token ERC20 token address
+     * @param whitelisted Is whitelisted
+     */
+    event TokenWhitelistedSet(address token, bool whitelisted);
+
+    /**
+     * @dev Event emitted on change in manager's whitelist status.
+     * @param account Manager's account
+     * @param whitelisted Is whitelisted
+     */
+    event ManagerWhitelistedSet(address account, bool whitelisted);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -298,6 +335,7 @@ contract Dispatcher is
         indexOfContract[address(pool)] = index;
 
         emit ContractRecordAdded(index, address(pool), IDispatcher.ContractType.Pool);
+        emit CompanyCreated(lastId, jurisdiction, entityType, fee, address(pool));
     }
 
     /**
@@ -336,6 +374,7 @@ contract Dispatcher is
         );
 
         delete queueInfo[id];
+        emit CompanyDeleted(id);
     }
 
     /**
@@ -349,6 +388,7 @@ contract Dispatcher is
             ExceptionsLibrary.RECORD_IN_USE
         );
         queueInfo[id].fee = fee;
+        emit FeeUpdated(id, fee);
     }
 
     /**
@@ -370,6 +410,7 @@ contract Dispatcher is
         }
         require(id > 0, ExceptionsLibrary.NO_COMPANY);
         queueInfo[id].fee = fee;
+        emit FeeUpdated(id, fee);
     }
 
     /**
@@ -393,6 +434,7 @@ contract Dispatcher is
         }
         require(id > 0, ExceptionsLibrary.NO_COMPANY);
         queueInfo[id].fee = fee;
+        emit FeeUpdated(id, fee);
     }
 
     // WhitelistedTokens functions
@@ -421,6 +463,7 @@ contract Dispatcher is
 
             tokenSwapPath[tokens[i]] = swapPaths[i];
             tokenSwapReversePath[tokens[i]] = swapReversePaths[i];
+            emit TokenWhitelistedSet(tokens[i], true);
         }
     }
 
@@ -437,6 +480,7 @@ contract Dispatcher is
                 _tokenWhitelist.remove(tokens[i]),
                 ExceptionsLibrary.ALREADY_NOT_WHITELISTED
             );
+            emit TokenWhitelistedSet(tokens[i], false);
         }
     }
 
@@ -449,6 +493,7 @@ contract Dispatcher is
             _managerWhitelist.add(account),
             ExceptionsLibrary.ALREADY_WHITELISTED
         );
+        emit ManagerWhitelistedSet(account, true);
     }
 
     /**
@@ -460,6 +505,7 @@ contract Dispatcher is
             _managerWhitelist.remove(account),
             ExceptionsLibrary.ALREADY_NOT_WHITELISTED
         );
+        emit ManagerWhitelistedSet(account, false);
     }
 
     // PUBLIC VIEW FUNCTIONS
